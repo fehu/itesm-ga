@@ -19,10 +19,11 @@ cabal-version:       >=1.10
 library
   exposed-modules:     GeneticAlgorithm
                        Parcial2.Problem
-                       Parcial2.GA
+--                       Parcial2.GA
   -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.8 && <4.9
                      , containers >= 0.5
+                     , random >= 1.1
   hs-source-dirs:      src
   default-language:    Haskell2010

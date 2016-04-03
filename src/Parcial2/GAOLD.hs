@@ -20,17 +20,20 @@ module Parcial2.GA (
 import GeneticAlgorithm
 import Parcial2.Problem
 
+import System.Random
 
 -----------------------------------------------------------------------------
 
 type Node = LabyrinthNode (Int, Int)
 
-data GA = GA
+data GA = GA Labyrinth2D
 
 instance GeneticAlgorithm GA where type Gene GA = Node
                                    type Chromosome GA = [Gene GA]
                                    listGenes = id
 
-                                   initialPopulation = undefined
+                                   initialPopulation = do rLen <- randomIO :: IO Int
+
+                                                          undefined
 
 

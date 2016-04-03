@@ -37,5 +37,7 @@ class GeneticAlgorithm ga where type InputData ga :: *
                                 newGA :: InputData ga -> ga
                                 runGA :: ga -> IO (ResultData ga)
 
+--runGA' :: ga -> [Chromosome ga] -> IO (ResultData ga)
+--runGA' ga chs | stopCriteria chs =
 
 
