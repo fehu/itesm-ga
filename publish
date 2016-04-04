@@ -1,0 +1,18 @@
+#!/bin/bash
+
+if [ "$1" = "" ]; then 
+  echo "[ERROR] Provide a file to publish"
+  exit 1
+fi
+
+cp "$1" "$1_"
+
+
+git checkout gh-pages --force
+cp "$1_" "$1"
+./publishTex "$1"
+
+
+git checkout master
+mv "$1_" "$1"
+
