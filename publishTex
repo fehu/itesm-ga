@@ -1,9 +1,0 @@
-#!/bin/bash
-
-PDF="$1"
-
-git checkout gh-pages &&\
-git add "$PDF" &&\
-git commit -am "Create/Update of ${PDF##*/}" &&\
-git push origin gh-pages &&\
-git checkout master
