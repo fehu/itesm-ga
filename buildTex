@@ -31,7 +31,7 @@ lhs2TeX    -o "$TEX_NAME" "$SRC_LHS" &&\
 
 
 latex -interaction=nonstopmode "$TEX_NAME"
-pdflatex -synctex=1 -interaction=nonstopmode "$TEX_NAME" &&\
+pdflatex -synctex=1 -interaction=nonstopmode "$TEX_NAME"
 
 cp "$PDF_NAME" ../
 
