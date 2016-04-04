@@ -1,0 +1,7 @@
+#!/bin/bash
+
+PDF="$1"
+
+git add "$PDF" &&\
+git commit -m "Create/Update of ${PDF##*/}" &&\
+git push origin gh-pages
