@@ -16,11 +16,8 @@
 
 module GeneticAlgorithm where
 
---import Data.List
-import Data.Ord (Down)
-
 import Control.Arrow
-import GHC.Exts
+import GHC.Exts (sortWith)
 
 class GeneticAlgorithm ga where type InputData ga :: *
                                 type ResultData ga :: *
@@ -35,9 +32,9 @@ class GeneticAlgorithm ga where type InputData ga :: *
                                 -- | Denotes number of crossover children.
                                 type CrossoverChildren ga :: * -> *
 
-                                initialPopulation :: ga -> IO [Chromosome ga]
+                                randomChromosome :: ga -> IO (Chromosome ga)
 
-                                fitness   :: Chromosome ga -> Fitness ga
+                                fitness   :: ga -> Chromosome ga -> Fitness ga
                                 crossover :: Chromosome ga -> Chromosome ga
                                           -> CrossoverChildren ga (Chromosome ga)
                                 mutate    :: Chromosome ga -> Chromosome ga
@@ -51,14 +48,14 @@ newtype Assessed ga = Assessed [(Chromosome ga, Fitness ga)]
 
 -- | Creates a new 'Assessed', sorting the given list by 'Fitness' (descending).
 assessed :: (Ord (Fitness ga)) => [(Chromosome ga, Fitness ga)] -> Assessed ga
-assessed = Assessed . sortWith (Down . snd)
+assessed = Assessed . sortWith snd
 
 unwrapAssessed (Assessed l) = l
 
 class (GeneticAlgorithm ga) => RunGA ga where
     type DebugData ga :: *
 
-    runGA :: ga -> IO (ResultData ga, DebugData ga)
+    runGA :: ga -> Int -> IO (ResultData ga, DebugData ga)
 
     selectIntact    :: Assessed ga -> Assessed ga
     selectCrossover :: Assessed ga -> Assessed ga

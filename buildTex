@@ -22,16 +22,16 @@ else
 fi
 
 TEX_NAME="$SRC_NAME.tex"
-FMT_NAME="$SRC_NAME.fmt"
+# FMT_NAME="$SRC_NAME.fmt"
 PDF_NAME="$SRC_NAME.pdf"
 
-
-lhs2TeX -o "$TEX_NAME" "$SRC_LHS" &&\
+# lhs2TeX-hl -o "$FMT_NAME" "$SRC_LHS" &&\
+lhs2TeX    -o "$TEX_NAME" "$SRC_LHS" &&\
 
 
 
 latex -interaction=nonstopmode "$TEX_NAME"
-pdflatex -synctex=1 -interaction=nonstopmode "$TEX_NAME"
+pdflatex -synctex=1 -interaction=nonstopmode "$TEX_NAME" &&\
 
 cp "$PDF_NAME" ../
 

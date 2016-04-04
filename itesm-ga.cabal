@@ -18,10 +18,8 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     GeneticAlgorithm
-                       Parcial2.Problem
                        Parcial2.Labyrinth
                        Parcial2.ReadLabyrinth
---                       Parcial2.GA
   -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.8 && <4.9
