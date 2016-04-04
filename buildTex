@@ -1,0 +1,46 @@
+#!/bin/bash
+
+if [ ! -d build ]; then mkdir build; fi
+
+cd build
+
+
+# SRC_WITHOUT_PREFIX="${1%.*}"
+SRC_BASE="${1##*/}"
+SRC_NAME="${SRC_BASE%.*}"
+SRC_EXT="${SRC_BASE##*.}"
+
+
+if [ "${SRC_EXT,,}" = "lhs" ]; then
+    if [[ "$1" = /* ]];
+    then SRC_LHS="$1"
+    else SRC_LHS="../$1"
+    fi
+else
+    echo "[ERROR] Pass *.lhs file as first argument"
+    fail
+fi
+
+TEX_NAME="$SRC_NAME.tex"
+FMT_NAME="$SRC_NAME.fmt"
+PDF_NAME="$SRC_NAME.pdf"
+
+
+lhs2TeX -o "$TEX_NAME" "$SRC_LHS" &&\
+
+
+
+latex -interaction=nonstopmode "$TEX_NAME"
+pdflatex -synctex=1 -interaction=nonstopmode "$TEX_NAME"
+
+cp "$PDF_NAME" ../
+
+cd ..
+exit 0
+
+
+
+function fail {
+               cd ..
+               exit 1
+              }
