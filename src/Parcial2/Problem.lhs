@@ -1,4 +1,4 @@
-
+%include polycode.fmt
 
 Diseñar un agente inteligente basado en un robot explorador, de tal forma que a partir de
 un mapa (laberinto), el agente sea capaz de encontrar la salida utilizando un algoritmo
@@ -24,18 +24,39 @@ Para ello, se utilizará el siguiente formato
 
 \end{enumerate}
 
-\begin{code}
-module Parcial2.Problem where
+> module Parcial2.Problem where
 
-import Data.Graph (Graph, Vertex)
-import Data.Map (Map)
-
-\end{code}
+> import Data.Graph (Graph, Vertex)
+> import Data.Map (Map)
 
 
+Un laberinto se representará como un \textbf{grafo no dirigido}.
+Los nodos representaran ciertas areas del laberinto,
+y las aristas representaran las connecciones de las areas entre si.
 
-\begin{code}
-data LabyrinthNode coord = LabyrinthNode{ nodeId :: Vertex,
-                                          nodePosition :: coord
-                                        }
-\end{code}
+
+> data Labyrinth coord = Labyrinth {
+>     labyrinthGraph :: Graph,
+>     labyrinthNodes :: Map Vertex (LabyrinthNode coord),
+
+Se defina también una métrica sobre el grafo:
+
+>   labyrinthDist :: Vertex -> Vertex -> Maybe Distance  }
+
+donde
+
+> type Distance = Double
+
+
+Los nodos se definen para cualquier sistema de coordinados:
+
+
+> data LabyrinthNode coord = LabyrinthNode{
+>     nodeId :: Vertex,
+
+Contiene información sobre su posición.
+
+>     nodePosition :: coord }
+
+
+
