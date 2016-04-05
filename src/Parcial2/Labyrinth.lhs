@@ -15,10 +15,7 @@
 \begin{document}
 
 \begin{code}
-{-# LANGUAGE TypeFamilies
-           , UndecidableInstances
-           , FlexibleContexts
-       #-}
+{-# LANGUAGE UndecidableInstances, FlexibleInstances #-}
 
 module Parcial2.Labyrinth where
 
@@ -99,7 +96,7 @@ Su implementación se presentará adelante.
 
 Se utiliza un mapa 2D:
 
-> newtype Point2D = Point2D (Int, Int) deriving Eq
+> newtype Point2D = Point2D (Int, Int) deriving (Eq, Ord)
 > instance Show Point2D where
 >   show (Point2D (x,y)) = show x ++ "-" ++ show y
 
@@ -112,11 +109,9 @@ Parcial2/ReadLabyrinth.hs
 % }.
 Aquí se presenta la construcción del grafo a partir del mapa leido.
 
-La instancia de \emph{Ord} usada determinará
 
 \begin{code}
-  readLabyrinth2D :: (Ord Point2D) =>
-                  FilePath -> IO (Either [String] Labyrinth2D)
+  readLabyrinth2D :: FilePath -> IO (Either [String] Labyrinth2D)
 
   readLabyrinth2D file = build <$> try (readFile file)
     where
@@ -159,28 +154,32 @@ Se defina el valor de aptitud como uno de los dos:
     aristas que existen entre los pares de genes ajustados.}
 \end{itemize}
 
-% > newtype CompositeFitness = CompositeFitness (Either Double Double)
-
-> data Route = RouteLength Double | RouteValidess Double
+> data Route (dir :: OrdDir) = RouteLength Double | RouteValidess Double
 >           deriving (Eq, Show)
 
-\noindent Y se defina la orden sobre la aptitud de tal manera que
-$$\forall x \in \textit{longitud}, y \in \textit{valides} \Rightarrow x > y$$
+\noindent También tiene un paramento de tipo para establecer la dirección de busqueda,
+lo que determina el orden deseado.
+Se defina la orden sobre la aptitud de tal manera que dependiendo en la dirección:
+\begin{itemize}
+  \item \emph{Min} --- $\forall x \in \textit{longitud}, y \in \textit{valides} \Rightarrow x < y$;
 
-> instance Ord Route where
+> instance Ord (Route Min) where
+>   compare (RouteLength x)   (RouteLength y)   = compare x y
+>   compare (RouteValidess x) (RouteValidess y) = compare x y
+>   compare (RouteLength _)   (RouteValidess _) = LT
+>   compare (RouteValidess _) (RouteLength _)   = GT
+
+
+  \item \emph{Max} --- $\forall x \in \textit{longitud}, y \in \textit{valides} \Rightarrow x > y$.
+
+> instance Ord (Route Max) where
 >   compare (RouteLength x)   (RouteLength y)   = compare x y
 >   compare (RouteValidess x) (RouteValidess y) = compare x y
 >   compare (RouteLength _)   (RouteValidess _) = GT
 >   compare (RouteValidess _) (RouteLength _)   = LT
 
-Se define el orden \textbf{ascendiente} soble los puntos,
-para que los mejores cromosomas (con valores \textbf{menores})
-sean en el principio de la lista, que representa la población.
+\end{itemize}
 
-> instance Ord Point2D where
->   compare (Point2D p1) (Point2D p2) = compare p1 p2
-
-Se define el orden sobre los contenedores de aptitud.
 
 Se define la metrica sobre los puntos del grafo:
 $$
@@ -218,7 +217,7 @@ y un \emph{cromosoma} como una \underline{lista de genes}.
 
 \item Los valores de aptitud ya fueron descritos previamente.
 
->    type Fitness GA = Route
+>    type Fitness GA = Route Min
 
 \item Para denotar que la operación de \emph{crossover} preserva el tamaño de población,
 su resultado se marca como un par de hijos.

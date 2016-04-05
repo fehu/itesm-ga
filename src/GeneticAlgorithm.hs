@@ -12,12 +12,12 @@
 --
 -----------------------------------------------------------------------------
 
-{-# LANGUAGE TypeFamilies, FlexibleContexts #-}
-
 module GeneticAlgorithm where
 
 import Control.Arrow
 import GHC.Exts (sortWith)
+
+data OrdDir = Max | Min
 
 class GeneticAlgorithm ga where type InputData ga :: *
                                 type ResultData ga :: *
@@ -26,6 +26,7 @@ class GeneticAlgorithm ga where type InputData ga :: *
                                 type Chromosome ga :: *
 
                                 type Fitness ga :: *
+                                type Target ga :: OrdDir
 
                                 listGenes :: Chromosome ga -> [Gene ga]
 
