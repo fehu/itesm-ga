@@ -5,7 +5,7 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage[spanish, mexico]{babel}
-\usepackage{amsmath, hyperref}
+\usepackage{amsmath, hyperref, xcolor, tikz}
 
 \usepackage{showframe}
 
@@ -57,6 +57,13 @@ aristas --- la existencia de rutas directas.
 
   edgeOf p es = any (`member` es) [p, swap p]
 
+  mapPoints f (Labyrinth ns es i t) = Labyrinth {
+        nodes = Set.map f ns,
+        edges = Set.map (first f . second f) es,
+        initial = f i,
+        target  = f t
+    }
+
 \end{code}
 
 
@@ -93,7 +100,8 @@ Su implementación se presentará adelante.
 Se utiliza un mapa 2D:
 
 > newtype Point2D = Point2D (Int, Int) deriving Eq
-> pnt2D (Point2D p) = p
+> instance Show Point2D where
+>   show (Point2D (x,y)) = show x ++ "-" ++ show y
 
 > type Labyrinth2D = Labyrinth Point2D
 
@@ -166,8 +174,8 @@ $$\forall x \in \textit{longitud}, y \in \textit{valides} \Rightarrow x > y$$
 >   compare (RouteValidess _) (RouteLength _)   = LT
 
 Se define el orden \textbf{ascendiente} soble los puntos,
-para que los mejores cromosomas sean en el principio de la lista
-que representa la población.
+para que los mejores cromosomas (con valores \textbf{menores})
+sean en el principio de la lista, que representa la población.
 
 > instance Ord Point2D where
 >   compare (Point2D p1) (Point2D p2) = compare p1 p2
@@ -187,11 +195,10 @@ $$
 d_E \text{ --- es la distancia euclidiana entre dos puntos.}
 $$
 
-
-> eDist' = mkDirectDistance $ undefined
->         -- \(Point2D (x1,x2)) (Point2D (y1,y2)) ->
->         --      sqrt $ fromIntegral $
->         --      abs(x1-x2)^2 + abs(y1-y2)^2
+> eDist' = mkDirectDistance $
+>         \(Point2D (x1,x2)) (Point2D (y1,y2)) ->
+>               sqrt $ fromIntegral $
+>               abs(x1-x2)^2 + abs(y1-y2)^2
 > eDist  = labyrinthDist eDist'
 
 Se define la instancia de la clase \emph{GeneticAlgorithm} para \emph{GA}
@@ -209,7 +216,7 @@ y un \emph{cromosoma} como una \underline{lista de genes}.
 >    -- listGenes :: Chromosome ga \rightarrow$ [Gene ga]
 >    listGenes = id
 
-\item Los valores de aptitud de adaptación van a tener un tipo flotante de doble precision.
+\item Los valores de aptitud ya fueron descritos previamente.
 
 >    type Fitness GA = Route
 
@@ -222,7 +229,7 @@ su resultado se marca como un par de hijos.
 
 >    type InputData GA = Labyrinth2D
 
-\item El resultado es la \underline{mejor chromosoma} obtenida.
+\item El resultado es el \underline{mejor chromosoma} obtenida.
 
 >    type ResultData GA = Chromosome GA
 
