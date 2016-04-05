@@ -5,10 +5,12 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage[spanish, mexico]{babel}
-\usepackage{amsmath}
+\usepackage{amsmath, hyperref}
 
-% \usepackage{showframe}
+\usepackage{showframe}
 
+
+% \newcommand{hs}[2]{\href{api/src/#1.html}{src/#2}}
 
 \begin{document}
 
@@ -74,7 +76,10 @@ Se define la \emph{distancia directa} entre los nodos que están connectados por
 
 \bigskip
 \noindent
-El algoritmo genético abstracto está definido en \href{src/GeneticAlgorithm.hs}{}.
+El algoritmo genético abstracto está definido en
+% \hs{GeneticAlgorithm}{
+GeneticAlgorithm.hs
+% }.
 Su implementación se presentará adelante.
 
 
@@ -93,7 +98,10 @@ Se utiliza un mapa 2D:
 > type Labyrinth2D = Labyrinth Point2D
 
 
-La lectura del archivo del mapa se encuentra en \href{src/Parcial2/ReadLabyrinth.hs}{}.
+La lectura del archivo del mapa se encuentra en
+% \hs{Parcial2-ReadLabyrinth}{
+Parcial2/ReadLabyrinth.hs
+% }.
 Aquí se presenta la construcción del grafo a partir del mapa leido.
 
 La instancia de \emph{Ord} usada determinará
@@ -132,6 +140,30 @@ Un alias para tuple \verb|(a,a)|.
 > unwrapPair (Pair p) = p
 > pair2List (Pair (f,s)) = [f,s]
 
+Se defina el valor de aptitud como uno de los dos:
+\begin{itemize}
+  \item longitud de la ruta completa;
+  \item grado de valides $\dfrac
+    {\text{número de aristas existentes en gene}}
+    {\text{número de aristas total}}$.
+
+    \textit{aristas existentes ---
+    aristas que existen entre los pares de genes ajustados.}
+\end{itemize}
+
+% > newtype CompositeFitness = CompositeFitness (Either Double Double)
+
+> data Route = RouteLength Double | RouteValidess Double
+>           deriving (Eq, Show)
+
+\noindent Y se defina la orden sobre la aptitud de tal manera que
+$$\forall x \in \textit{longitud}, y \in \textit{valides} \Rightarrow x > y$$
+
+> instance Ord Route where
+>   compare (RouteLength x)   (RouteLength y)   = compare x y
+>   compare (RouteValidess x) (RouteValidess y) = compare x y
+>   compare (RouteLength _)   (RouteValidess _) = GT
+>   compare (RouteValidess _) (RouteLength _)   = LT
 
 Se define el orden \textbf{ascendiente} soble los puntos,
 para que los mejores cromosomas sean en el principio de la lista
@@ -140,7 +172,9 @@ que representa la población.
 > instance Ord Point2D where
 >   compare (Point2D p1) (Point2D p2) = compare p1 p2
 
-Se define la metrica sobre el grafo:
+Se define el orden sobre los contenedores de aptitud.
+
+Se define la metrica sobre los puntos del grafo:
 $$
   \mathrm{dist}(p_1, p_2) = \begin{cases}
        \mathit{Just}~ d_E(p_1, p_2)
@@ -153,10 +187,11 @@ $$
 d_E \text{ --- es la distancia euclidiana entre dos puntos.}
 $$
 
-> eDist' = mkDirectDistance $
->          \(Point2D (x1,x2)) (Point2D (y1,y2)) ->
->               sqrt $ fromIntegral $
->               abs(x1-x2)^2 + abs(y1-y2)^2
+
+> eDist' = mkDirectDistance $ undefined
+>         -- \(Point2D (x1,x2)) (Point2D (y1,y2)) ->
+>         --      sqrt $ fromIntegral $
+>         --      abs(x1-x2)^2 + abs(y1-y2)^2
 > eDist  = labyrinthDist eDist'
 
 Se define la instancia de la clase \emph{GeneticAlgorithm} para \emph{GA}
@@ -176,7 +211,7 @@ y un \emph{cromosoma} como una \underline{lista de genes}.
 
 \item Los valores de aptitud de adaptación van a tener un tipo flotante de doble precision.
 
->    type Fitness GA = Double
+>    type Fitness GA = Route
 
 \item Para denotar que la operación de \emph{crossover} preserva el tamaño de población,
 su resultado se marca como un par de hijos.
@@ -251,8 +286,8 @@ $$
 >                               lPairs _       = []
 >                               dists = map (uncurry $ eDist l) (lPairs genes)
 >                           in if isJust `all` dists
->                                then sum $ map fromJust dists
->                                else fromRational infinity
+>                                then undefined -- sum $ map fromJust dists
+>                                else undefined -- fromRational infinity
 
 \item ?
 
