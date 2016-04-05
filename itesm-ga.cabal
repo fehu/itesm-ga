@@ -55,3 +55,18 @@ test-suite tests
                      , FlexibleContexts
                      , DataKinds
 
+
+executable LabyrinthExample
+  hs-source-dirs:      src
+  main-is:             Parcial2/LabyrinthExample.hs
+  build-depends:       base >=4.8 && <4.9
+                     , containers >= 0.5
+                     , random >= 1.1
+                     , parsec >= 3.1
+                     , mtl == 2.2.*
+  default-language:    Haskell2010
+  default-extensions:  TypeFamilies
+                     , FlexibleContexts
+                     , DataKinds
+
+

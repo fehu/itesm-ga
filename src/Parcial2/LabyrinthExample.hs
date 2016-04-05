@@ -72,7 +72,11 @@ labyrinthExample = Labyrinth nodes' edges' (0,0) (0,1)
     where nodes' = Set.fromList $ nodesC ++ nodesW ++ nodesN ++ nodesS ++ nodesE
           edges' = Set.fromList $ edgesC ++ edgesW ++ edgesN ++ edgesS ++ edgesE
 
+chromosomeExamples = [
+    "red" --> []
+  ]
 
-showExample = tikzLabyrinth $ mapPoints (Point2D . second negate) labyrinthExample
+showExample = tikzLabyrinth (mapPoints (Point2D . second negate) labyrinthExample)
+                            (map (second (map Point2D)) chromosomeExamples)
 
 

@@ -26,15 +26,20 @@ import qualified Data.Set as Set
 
 -----------------------------------------------------------------------------
 
-tikzLabyrinth :: Labyrinth2D -> String
-tikzLabyrinth l = intercalate "\n" . extract . tikzPicture [] $ [
+type Color = String
+type ChromosomeExample = (Color, [Point2D])
+
+tikzLabyrinth :: Labyrinth2D -> [ChromosomeExample] -> String
+tikzLabyrinth l exs = intercalate "\n" . extract . tikzPicture [] $ [
     tikzStyles [ "point" --> ["draw", "circle", "inner sep=2pt"] ]
   , newline
   ]
   ++ map node (Set.toList $ nodes l)
   ++ [ newline
      , tikzScope [] $ map edge (Set.toList $ edges l)
+     , newline
      ]
+  ++ map chromosomeExample exs
 
   where node p@(Point2D (x,y)) = tikzNode ["point"]
                                           (show p)
@@ -42,7 +47,11 @@ tikzLabyrinth l = intercalate "\n" . extract . tikzPicture [] $ [
                                           ("\\footnotesize " ++ show p)
         edge (x, y) = tikzEdge (show x) (show y) []
 
-
+chromosomeExample (color, c) = tikzScope ["draw opacity=0.5", "color=" ++ color]
+                             . map route $ pairs c
+    where pairs (f:s:t) = (f,s) : pairs (s:t)
+          pairs _       = []
+          route (x, y) = tikzEdge (show x) (show y) []
 
 -----------------------------------------------------------------------------
 
@@ -60,7 +69,7 @@ extract (TikzExpr es) = es
 
 indent s = replicate 4 ' ' ++ s
 
-newline = TikzExpr []
+newline = TikzExpr [""]
 
 showAttrs [] = ""
 showAttrs as = "[" ++ intercalate ", " as ++ "]"
