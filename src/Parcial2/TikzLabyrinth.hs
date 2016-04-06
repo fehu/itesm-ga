@@ -27,11 +27,14 @@ import qualified Data.Set as Set
 -----------------------------------------------------------------------------
 
 type Color = String
-type ChromosomeExample = (Color, [Point2D])
+type ChromosomeExample = (Color, [(Point2D, Point2D)])
 
-tikzLabyrinth :: Labyrinth2D -> [ChromosomeExample] -> String
-tikzLabyrinth l exs = intercalate "\n" . extract . tikzPicture [] $ [
-    tikzStyles [ "point" --> ["draw", "circle", "inner sep=2pt"] ]
+tikzLabyrinth :: Labyrinth2D -> [ChromosomeExample] -> [TikzAttr] -> String
+tikzLabyrinth l exs attrs = intercalate "\n" . extract . tikzPicture [] $ [
+    tikzStyles [ "point"   --> ["draw"]
+               , "initial" --> ["draw", "circle", "fill=green!50", "inner sep=2pt"]
+               , "target"  --> ["draw", "circle", "fill=blue!50", "inner sep=2pt"]
+               ]
   , newline
   ]
   ++ map node (Set.toList $ nodes l)
@@ -39,19 +42,24 @@ tikzLabyrinth l exs = intercalate "\n" . extract . tikzPicture [] $ [
      , tikzScope [] $ map edge (Set.toList $ edges l)
      , newline
      ]
-  ++ map chromosomeExample exs
+  ++ zipWith (chromosomeExample attrs) exs (reverse [1..length exs ])
 
-  where node p@(Point2D (x,y)) = tikzNode ["point"]
-                                          (show p)
-                                          (Just $ AbsPos x y)
-                                          ("\\footnotesize " ++ show p)
+  where node pnt@(Point2D (x,y)) =
+            let clazz = case pnt of p | p == initial l -> "initial"
+                                    p | p == target l  -> "target"
+                                    _                  -> "point"
+            in tikzNode [ clazz ]
+                        (show pnt)
+                        (Just $ AbsPos x y)
+                        ("\\footnotesize " ++ show pnt)
         edge (x, y) = tikzEdge (show x) (show y) []
 
-chromosomeExample (color, c) = tikzScope ["draw opacity=0.5", "color=" ++ color]
-                             . map route $ pairs c
-    where pairs (f:s:t) = (f,s) : pairs (s:t)
-          pairs _       = []
-          route (x, y) = tikzEdge (show x) (show y) []
+chromosomeExample attrs (color, es) w = tikzScope attrs' $ map route es
+    where route (x, y) = tikzEdge (show x) (show y) []
+          attrs' = [ "color=" ++ color
+                   , "line width=" ++ show w ++ "pt"
+                   ]
+                  ++ attrs
 
 -----------------------------------------------------------------------------
 
@@ -95,9 +103,13 @@ tikzPicture attrs body = tikzEnv "tikzpicture" attrs $ intercalate []
 a --> b = (a,b)
 
 tikzStyles :: [(String, [TikzAttr])] -> TikzExpr
-tikzStyles styles = tikzCmd "tikzset" [] styles'
-    where styles' = do (s, as) <- styles
+tikzStyles styles = TikzExpr $ "\\tikzset{" : map indent s ++ ["};"]
+    where styles' :: [String]
+          styles' = do (s, as) <- styles
                        [s ++ "/.style={ " ++ intercalate ", " as ++ " }"]
+          s = if length styles' == 1
+                then styles'
+                else foldr (\s a -> a ++ [',':s]) [' ' :head styles'] (tail styles')
 
 tikzNode :: [TikzAttr] -> String -> Maybe TikzPos -> String -> TikzExpr
 tikzNode as id mbPos body = TikzExpr
