@@ -1,0 +1,10 @@
+#!/bin/bash
+
+RUN=dist/build/LabyrinthExample/LabyrinthExample
+
+SRC=src/Parcial2
+
+$RUN --map $SRC/MapExampleRaw.tikz.tex
+$RUN $SRC/MapExampleChromosomes.tikz.tex
+
+scripts/lhs2pdf $SRC/Labyrinth.lhs
