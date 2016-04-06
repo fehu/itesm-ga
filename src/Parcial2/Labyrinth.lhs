@@ -5,10 +5,21 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage[spanish, mexico]{babel}
-\usepackage{amsmath, hyperref, xcolor, tikz}
+\usepackage{amsmath, hyperref, xcolor, tikz, mdframed}
+\usepackage[shortlabels, inline]{enumitem}
 
-\usepackage{showframe}
+% \usepackage{showframe}
 
+\newenvironment{note}
+    {\begin{mdframed}[leftmargin=1cm,
+                 skipabove=1em,
+                 skipbelow=1em,
+                 rightline=false,
+                 topline=false,
+                 bottomline=false,
+                 linewidth=2pt]
+        \textbf{Nota}\\}
+    {\end{mdframed}}
 
 % \newcommand{hs}[2]{\href{api/src/#1.html}{src/#2}}
 
@@ -28,6 +39,7 @@ module Parcial2.Labyrinth where
   import Data.Set (Set, member)
   import qualified Data.Set as Set
   import GHC.Real (infinity)
+
 
   import Parcial2.ReadLabyrinth
   import GeneticAlgorithm
@@ -147,7 +159,7 @@ Se defina el valor de aptitud como uno de los dos:
 \begin{itemize}
   \item longitud de la ruta completa;
   \item grado de valides $\dfrac
-    {\text{número de aristas existentes en gene}}
+    {\text{número de aristas existentes}}
     {\text{número de aristas total}}$.
 
     \textit{aristas existentes ---
@@ -205,10 +217,12 @@ empezando con los tipos y siguiendo con los métodos.
 
 > instance GeneticAlgorithm GA where
 
-\begin{itemize}
+\medskip
+
+\begin{enumerate}[(1)]
 
 \item Un \emph{gene} se define como \underline{nodo del laberinto}
-y un \emph{cromosoma} como una \underline{lista de genes}.
+      y un \emph{cromosoma} como una \underline{lista de genes}.
 
 >    type Gene GA = Point2D
 >    type Chromosome GA = [Point2D]
@@ -218,6 +232,7 @@ y un \emph{cromosoma} como una \underline{lista de genes}.
 \item Los valores de aptitud ya fueron descritos previamente.
 
 >    type Fitness GA = Route Min
+
 
 \item Para denotar que la operación de \emph{crossover} preserva el tamaño de población,
 su resultado se marca como un par de hijos.
@@ -234,57 +249,30 @@ su resultado se marca como un par de hijos.
 
 
 
-\item Generación de cromosomas aleatorios.
-
->    -- randomChromosome :: ga \rightarrow$ IO (Chromosome ga)
->    randomChromosome (GA l) = do
-
-Primero se genera aleotoriamente el tamaño extra del cromosoma con valor entre $0$ y $2N$.
-Dos valores mas se reservan para el punto inicial y el punto final.
-El tamaño final de los cromosomas generados está entre $2$ y $2N + 2$.
-
->       len' <- getStdRandom $ randomR (0, 2* Set.size (nodes l))
-
-Un punto aleatorio se selecciona entre todos los nodos del mapa, excepto la posición inicial
-del agente y el punto meta.
-
->       let randPoint = undefined :: StdGen -> (Point2D, StdGen)
-
-Un punto aleatorio se re-genera hasta que se encuentra uno que todavía no está en el cromosoma,
-generado previamente (ulilizando el mismo generador).
-
->       let rand prev = fix $ \f g ->
->                        let (r, g') = randPoint g
->                        in if r `elem` prev  then f g' else (r, g')
-
-Se genera la parte aleatoria del cromosoma.
-
->       rnd <- getStdGen
->       let (genes, _) = ($ ([], rnd)) . fix $
->                           \f (l,g) -> if length l == len'
->                                       then (l, g)
->                                       else first (:l) (rand l g)
-
-Todas las rutas, encodificadas en los cromosomas, se empiezan en
-el punto inicial y se terminan en el punto meta.
-
->       let chrom = [initial l] ++ genes ++ [target l]
->       return chrom
-
-
-
 \item La \textbf{aptitud de adoptación} se define como:
 
-$$ f(c) = \begin{cases}
-\sum\limits_{i = 1}^{\mathrm{len}-1} \mathrm{dist}(c_{i-1}, c_i)
+$$
+f(c) &= \begin{cases}
+  \mathit{Length} ~ \mathrm{length}
     & \mbox{si } \begin{tabular}{l}
              \forall i = \overline{[1,\mathrm{len}-1]} \Rightarrow \\
-             \exists \text{ arista, connectando } c_{i-1} \text{ y } c_i
+             \qquad \exists \text{ arista, connectando } c_{i-1} \text{ y } c_i \\
+             \land ~\mathrm{initial} \in \{c\}\\
+             \land ~\mathrm{target} \in \{c\}
       \end{tabular}
-\\
-+\infty & \mbox{en otro caso}
-\end{cases}
+  \\
+  \mathit{Validess} ~\mathrm{validess}
+    & \mbox{en otro caso}
+  \end{cases}
 $$
+
+\qquad\qquad  donde
+\begin{align*}
+\mathrm{length} &= \sum\limits_{i = 1}^{\mathrm{len}-1} \mathrm{dist}(c_{i-1}, c_i)
+\\
+\mathrm{validess} &= \text{grado de valides (se describe antes)}
+\end{align*}
+
 
 >    -- fitness :: ga \rightarrow$ Chromosome ga \rightarrow$ Fitness ga
 >    fitness (GA l) genes = let
@@ -292,8 +280,56 @@ $$
 >                               lPairs _       = []
 >                               dists = map (uncurry $ eDist l) (lPairs genes)
 >                           in if isJust `all` dists
->                                then undefined -- sum $ map fromJust dists
->                                else undefined -- fromRational infinity
+>                                then -- is a valid route
+>                                     RouteLength . sum $ map fromJust dists
+>                                else -- is incomplete
+>                                     RouteValidess $
+>                                       fromIntegral (length $ filter isJust dists)
+>                                       / fromIntegral (length dists)
+
+
+
+
+\item Generación de cromosomas aleatorios.
+
+\begin{figure}[h]
+    \centering
+    \input{MapExampleRaw.tikz}
+    \label{figure:rawMapExample}
+    \caption{Un exemplo de mapa, inicio: 0--2, meta: 9--3.}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \input{MapExampleChromosomes.tikz}
+    \label{figure:chromosomesMapExample}
+    \caption{Se presentan unos chromosomas en el mapa.
+             Los cromosomas {\color{orange} •} {\color{blue} •} {\color{green} •} están compuestas
+               de pares de genes, connectados por aristas;
+             mientras que los cromosomas {\color{red} •} {\color{violet} •} están compuestas
+               de cadenas de genes, connectados por aristas, de longitud 3.
+            \textit{\small (Son de grosor diferente para que se ven mejor
+                            las connecciones que existen en varios cromosomas)}
+            }
+\end{figure}
+
+
+\noindent Para mejorar las poblaciones iniciales, las cromosomas se componen de
+sequencias de genes, que son sub-rutas validas de tamaños diferentes.
+
+En figura \ref{figure:rawMapExample} se presenta un exemplo de un mapa y
+en figura \ref{figure:chromosomesMapExample} se presenta un exemplo de cromosomas generados.
+
+{\Huge \color{red} TBD \dots}
+
+
+
+
+
+
+>    -- randomChromosome :: ga \rightarrow$ IO (Chromosome ga)
+>    randomChromosome (GA l) = undefined
+
 
 \item ?
 
@@ -313,11 +349,24 @@ $$
 >    -- newGA :: InputData ga \rightarrow$ ga
 
 
-\end{itemize}
+\end{enumerate}
 
 
 
+\newpage
 
+{\Huge \color{red} Esto es un reporte preliminar }
+
+\begin{note}
+  La intención es utilizar \emph{crossover} para:
+  \begin{enumerate*}[1)]
+    \item remplazar los ''hoyos'' en las rutas;
+    \item extendir rutas existientes.
+  \end{enumerate*}
+  La preferencia debe ser dada a las rutas que contienen un de los puntos de interes (inicio, meta).
+
+  La mutación debe extender/replacar un geno al inicio/meta si $\exists$ una ruta directa.
+\end{note}
 
 
 
