@@ -21,7 +21,12 @@
         \textbf{Nota}\\}
     {\end{mdframed}}
 
-% \newcommand{hs}[2]{\href{api/src/#1.html}{src/#2}}
+
+\newcommand{\crule}[2][1pt] {\begin{center}\rule{#2\textwidth}{#1}\end{center}}
+
+\newcommand{\hssrc} [2]{\href{api/src/#1.html}{src/#2}}
+\newcommand{\hstest}[2]{\href{api/tests/src/#1.html}{test/#2}}
+
 
 \begin{document}
 
@@ -92,11 +97,7 @@ Se define la \emph{distancia directa} entre los nodos que están conectados por 
 
 \bigskip
 \noindent
-El algoritmo genético abstracto está definido en
-% \hs{GeneticAlgorithm}{
-GeneticAlgorithm.hs
-% }
-.
+El algoritmo genético abstracto está definido en \hssrc{GeneticAlgorithm}{GeneticAlgorithm.hs}.
 Su implementación se presentará a continuación.
 
 
@@ -117,9 +118,7 @@ Se utiliza un mapa 2D:
 
 
 La lectura del archivo del mapa se encuentra en
-% \hs{Parcial2-ReadLabyrinth}{
-Parcial2/ReadLabyrinth.hs
-% }.
+\hssrc{Parcial2-ReadLabyrinth}{Parcial2/ReadLabyrinth.hs}.
 Aquí se presenta la construcción del grafo a partir del mapa leido.
 
 
@@ -143,20 +142,15 @@ Aquí se presenta la construcción del grafo a partir del mapa leido.
 
 \end{code}
 
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Algoritmo genético}
+\subsection{Adoptación}
 
 
-> data GA = GA Labyrinth2D
 
-Un alias para tuple \verb|(a,a)|.
-
-> newtype Pair a = Pair (a,a)
-> unwrapPair (Pair p) = p
-> pair2List (Pair (f,s)) = [f,s]
-
-Se define el valor de aptitud como uno de los dos:
+Se define el valor de \emph{aptitud de adoptación} como uno de los dos:
 \begin{itemize}
   \item longitud de la ruta completa;
   \item grado de valides $\dfrac
@@ -176,22 +170,45 @@ Se define la orden sobre la aptitud de tal manera que dependiendo en la direcci�
 \begin{itemize}
   \item \emph{Min} --- $\forall x \in \textit{longitud}, y \in \textit{valides} \Rightarrow x < y$;
 
-> instance Ord (Route Min) where
->   compare (RouteLength x)   (RouteLength y)   = compare x y
->   compare (RouteValidess x) (RouteValidess y) = compare x y
->   compare (RouteLength _)   (RouteValidess _) = LT
->   compare (RouteValidess _) (RouteLength _)   = GT
-
+\begin{code}
+  instance Ord (Route Min) where
+    compare (RouteLength x)   (RouteLength y)   = compare x y
+    compare (RouteValidess x) (RouteValidess y) = compare x y
+    compare (RouteLength _)   (RouteValidess _) = LT
+    compare (RouteValidess _) (RouteLength _)   = GT
+\end{code}
 
   \item \emph{Max} --- $\forall x \in \textit{longitud}, y \in \textit{valides} \Rightarrow x > y$.
 
-> instance Ord (Route Max) where
->   compare (RouteLength x)   (RouteLength y)   = compare x y
->   compare (RouteValidess x) (RouteValidess y) = compare x y
->   compare (RouteLength _)   (RouteValidess _) = GT
->   compare (RouteValidess _) (RouteLength _)   = LT
+\begin{code}
+  instance Ord (Route Max) where
+    compare (RouteLength x)   (RouteLength y)   = compare x y
+    compare (RouteValidess x) (RouteValidess y) = compare x y
+    compare (RouteLength _)   (RouteValidess _) = GT
+    compare (RouteValidess _) (RouteLength _)   = LT
+\end{code}
 
 \end{itemize}
+
+
+Las pruebas del contenedor \emph{Route} se encuentran en \hstest{Parcial2-Route}{Parcial2/Route.hs}.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Algoritmo genético}
+
+
+> data GA = GA Labyrinth2D
+
+Se usa adelante un alias de tuple \verb|(a,a)| para denotar el número de hijos de \emph{crossover}.
+
+\begin{code}
+  newtype Pair a = Pair (a,a)
+  unwrapPair (Pair p) = p
+  pair2List (Pair (f,s)) = [f,s]
+\end{code}
+
 
 
 \noindent
@@ -216,6 +233,8 @@ $$
 > eDist  = labyrinthDist eDist'
 
 
+
+\crule{1}
 \medskip
 \noindent
 Se define la instancia de la clase \emph{GeneticAlgorithm} para \emph{GA}
@@ -323,6 +342,11 @@ secuencias de genes, que son sub-rutas validas de tamaños diferentes.
 
 En la figura \ref{fig:rawMapExample} se presenta un ejemplo de un mapa y
 en la figura \ref{fig:chromosomesMapExample} se presenta un exemplo de cromosomas generados.
+
+
+
+
+
 
 {\Huge \color{red} TBD \dots}
 
