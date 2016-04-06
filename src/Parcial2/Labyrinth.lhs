@@ -194,6 +194,7 @@ Se define la orden sobre la aptitud de tal manera que dependiendo en la direcciÃ
 \end{itemize}
 
 
+\noindent
 Se define la metrica sobre los puntos del grafo:
 $$
   \mathrm{dist}(p_1, p_2) = \begin{cases}
@@ -207,18 +208,20 @@ $$
 d_E \text{ --- es la distancia euclidiana entre dos puntos.}
 $$
 
+
 > eDist' = mkDirectDistance $
 >         \(Point2D (x1,x2)) (Point2D (y1,y2)) ->
 >               sqrt $ fromIntegral $
 >               abs(x1-x2)^2 + abs(y1-y2)^2
 > eDist  = labyrinthDist eDist'
 
+
+\medskip
+\noindent
 Se define la instancia de la clase \emph{GeneticAlgorithm} para \emph{GA}
 empezando con los tipos y siguiendo con los mÃ©todos.
 
 > instance GeneticAlgorithm GA where
-
-\medskip
 
 \begin{enumerate}[(1)]
 
