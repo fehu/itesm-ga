@@ -24,8 +24,10 @@
 
 \newcommand{\crule}[2][1pt] {\begin{center}\rule{#2\textwidth}{#1}\end{center}}
 
-\newcommand{\hssrc} [2]{\href{http://./api/src/#1.html}{src/#2}}
-\newcommand{\hstest}[2]{\href{http://./api/tests/src/#1.html}{test/#2}}
+\def\github{http://fehu.github.io/itesm-ga/}
+
+\newcommand{\hssrc} [2]{\href{\github/api/src/#1.html}{src/#2}}
+\newcommand{\hstest}[2]{\href{\github/api/tests/src/#1.html}{test/#2}}
 
 
 \begin{document}
