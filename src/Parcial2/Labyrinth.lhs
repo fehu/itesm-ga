@@ -76,7 +76,7 @@ aristas --- la existencia de rutas directas.
 \end{code}
 
 
-Se define la \emph{distancia directa} entre los nodos que están connectados por una arista.
+Se define la \emph{distancia directa} entre los nodos que están conectados por una arista.
 
 \begin{code}
   data DirectDistance point dist = DirectDistance {
@@ -95,8 +95,9 @@ Se define la \emph{distancia directa} entre los nodos que están connectados por
 El algoritmo genético abstracto está definido en
 % \hs{GeneticAlgorithm}{
 GeneticAlgorithm.hs
-% }.
-Su implementación se presentará adelante.
+% }
+.
+Su implementación se presentará a continuación.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -155,7 +156,7 @@ Un alias para tuple \verb|(a,a)|.
 > unwrapPair (Pair p) = p
 > pair2List (Pair (f,s)) = [f,s]
 
-Se defina el valor de aptitud como uno de los dos:
+Se define el valor de aptitud como uno de los dos:
 \begin{itemize}
   \item longitud de la ruta completa;
   \item grado de valides $\dfrac
@@ -169,9 +170,9 @@ Se defina el valor de aptitud como uno de los dos:
 > data Route (dir :: OrdDir) = RouteLength Double | RouteValidess Double
 >           deriving (Eq, Show)
 
-\noindent También tiene un paramento de tipo para establecer la dirección de busqueda,
+\noindent También tiene un parametro de tipo para establecer la dirección de busqueda,
 lo que determina el orden deseado.
-Se defina la orden sobre la aptitud de tal manera que dependiendo en la dirección:
+Se define la orden sobre la aptitud de tal manera que dependiendo en la dirección:
 \begin{itemize}
   \item \emph{Min} --- $\forall x \in \textit{longitud}, y \in \textit{valides} \Rightarrow x < y$;
 
@@ -221,7 +222,7 @@ empezando con los tipos y siguiendo con los métodos.
 
 \begin{enumerate}[(1)]
 
-\item Un \emph{gene} se define como \underline{nodo del laberinto}
+\item Un \emph{gen} se define como \underline{nodo del laberinto}
       y un \emph{cromosoma} como una \underline{lista de genes}.
 
 >    type Gene GA = Point2D
@@ -243,7 +244,7 @@ su resultado se marca como un par de hijos.
 
 >    type InputData GA = Labyrinth2D
 
-\item El resultado es el \underline{mejor chromosoma} obtenida.
+\item El resultado es el \underline{mejor cromosoma} obtenido.
 
 >    type ResultData GA = Chromosome GA
 
@@ -295,30 +296,30 @@ $$
 \begin{figure}[h]
     \centering
     \input{MapExampleRaw.tikz}
-    \label{figure:rawMapExample}
     \caption{Un exemplo de mapa, inicio: 0--2, meta: 9--3.}
+    \label{fig:rawMapExample}
 \end{figure}
 
 \begin{figure}[h]
     \centering
     \input{MapExampleChromosomes.tikz}
-    \label{figure:chromosomesMapExample}
-    \caption{Se presentan unos chromosomas en el mapa.
+    \caption{Se presentan algunos cromosomas en el mapa.
              Los cromosomas {\color{orange} •} {\color{blue} •} {\color{green} •} están compuestas
-               de pares de genes, connectados por aristas;
-             mientras que los cromosomas {\color{red} •} {\color{violet} •} están compuestas
-               de cadenas de genes, connectados por aristas, de longitud 3.
-            \textit{\small (Son de grosor diferente para que se ven mejor
-                            las connecciones que existen en varios cromosomas)}
+               de pares de genes, conectados por aristas;
+             mientras que los cromosomas {\color{red} •} {\color{violet} •} están compuestos
+               de cadenas de genes, conectados por aristas, de longitud 3.
+            \textit{\small (Son de diferente grosor para que se ven mejor
+                            las conecciones que existen en varios cromosomas)}
             }
+    \label{fig:chromosomesMapExample}
 \end{figure}
 
 
 \noindent Para mejorar las poblaciones iniciales, las cromosomas se componen de
-sequencias de genes, que son sub-rutas validas de tamaños diferentes.
+secuencias de genes, que son sub-rutas validas de tamaños diferentes.
 
-En figura \ref{figure:rawMapExample} se presenta un exemplo de un mapa y
-en figura \ref{figure:chromosomesMapExample} se presenta un exemplo de cromosomas generados.
+En la figura \ref{fig:rawMapExample} se presenta un ejemplo de un mapa y
+en la figura \ref{fig:chromosomesMapExample} se presenta un exemplo de cromosomas generados.
 
 {\Huge \color{red} TBD \dots}
 
@@ -361,11 +362,14 @@ en figura \ref{figure:chromosomesMapExample} se presenta un exemplo de cromosoma
   La intención es utilizar \emph{crossover} para:
   \begin{enumerate*}[1)]
     \item remplazar los ''hoyos'' en las rutas;
-    \item extendir rutas existientes.
+    \item extender rutas existientes.
   \end{enumerate*}
   La preferencia debe ser dada a las rutas que contienen un de los puntos de interes (inicio, meta).
 
-  La mutación debe extender/replacar un geno al inicio/meta si $\exists$ una ruta directa.
+  La mutación debe extender/remplacar un gen al inicio/meta si $\exists$ una ruta directa.
+
+  \medskip
+  \noindent {\Large \color{red} !} El concepto de \emph{''valides''} va ser cambiado.
 \end{note}
 
 
