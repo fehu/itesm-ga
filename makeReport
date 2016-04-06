@@ -4,7 +4,25 @@ RUN=dist/build/LabyrinthExample/LabyrinthExample
 
 SRC=src/Parcial2
 
+# Clean and build the project.
+cabal clean
+cabal configure --enable-tests
+cabal build
+
+
+# Generate html sources (library+test+executables)
+cabal hscolour --all
+
+# Generate html documentation (library only).
+cabal haddock\
+    --hyperlink-sources\
+    --html-location='http://hackage.haskell.org/packages/archive/$pkg/latest/doc/html'
+
+
+# Generate Tikz examples.
 $RUN --map $SRC/MapExampleRaw.tikz.tex
 $RUN $SRC/MapExampleChromosomes.tikz.tex
 
+
+# Generate PDF for 'Parcial2/Labyrinth.lhs'.
 scripts/lhs2pdf $SRC/Labyrinth.lhs
