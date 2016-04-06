@@ -2,6 +2,15 @@
 
 PDF="$1"
 
+# clean and copy API documentation
+rm -rf api
+mkdir api
+cp -r dist/doc/html/itesm-ga/* api/ &&\
+
+# register updates with git
 git add "$PDF" &&\
+git add api/ &&\
+
+# commit and push
 git commit -m "Create/Update of ${PDF##*/}" &&\
 git push origin gh-pages
