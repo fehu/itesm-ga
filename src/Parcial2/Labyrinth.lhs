@@ -461,8 +461,6 @@ en la figura \ref{fig:chromosomesMapExample} se presenta un exemplo de cromosoma
 
   La mutación debe extender/remplacar un gen al inicio/meta si $\exists$ una ruta directa.
 
-  \medskip
-  \noindent {\Large \color{red} !} El concepto de \emph{''valides''} va ser cambiado.
 \end{note}
 
 
