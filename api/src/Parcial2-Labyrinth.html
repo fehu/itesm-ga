@@ -33,8 +33,10 @@
 
 \newcommand{\crule}[2][1pt] {\begin{center}\rule{#2\textwidth}{#1}\end{center}}
 
-\newcommand{\hssrc} [2]{\href{api/src/#1.html}{src/#2}}
-\newcommand{\hstest}[2]{\href{api/tests/src/#1.html}{test/#2}}
+\def\github{http://fehu.github.io/itesm-ga/}
+
+\newcommand{\hssrc} [2]{\href{\github/api/src/#1.html}{src/#2}}
+\newcommand{\hstest}[2]{\href{\github/api/tests/src/#1.html}{test/#2}}
 
 
 \begin{document}
@@ -158,46 +160,118 @@ Aquí se presenta la construcción del grafo a partir del mapa leido.
 \subsection{Adoptación}
 
 
+El valor de \emph{aptitud de adoptación} se llamará \emph{ruta} y se define
+para permitir destinguir facilmente los dos tipos de rutas
+(encodificadas en los cromosomas) posibles:
 
-Se define el valor de \emph{aptitud de adoptación} como uno de los dos:
 \begin{itemize}
-  \item longitud de la ruta completa;
-  \item grado de valides $\dfrac
-    {\text{número de aristas existentes}}
-    {\text{número de aristas total}}$.
+  \item \textbf{Ruta completa}: es una ruta valida
+    ($\exists$ una conección entre cada par de genes adjuntos) que contiene
+    en punto inicial y el punto meta.
 
-    \textit{aristas existentes ---
-    aristas que existen entre los pares de genes ajustados.}
+    Se caracteriza por la \emph{longitud de la ruta}.
+
+    El resultado, esperado del algoritmo genético es la más corta de estas rutas.
+
+  \item \textbf{Ruta parcial}: es una ruta que
+    \begin{enumerate*}[1)]
+        \item contiene pares de genes adjuntos, los cuales no están conectados, o
+        \item no contiene los ambos puntos: inicio y meta.
+    \end{enumerate*}
+
+    Se caracteriza por los tres valores:
+    \begin{enumerate}
+
+        \item \emph{valides} $= \dfrac
+            {\text{número de aristas existentes}}
+            {\text{número de aristas total}}$.
+
+            \textit{aristas existentes ---
+                    aristas que existen entre los pares de genes adjuntos.}
+
+        \item los \emph{puntos de interés} que contiene la ruta.
+        \item la longitud sumatoria de las sub-rutas en el cromosoma.
+
+    \end{enumerate}
+
 \end{itemize}
 
-<pre><a name="line-63"></a><span class='hs-varop'>&gt;</span> <span class='hs-keyword'>data</span> <span class='hs-conid'>Route</span> <span class='hs-layout'>(</span><span class='hs-varid'>dir</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>OrdDir</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>RouteLength</span> <span class='hs-conid'>Double</span> <span class='hs-keyglyph'>|</span> <span class='hs-conid'>RouteValidess</span> <span class='hs-conid'>Double</span>
-<a name="line-64"></a><span class='hs-varop'>&gt;</span>           <span class='hs-keyword'>deriving</span> <span class='hs-layout'>(</span><span class='hs-conid'>Eq</span><span class='hs-layout'>,</span> <span class='hs-conid'>Show</span><span class='hs-layout'>)</span>
-</pre>
-\noindent También tiene un parametro de tipo para establecer la dirección de busqueda,
-lo que determina el orden deseado.
-Se define la orden sobre la aptitud de tal manera que dependiendo en la dirección:
-\begin{itemize}
-  \item \emph{Min} --- $\forall x \in \textit{longitud}, y \in \textit{valides} \Rightarrow x < y$;
+
 
 \begin{code}
-<pre><a name="line-65"></a>  <span class='hs-keyword'>instance</span> <span class='hs-conid'>Ord</span> <span class='hs-layout'>(</span><span class='hs-conid'>Route</span> <span class='hs-conid'>Min</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
-<a name="line-66"></a>    <span class='hs-varid'>compare</span> <span class='hs-layout'>(</span><span class='hs-conid'>RouteLength</span> <span class='hs-varid'>x</span><span class='hs-layout'>)</span>   <span class='hs-layout'>(</span><span class='hs-conid'>RouteLength</span> <span class='hs-varid'>y</span><span class='hs-layout'>)</span>   <span class='hs-keyglyph'>=</span> <span class='hs-varid'>compare</span> <span class='hs-varid'>x</span> <span class='hs-varid'>y</span>
-<a name="line-67"></a>    <span class='hs-varid'>compare</span> <span class='hs-layout'>(</span><span class='hs-conid'>RouteValidess</span> <span class='hs-varid'>x</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-conid'>RouteValidess</span> <span class='hs-varid'>y</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>compare</span> <span class='hs-varid'>x</span> <span class='hs-varid'>y</span>
-<a name="line-68"></a>    <span class='hs-varid'>compare</span> <span class='hs-layout'>(</span><span class='hs-conid'>RouteLength</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span>   <span class='hs-layout'>(</span><span class='hs-conid'>RouteValidess</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>LT</span>
-<a name="line-69"></a>    <span class='hs-varid'>compare</span> <span class='hs-layout'>(</span><span class='hs-conid'>RouteValidess</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-conid'>RouteLength</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span>   <span class='hs-keyglyph'>=</span> <span class='hs-conid'>GT</span>
+<pre><a name="line-63"></a>
+<a name="line-64"></a>  <span class='hs-keyword'>data</span> <span class='hs-conid'>POI</span>  <span class='hs-keyglyph'>=</span> <span class='hs-conid'>POIInit</span> <span class='hs-keyglyph'>|</span> <span class='hs-conid'>POITarget</span> <span class='hs-keyword'>deriving</span> <span class='hs-layout'>(</span><span class='hs-conid'>Eq</span><span class='hs-layout'>,</span> <span class='hs-conid'>Ord</span><span class='hs-layout'>,</span> <span class='hs-conid'>Enum</span><span class='hs-layout'>,</span> <span class='hs-conid'>Show</span><span class='hs-layout'>)</span>
+<a name="line-65"></a>  <span class='hs-keyword'>data</span> <span class='hs-conid'>POIs</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>POINone</span> <span class='hs-keyglyph'>|</span> <span class='hs-conid'>POISome</span> <span class='hs-conid'>POI</span> <span class='hs-keyglyph'>|</span> <span class='hs-conid'>POIBoth</span> <span class='hs-keyword'>deriving</span> <span class='hs-layout'>(</span><span class='hs-conid'>Eq</span><span class='hs-layout'>,</span> <span class='hs-conid'>Show</span><span class='hs-layout'>)</span>
+<a name="line-66"></a>
+<a name="line-67"></a>  <span class='hs-keyword'>instance</span> <span class='hs-conid'>Ord</span> <span class='hs-conid'>POIs</span> <span class='hs-keyword'>where</span>
+<a name="line-68"></a>    <span class='hs-varid'>x</span> <span class='hs-varop'>`compare`</span> <span class='hs-varid'>y</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>val</span> <span class='hs-varid'>x</span> <span class='hs-varop'>`compare`</span> <span class='hs-varid'>val</span> <span class='hs-varid'>y</span> <span class='hs-keyword'>where</span>
+<a name="line-69"></a>        <span class='hs-varid'>val</span> <span class='hs-conid'>POINone</span> <span class='hs-keyglyph'>=</span> <span class='hs-num'>0</span>
+<a name="line-70"></a>        <span class='hs-varid'>val</span> <span class='hs-layout'>(</span><span class='hs-conid'>POISome</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-num'>1</span>
+<a name="line-71"></a>        <span class='hs-varid'>val</span> <span class='hs-conid'>POIBoth</span> <span class='hs-keyglyph'>=</span> <span class='hs-num'>2</span>
+<a name="line-72"></a>
+<a name="line-73"></a>
+<a name="line-74"></a>  <span class='hs-keyword'>data</span> <span class='hs-conid'>Route</span> <span class='hs-keyglyph'>=</span>
+<a name="line-75"></a>      <span class='hs-conid'>CompleteRoute</span> <span class='hs-layout'>{</span> <span class='hs-varid'>routeLength</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Double</span> <span class='hs-layout'>}</span>
+<a name="line-76"></a>    <span class='hs-keyglyph'>|</span> <span class='hs-conid'>PartialRoute</span>  <span class='hs-layout'>{</span> <span class='hs-varid'>partialValidess</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Double</span>
+<a name="line-77"></a>                    <span class='hs-layout'>,</span> <span class='hs-varid'>partialPOI</span>      <span class='hs-keyglyph'>::</span> <span class='hs-conid'>POIs</span>
+<a name="line-78"></a>                    <span class='hs-layout'>,</span> <span class='hs-varid'>partialLength</span>   <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Double</span>
+<a name="line-79"></a>                    <span class='hs-layout'>}</span>
+<a name="line-80"></a>    <span class='hs-keyword'>deriving</span> <span class='hs-layout'>(</span><span class='hs-conid'>Eq</span><span class='hs-layout'>,</span> <span class='hs-conid'>Show</span><span class='hs-layout'>)</span>
 </pre>\end{code}
 
-  \item \emph{Max} --- $\forall x \in \textit{longitud}, y \in \textit{valides} \Rightarrow x > y$.
+\noindent Para la busqueda de la ruta mas corta,
+se define el orden sobre las rutas de tal manera, que
+una lista de \emph{rutas}, ordenada ascendentamente,
+tendrá los mejores elementos en el principio.
+\begin{enumerate}
+
+  \item Cualquiera \emph{ruta completa} \underline{es minor} que cualquiera \emph{ruta parcial}.
+        $$\forall x \in \textit{ruta completa},
+                  y \in \textit{ruta parcial}     \implies x < y$$
+
+  \item Dos \emph{rutas completas} se comparan por su \underline{longitud} sin cambios de la orden.
+        \begin{align*}
+            \begin{tabular}{l}
+                \forall x \in \textit{ruta completa}, x \sim r_1\\
+                \forall y \in \textit{ruta completa}, y \sim r_2
+            \end{tabular}
+            & \implies
+            & \begin{cases}
+                x < y & \mbox{si } r_1 < r_2 \\
+                x > y & \mbox{si } r_1 > r_2 \\
+                x = y & \mbox{en otro caso}
+              \end{cases}
+        \end{align*}
+
+  \item Dos \emph{rutas parciales} se comparan por sus \underline{tres componentes} en orden
+        \underline{lexicográfico}, que quiere decir que
+        primero se comparan los primeros elementes, si son igual, se comparan los segundos, etc.,
+        hasta que la comparación da un resultado diferente de igualidad o se termina la lista.
+
+        El orden de la comparación se cambia al opuesto.
+
+        \begin{align*}
+            \begin{tabular}{l}
+                \forall x \in \textit{ruta parcial}, x \sim \langle v_x, i_x, l_x \rangle \\
+                \forall y \in \textit{ruta parcial}, y \sim \langle v_y, i_y, l_y \rangle
+            \end{tabular}
+            & \implies
+            & \begin{cases}
+                x < y & \mbox{si } \langle v_x, i_x, l_x \rangle > \langle v_y, i_y, l_y \rangle \\
+                x > y & \mbox{si } \langle v_x, i_x, l_x \rangle < \langle v_y, i_y, l_y \rangle \\
+                x = y & \mbox{en otro caso}
+              \end{cases}
+        \end{align*}
+
+\end{enumerate}
 
 \begin{code}
-<pre><a name="line-70"></a>  <span class='hs-keyword'>instance</span> <span class='hs-conid'>Ord</span> <span class='hs-layout'>(</span><span class='hs-conid'>Route</span> <span class='hs-conid'>Max</span><span class='hs-layout'>)</span> <span class='hs-keyword'>where</span>
-<a name="line-71"></a>    <span class='hs-varid'>compare</span> <span class='hs-layout'>(</span><span class='hs-conid'>RouteLength</span> <span class='hs-varid'>x</span><span class='hs-layout'>)</span>   <span class='hs-layout'>(</span><span class='hs-conid'>RouteLength</span> <span class='hs-varid'>y</span><span class='hs-layout'>)</span>   <span class='hs-keyglyph'>=</span> <span class='hs-varid'>compare</span> <span class='hs-varid'>x</span> <span class='hs-varid'>y</span>
-<a name="line-72"></a>    <span class='hs-varid'>compare</span> <span class='hs-layout'>(</span><span class='hs-conid'>RouteValidess</span> <span class='hs-varid'>x</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-conid'>RouteValidess</span> <span class='hs-varid'>y</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>compare</span> <span class='hs-varid'>x</span> <span class='hs-varid'>y</span>
-<a name="line-73"></a>    <span class='hs-varid'>compare</span> <span class='hs-layout'>(</span><span class='hs-conid'>RouteLength</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span>   <span class='hs-layout'>(</span><span class='hs-conid'>RouteValidess</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>GT</span>
-<a name="line-74"></a>    <span class='hs-varid'>compare</span> <span class='hs-layout'>(</span><span class='hs-conid'>RouteValidess</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-conid'>RouteLength</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span>   <span class='hs-keyglyph'>=</span> <span class='hs-conid'>LT</span>
+<pre><a name="line-81"></a>  <span class='hs-keyword'>instance</span> <span class='hs-conid'>Ord</span> <span class='hs-conid'>Route</span> <span class='hs-keyword'>where</span>
+<a name="line-82"></a>    <span class='hs-varid'>compare</span> <span class='hs-layout'>(</span><span class='hs-conid'>CompleteRoute</span> <span class='hs-varid'>x</span><span class='hs-layout'>)</span>       <span class='hs-layout'>(</span><span class='hs-conid'>CompleteRoute</span> <span class='hs-varid'>y</span><span class='hs-layout'>)</span>       <span class='hs-keyglyph'>=</span> <span class='hs-varid'>compare</span> <span class='hs-varid'>x</span> <span class='hs-varid'>y</span>
+<a name="line-83"></a>    <span class='hs-varid'>compare</span> <span class='hs-layout'>(</span><span class='hs-conid'>PartialRoute</span> <span class='hs-varid'>v1</span> <span class='hs-varid'>i1</span> <span class='hs-varid'>l1</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-conid'>PartialRoute</span> <span class='hs-varid'>v2</span> <span class='hs-varid'>i2</span> <span class='hs-varid'>l2</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>compare</span> <span class='hs-layout'>(</span><span class='hs-varid'>v2</span><span class='hs-layout'>,</span><span class='hs-varid'>i2</span><span class='hs-layout'>,</span><span class='hs-varid'>l2</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-varid'>v1</span><span class='hs-layout'>,</span><span class='hs-varid'>i1</span><span class='hs-layout'>,</span><span class='hs-varid'>l1</span><span class='hs-layout'>)</span>
+<a name="line-84"></a>    <span class='hs-varid'>compare</span> <span class='hs-layout'>(</span><span class='hs-conid'>CompleteRoute</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span>        <span class='hs-conid'>PartialRoute</span><span class='hs-layout'>{</span><span class='hs-layout'>}</span>         <span class='hs-keyglyph'>=</span> <span class='hs-conid'>LT</span>
+<a name="line-85"></a>    <span class='hs-varid'>compare</span>  <span class='hs-conid'>PartialRoute</span><span class='hs-layout'>{</span><span class='hs-layout'>}</span>         <span class='hs-layout'>(</span><span class='hs-conid'>CompleteRoute</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span>       <span class='hs-keyglyph'>=</span> <span class='hs-conid'>GT</span>
 </pre>\end{code}
-
-\end{itemize}
 
 
 Las pruebas del contenedor \emph{Route} se encuentran en \hstest{Parcial2-Route}{Parcial2/Route.hs}.
@@ -208,14 +282,14 @@ Las pruebas del contenedor \emph{Route} se encuentran en \hstest{Parcial2-Route}
 \subsection{Algoritmo genético}
 
 
-<pre><a name="line-75"></a><span class='hs-varop'>&gt;</span> <span class='hs-keyword'>data</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>GA</span> <span class='hs-conid'>Labyrinth2D</span>
+<pre><a name="line-86"></a><span class='hs-varop'>&gt;</span> <span class='hs-keyword'>data</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>GA</span> <span class='hs-conid'>Labyrinth2D</span>
 </pre>
 Se usa adelante un alias de tuple \verb|(a,a)| para denotar el número de hijos de \emph{crossover}.
 
 \begin{code}
-<pre><a name="line-76"></a>  <span class='hs-keyword'>newtype</span> <span class='hs-conid'>Pair</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Pair</span> <span class='hs-layout'>(</span><span class='hs-varid'>a</span><span class='hs-layout'>,</span><span class='hs-varid'>a</span><span class='hs-layout'>)</span>
-<a name="line-77"></a>  <span class='hs-varid'>unwrapPair</span> <span class='hs-layout'>(</span><span class='hs-conid'>Pair</span> <span class='hs-varid'>p</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>p</span>
-<a name="line-78"></a>  <span class='hs-varid'>pair2List</span> <span class='hs-layout'>(</span><span class='hs-conid'>Pair</span> <span class='hs-layout'>(</span><span class='hs-varid'>f</span><span class='hs-layout'>,</span><span class='hs-varid'>s</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyglyph'>[</span><span class='hs-varid'>f</span><span class='hs-layout'>,</span><span class='hs-varid'>s</span><span class='hs-keyglyph'>]</span>
+<pre><a name="line-87"></a>  <span class='hs-keyword'>newtype</span> <span class='hs-conid'>Pair</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Pair</span> <span class='hs-layout'>(</span><span class='hs-varid'>a</span><span class='hs-layout'>,</span><span class='hs-varid'>a</span><span class='hs-layout'>)</span>
+<a name="line-88"></a>  <span class='hs-varid'>unwrapPair</span> <span class='hs-layout'>(</span><span class='hs-conid'>Pair</span> <span class='hs-varid'>p</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>p</span>
+<a name="line-89"></a>  <span class='hs-varid'>pair2List</span> <span class='hs-layout'>(</span><span class='hs-conid'>Pair</span> <span class='hs-layout'>(</span><span class='hs-varid'>f</span><span class='hs-layout'>,</span><span class='hs-varid'>s</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyglyph'>[</span><span class='hs-varid'>f</span><span class='hs-layout'>,</span><span class='hs-varid'>s</span><span class='hs-keyglyph'>]</span>
 </pre>\end{code}
 
 
@@ -235,11 +309,11 @@ d_E \text{ --- es la distancia euclidiana entre dos puntos.}
 $$
 
 
-<pre><a name="line-79"></a><span class='hs-varop'>&gt;</span> <span class='hs-definition'>eDist'</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>mkDirectDistance</span> <span class='hs-varop'>$</span>
-<a name="line-80"></a><span class='hs-varop'>&gt;</span>         <span class='hs-keyglyph'>\</span><span class='hs-layout'>(</span><span class='hs-conid'>Point2D</span> <span class='hs-layout'>(</span><span class='hs-varid'>x1</span><span class='hs-layout'>,</span><span class='hs-varid'>x2</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-conid'>Point2D</span> <span class='hs-layout'>(</span><span class='hs-varid'>y1</span><span class='hs-layout'>,</span><span class='hs-varid'>y2</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span>
-<a name="line-81"></a><span class='hs-varop'>&gt;</span>               <span class='hs-varid'>sqrt</span> <span class='hs-varop'>$</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-varop'>$</span>
-<a name="line-82"></a><span class='hs-varop'>&gt;</span>               <span class='hs-varid'>abs</span><span class='hs-layout'>(</span><span class='hs-varid'>x1</span><span class='hs-comment'>-</span><span class='hs-varid'>x2</span><span class='hs-layout'>)</span><span class='hs-varop'>^</span><span class='hs-num'>2</span> <span class='hs-varop'>+</span> <span class='hs-varid'>abs</span><span class='hs-layout'>(</span><span class='hs-varid'>y1</span><span class='hs-comment'>-</span><span class='hs-varid'>y2</span><span class='hs-layout'>)</span><span class='hs-varop'>^</span><span class='hs-num'>2</span>
-<a name="line-83"></a><span class='hs-varop'>&gt;</span> <span class='hs-definition'>eDist</span>  <span class='hs-keyglyph'>=</span> <span class='hs-varid'>labyrinthDist</span> <span class='hs-varid'>eDist'</span>
+<pre><a name="line-90"></a><span class='hs-varop'>&gt;</span> <span class='hs-definition'>eDist'</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>mkDirectDistance</span> <span class='hs-varop'>$</span>
+<a name="line-91"></a><span class='hs-varop'>&gt;</span>         <span class='hs-keyglyph'>\</span><span class='hs-layout'>(</span><span class='hs-conid'>Point2D</span> <span class='hs-layout'>(</span><span class='hs-varid'>x1</span><span class='hs-layout'>,</span><span class='hs-varid'>x2</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-conid'>Point2D</span> <span class='hs-layout'>(</span><span class='hs-varid'>y1</span><span class='hs-layout'>,</span><span class='hs-varid'>y2</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span>
+<a name="line-92"></a><span class='hs-varop'>&gt;</span>               <span class='hs-varid'>sqrt</span> <span class='hs-varop'>$</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-varop'>$</span>
+<a name="line-93"></a><span class='hs-varop'>&gt;</span>               <span class='hs-varid'>abs</span><span class='hs-layout'>(</span><span class='hs-varid'>x1</span><span class='hs-comment'>-</span><span class='hs-varid'>x2</span><span class='hs-layout'>)</span><span class='hs-varop'>^</span><span class='hs-num'>2</span> <span class='hs-varop'>+</span> <span class='hs-varid'>abs</span><span class='hs-layout'>(</span><span class='hs-varid'>y1</span><span class='hs-comment'>-</span><span class='hs-varid'>y2</span><span class='hs-layout'>)</span><span class='hs-varop'>^</span><span class='hs-num'>2</span>
+<a name="line-94"></a><span class='hs-varop'>&gt;</span> <span class='hs-definition'>eDist</span>  <span class='hs-keyglyph'>=</span> <span class='hs-varid'>labyrinthDist</span> <span class='hs-varid'>eDist'</span>
 </pre>
 
 
@@ -249,35 +323,35 @@ $$
 Se define la instancia de la clase \emph{GeneticAlgorithm} para \emph{GA}
 empezando con los tipos y siguiendo con los métodos.
 
-<pre><a name="line-84"></a><span class='hs-varop'>&gt;</span> <span class='hs-keyword'>instance</span> <span class='hs-conid'>GeneticAlgorithm</span> <span class='hs-conid'>GA</span> <span class='hs-keyword'>where</span>
+<pre><a name="line-95"></a><span class='hs-varop'>&gt;</span> <span class='hs-keyword'>instance</span> <span class='hs-conid'>GeneticAlgorithm</span> <span class='hs-conid'>GA</span> <span class='hs-keyword'>where</span>
 </pre>
 \begin{enumerate}[(1)]
 
 \item Un \emph{gen} se define como \underline{nodo del laberinto}
       y un \emph{cromosoma} como una \underline{lista de genes}.
 
-<pre><a name="line-85"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>Gene</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Point2D</span>
-<a name="line-86"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>Chromosome</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>Point2D</span><span class='hs-keyglyph'>]</span>
-<a name="line-87"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- listGenes :: Chromosome ga \rightarrow$ [Gene ga]</span>
-<a name="line-88"></a><span class='hs-varop'>&gt;</span>    <span class='hs-varid'>listGenes</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>id</span>
+<pre><a name="line-96"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>Gene</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Point2D</span>
+<a name="line-97"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>Chromosome</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>Point2D</span><span class='hs-keyglyph'>]</span>
+<a name="line-98"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- listGenes :: Chromosome ga \rightarrow$ [Gene ga]</span>
+<a name="line-99"></a><span class='hs-varop'>&gt;</span>    <span class='hs-varid'>listGenes</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>id</span>
 </pre>
 \item Los valores de aptitud ya fueron descritos previamente.
 
-<pre><a name="line-89"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>Fitness</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Route</span> <span class='hs-conid'>Min</span>
+<pre><a name="line-100"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>Fitness</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Route</span>
 </pre>
 
 \item Para denotar que la operación de \emph{crossover} preserva el tamaño de población,
 su resultado se marca como un par de hijos.
 
-<pre><a name="line-90"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>CrossoverChildren</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Pair</span>
+<pre><a name="line-101"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>CrossoverChildren</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Pair</span>
 </pre>
 \item La información de entrada para generación de la población --- el laberinto.
 
-<pre><a name="line-91"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>InputData</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Labyrinth2D</span>
+<pre><a name="line-102"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>InputData</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Labyrinth2D</span>
 </pre>
 \item El resultado es el \underline{mejor cromosoma} obtenido.
 
-<pre><a name="line-92"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>ResultData</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Chromosome</span> <span class='hs-conid'>GA</span>
+<pre><a name="line-103"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>ResultData</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Chromosome</span> <span class='hs-conid'>GA</span>
 </pre>
 
 
@@ -305,20 +379,23 @@ $$
 \mathrm{validess} &= \text{grado de valides (se describe antes)}
 \end{align*}
 
-
-<pre><a name="line-93"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- fitness :: ga \rightarrow$ Chromosome ga \rightarrow$ Fitness ga</span>
-<a name="line-94"></a><span class='hs-varop'>&gt;</span>    <span class='hs-varid'>fitness</span> <span class='hs-layout'>(</span><span class='hs-conid'>GA</span> <span class='hs-varid'>l</span><span class='hs-layout'>)</span> <span class='hs-varid'>genes</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>let</span>
-<a name="line-95"></a><span class='hs-varop'>&gt;</span>                               <span class='hs-varid'>lPairs</span> <span class='hs-layout'>(</span><span class='hs-varid'>f</span><span class='hs-conop'>:</span><span class='hs-varid'>s</span><span class='hs-conop'>:</span><span class='hs-varid'>t</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-layout'>(</span><span class='hs-varid'>f</span><span class='hs-layout'>,</span><span class='hs-varid'>s</span><span class='hs-layout'>)</span> <span class='hs-conop'>:</span> <span class='hs-varid'>lPairs</span> <span class='hs-layout'>(</span><span class='hs-varid'>s</span><span class='hs-conop'>:</span><span class='hs-varid'>t</span><span class='hs-layout'>)</span>
-<a name="line-96"></a><span class='hs-varop'>&gt;</span>                               <span class='hs-varid'>lPairs</span> <span class='hs-keyword'>_</span>       <span class='hs-keyglyph'>=</span> <span class='hs-conid'>[]</span>
-<a name="line-97"></a><span class='hs-varop'>&gt;</span>                               <span class='hs-varid'>dists</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>map</span> <span class='hs-layout'>(</span><span class='hs-varid'>uncurry</span> <span class='hs-varop'>$</span> <span class='hs-varid'>eDist</span> <span class='hs-varid'>l</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-varid'>lPairs</span> <span class='hs-varid'>genes</span><span class='hs-layout'>)</span>
-<a name="line-98"></a><span class='hs-varop'>&gt;</span>                           <span class='hs-keyword'>in</span> <span class='hs-keyword'>if</span> <span class='hs-varid'>isJust</span> <span class='hs-varop'>`all`</span> <span class='hs-varid'>dists</span>
-<a name="line-99"></a><span class='hs-varop'>&gt;</span>                                <span class='hs-keyword'>then</span> <span class='hs-comment'>-- is a valid route</span>
-<a name="line-100"></a><span class='hs-varop'>&gt;</span>                                     <span class='hs-conid'>RouteLength</span> <span class='hs-varop'>.</span> <span class='hs-varid'>sum</span> <span class='hs-varop'>$</span> <span class='hs-varid'>map</span> <span class='hs-varid'>fromJust</span> <span class='hs-varid'>dists</span>
-<a name="line-101"></a><span class='hs-varop'>&gt;</span>                                <span class='hs-keyword'>else</span> <span class='hs-comment'>-- is incomplete</span>
-<a name="line-102"></a><span class='hs-varop'>&gt;</span>                                     <span class='hs-conid'>RouteValidess</span> <span class='hs-varop'>$</span>
-<a name="line-103"></a><span class='hs-varop'>&gt;</span>                                       <span class='hs-varid'>fromIntegral</span> <span class='hs-layout'>(</span><span class='hs-varid'>length</span> <span class='hs-varop'>$</span> <span class='hs-varid'>filter</span> <span class='hs-varid'>isJust</span> <span class='hs-varid'>dists</span><span class='hs-layout'>)</span>
-<a name="line-104"></a><span class='hs-varop'>&gt;</span>                                       <span class='hs-varop'>/</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-layout'>(</span><span class='hs-varid'>length</span> <span class='hs-varid'>dists</span><span class='hs-layout'>)</span>
-</pre>
+\begin{code}
+<pre><a name="line-104"></a>    <span class='hs-comment'>-- fitness :: ga \rightarrow$ Chromosome ga \rightarrow$ Fitness ga</span>
+<a name="line-105"></a>     <span class='hs-varid'>fitness</span> <span class='hs-layout'>(</span><span class='hs-conid'>GA</span> <span class='hs-varid'>l</span><span class='hs-layout'>)</span> <span class='hs-varid'>genes</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>let</span>
+<a name="line-106"></a>                            <span class='hs-varid'>lPairs</span> <span class='hs-layout'>(</span><span class='hs-varid'>f</span><span class='hs-conop'>:</span><span class='hs-varid'>s</span><span class='hs-conop'>:</span><span class='hs-varid'>t</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-layout'>(</span><span class='hs-varid'>f</span><span class='hs-layout'>,</span><span class='hs-varid'>s</span><span class='hs-layout'>)</span> <span class='hs-conop'>:</span> <span class='hs-varid'>lPairs</span> <span class='hs-layout'>(</span><span class='hs-varid'>s</span><span class='hs-conop'>:</span><span class='hs-varid'>t</span><span class='hs-layout'>)</span>
+<a name="line-107"></a>                            <span class='hs-varid'>lPairs</span> <span class='hs-keyword'>_</span>       <span class='hs-keyglyph'>=</span> <span class='hs-conid'>[]</span>
+<a name="line-108"></a>                            <span class='hs-varid'>dists</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>map</span> <span class='hs-layout'>(</span><span class='hs-varid'>uncurry</span> <span class='hs-varop'>$</span> <span class='hs-varid'>eDist</span> <span class='hs-varid'>l</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-varid'>lPairs</span> <span class='hs-varid'>genes</span><span class='hs-layout'>)</span>
+<a name="line-109"></a>                        <span class='hs-keyword'>in</span> <span class='hs-keyword'>if</span> <span class='hs-varid'>isJust</span> <span class='hs-varop'>`all`</span> <span class='hs-varid'>dists</span>
+<a name="line-110"></a>                             <span class='hs-keyword'>then</span> <span class='hs-comment'>-- is a valid route</span>
+<a name="line-111"></a>                                  <span class='hs-conid'>CompleteRoute</span> <span class='hs-varop'>.</span> <span class='hs-varid'>sum</span> <span class='hs-varop'>$</span> <span class='hs-varid'>map</span> <span class='hs-varid'>fromJust</span> <span class='hs-varid'>dists</span>
+<a name="line-112"></a>                             <span class='hs-keyword'>else</span> <span class='hs-comment'>-- is incomplete</span>
+<a name="line-113"></a>                                  <span class='hs-keyword'>let</span> <span class='hs-varid'>v</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-layout'>(</span><span class='hs-varid'>length</span> <span class='hs-varop'>$</span> <span class='hs-varid'>filter</span> <span class='hs-varid'>isJust</span> <span class='hs-varid'>dists</span><span class='hs-layout'>)</span>
+<a name="line-114"></a>                                        <span class='hs-varop'>/</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-layout'>(</span><span class='hs-varid'>length</span> <span class='hs-varid'>dists</span><span class='hs-layout'>)</span>
+<a name="line-115"></a>                                      <span class='hs-varid'>poi</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>undefined</span>
+<a name="line-116"></a>                                      <span class='hs-varid'>len</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>undefined</span>
+<a name="line-117"></a>                                  <span class='hs-keyword'>in</span> <span class='hs-conid'>PartialRoute</span> <span class='hs-varid'>v</span> <span class='hs-varid'>poi</span> <span class='hs-varid'>len</span>
+<a name="line-118"></a>
+</pre>\end{code}
 
 
 
@@ -364,26 +441,26 @@ en la figura \ref{fig:chromosomesMapExample} se presenta un exemplo de cromosoma
 
 
 
-<pre><a name="line-105"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- randomChromosome :: ga \rightarrow$ IO (Chromosome ga)</span>
-<a name="line-106"></a><span class='hs-varop'>&gt;</span>    <span class='hs-varid'>randomChromosome</span> <span class='hs-layout'>(</span><span class='hs-conid'>GA</span> <span class='hs-varid'>l</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>undefined</span>
+<pre><a name="line-119"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- randomChromosome :: ga \rightarrow$ IO (Chromosome ga)</span>
+<a name="line-120"></a><span class='hs-varop'>&gt;</span>    <span class='hs-varid'>randomChromosome</span> <span class='hs-layout'>(</span><span class='hs-conid'>GA</span> <span class='hs-varid'>l</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>undefined</span>
 </pre>
 
 \item ?
 
-<pre><a name="line-107"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- crossover :: Chromosome ga \rightarrow$ Chromosome ga</span>
-<a name="line-108"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- \qquad\qquad \rightarrow$ CrossoverChildren ga (Chromosome ga)</span>
+<pre><a name="line-121"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- crossover :: Chromosome ga \rightarrow$ Chromosome ga</span>
+<a name="line-122"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- \qquad\qquad \rightarrow$ CrossoverChildren ga (Chromosome ga)</span>
 </pre>
 \item ?
 
-<pre><a name="line-109"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- mutate :: Chromosome ga \rightarrow$ Chromosome ga</span>
+<pre><a name="line-123"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- mutate :: Chromosome ga \rightarrow$ Chromosome ga</span>
 </pre>
 \item ?
 
-<pre><a name="line-110"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- stopCriteria :: [Fitness ga] \rightarrow$ Bool</span>
+<pre><a name="line-124"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- stopCriteria :: [Fitness ga] \rightarrow$ Bool</span>
 </pre>
 \item ?
 
-<pre><a name="line-111"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- newGA :: InputData ga \rightarrow$ ga</span>
+<pre><a name="line-125"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- newGA :: InputData ga \rightarrow$ ga</span>
 </pre>
 
 \end{enumerate}
