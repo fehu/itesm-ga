@@ -73,7 +73,7 @@ aristas --- la existencia de rutas directas.
         target  :: point
       }
 
-  edgeOf p es = any (`member` es) [p, swap p]
+  edgeOf p l = any (`member` edges l) [p, swap p]
 
   mapPoints f (Labyrinth ns es i t) = Labyrinth {
         nodes = Set.map f ns,
@@ -81,6 +81,8 @@ aristas --- la existencia de rutas directas.
         initial = f i,
         target  = f t
     }
+
+  isPOI p l = p == initial l || p == target l
 
 \end{code}
 
@@ -93,7 +95,7 @@ Se define la \emph{distancia directa} entre los nodos que están conectados por 
       }
 
   mkDirectDistance f = DirectDistance $ \l v1 v2 ->
-    if (v1,v2) `edgeOf` edges l then Just (f v1 v2) else Nothing
+    if (v1,v2) `edgeOf` l then Just (f v1 v2) else Nothing
 \end{code}
 
 
@@ -271,6 +273,26 @@ tendrá los mejores elementos en el principio.
 \end{code}
 
 
+Función de utilidad: separación de las sub-rutas que se encuentran dentro de un cromosoma.
+Separa los puntos de interes como sub-rutas.
+
+\begin{code}
+  splitRoutes :: Labyrinth2D -> Chromosome GA -> [[Gene GA]]
+  splitRoutes l = reverse . map reverse . splitRoutes' [] [] l
+
+  splitRoutes' accSplit [] _ [] = accSplit
+  splitRoutes' accSplit accRoute _ [] = accRoute:accSplit
+  splitRoutes' accSplit accRoute l (h:t) =
+    case accRoute of
+        _      | h `isPOI` l          -> splitRoutes' (addR accRoute accSplit) [h] l t
+        prev:_ | prev `isPOI` l       -> splitRoutes' (addR accRoute accSplit) [h] l t
+        prev:_ | (prev, h) `edgeOf` l -> splitRoutes' accSplit (h:accRoute) l t
+        _                             -> splitRoutes' (addR accRoute accSplit) [h] l t
+    where addR [] s = s
+          addR r s = r:s
+\end{code}
+
+
 Las pruebas del contenedor \emph{Route} se encuentran en \hstest{Parcial2-Route}{Parcial2/Route.hs}.
 
 
@@ -294,7 +316,8 @@ Las pruebas del contenedor \emph{Route} se encuentran en \hstest{Parcial2-Route}
   data GA = GA Labyrinth2D GAParams GACache
 \end{code}
 
-Se usa adelante un alias de tuple \verb|(a,a)| para denotar el número de hijos de \emph{crossover}.
+Se usa adelante un alias de tuple \verb|(a,a)| para denotar el número de hijos de
+\emph{recombinación} (\emph{crossover}).
 
 \begin{code}
   newtype Pair a = Pair (a,a)
@@ -319,13 +342,19 @@ d_E \text{ --- es la distancia euclidiana entre dos puntos.}
 $$
 
 
-> eDist' = mkDirectDistance $
->         \(Point2D (x1,x2)) (Point2D (y1,y2)) ->
->               sqrt $ fromIntegral $
->               abs(x1-x2)^2 + abs(y1-y2)^2
-> eDist  = labyrinthDist eDist'
+\begin{code}
+  eDist' = mkDirectDistance $
+          \(Point2D (x1,x2)) (Point2D (y1,y2)) ->
+                sqrt $ fromIntegral $
+                abs(x1-x2)^2 + abs(y1-y2)^2
+  eDist  = labyrinthDist eDist'
+\end{code}
 
 
+\begin{code}
+  lPairs (f:s:t) = (f,s) : lPairs (s:t)
+  lPairs _       = []
+\end{code}
 
 \crule{1}
 \medskip
@@ -352,7 +381,7 @@ empezando con los tipos y siguiendo con los métodos.
 >    type Fitness GA = Route
 
 
-\item Para denotar que la operación de \emph{crossover} preserva el tamaño de población,
+\item Para denotar que la operación de \emph{recombinación} preserva el tamaño de población,
 su resultado se marca como un par de hijos.
 
 >    type CrossoverChildren GA = Pair
@@ -367,14 +396,12 @@ su resultado se marca como un par de hijos.
 
 
 
-\item La \textbf{aptitud de adoptación} fue descrita en sección \ref{subsec:fitness}.
+\item La \textbf{aptitud de adoptación} fue descrita en subsección \ref{subsec:fitness}.
 
 \begin{code}
      -- fitness :: ga \rightarrow$ Chromosome ga \rightarrow$ Fitness ga
      fitness (GA l _ _) genes =
-                    let lPairs (f:s:t) = (f,s) : lPairs (s:t)
-                        lPairs _       = []
-                        dists = map (uncurry $ eDist l) (lPairs genes)
+                    let dists = map (uncurry $ eDist l) (lPairs genes)
                     in if isJust `all` dists
                          then -- is a valid route
                               CompleteRoute . sum $ map fromJust dists
@@ -504,7 +531,20 @@ Se genera el cromosoma.
 
 
 
-\item ?
+\item La \emph{recombinación} de cromosomas se enfoca en remplacamiento de
+      malas sub-rutas o extención de rutas existentes.
+
+      Aquí solamente se define la recombinación de dos cromosomas, su selección
+      va ser descrito en la subsección \ref{subsec:gaRun}.
+
+      Se separan la rutas con función \emph{splitRoutes}
+      (fue descrita en subsección \ref{subsec:fitness}) para ambos cromosomas.
+
+      \begin{enumerate}
+        \item Se buscan todos los puntos $x,y$, tales que son parte de una ruta dentro de un
+              de los cromosomas, pero no el otro.
+        \item
+      \end{enumerate}
 
 >    -- crossover :: Chromosome ga \rightarrow$ Chromosome ga
 >    -- \qquad\qquad \rightarrow$ CrossoverChildren ga (Chromosome ga)
@@ -534,6 +574,11 @@ Se genera el cromosoma.
 
 \end{enumerate}
 
+
+
+
+\subsection{??? gaRun ???}
+\label{subsec:gaRun}
 
 
 \newpage
