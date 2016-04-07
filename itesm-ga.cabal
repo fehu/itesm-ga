@@ -20,7 +20,9 @@ library
   exposed-modules:     GeneticAlgorithm
                        Parcial2.Labyrinth
                        Parcial2.ReadLabyrinth
-                       Parcial2.TikzLabyrinth
+                       Parcial2.Tikz
+                       Parcial2.Tikz.DrawLabyrinth
+                       Parcial2.Tikz.DrawCrossover
   -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.8 && <4.9
@@ -58,7 +60,9 @@ test-suite tests
 
 executable LabyrinthExample
   hs-source-dirs:      src
-  main-is:             Parcial2/LabyrinthExample.hs
+  main-is:             Parcial2/Examples/LabyrinthExample.hs
+  other-modules:       Parcial2.Examples.Data
+
   build-depends:       base >=4.8 && <4.9
                      , containers >= 0.5
                      , random >= 1.1
@@ -68,5 +72,8 @@ executable LabyrinthExample
   default-extensions:  TypeFamilies
                      , FlexibleContexts
                      , DataKinds
+
+
+
 
 

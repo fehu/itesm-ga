@@ -1,21 +1,30 @@
-module Main where
+-----------------------------------------------------------------------------
+--
+-- Module      :  Parcial2.Examples.Data
+-- Copyright   :
+-- License     :  MIT
+--
+-- Maintainer  :  -
+-- Stability   :
+-- Portability :
+--
+-- |
+--
+
+
+module Parcial2.Examples.Data where
 
 import Parcial2.Labyrinth
-import Parcial2.TikzLabyrinth
+import Parcial2.Tikz ((-->))
 
 import qualified Data.Set as Set
+import Data.List (nub)
 
 import Control.Arrow
-import System.Environment (getArgs)
 
 -----------------------------------------------------------------------------
 
-main = do args <- getArgs
-          case args of []  -> putStrLn showExample
-                       [f] -> do writeFile f showExample
-                                 putStrLn $ "wrote example to " ++ f
-                       ["--map", f] -> do writeFile f showExampleMap
-                                          putStrLn $ "wrote example map to " ++ f
+mkpnt = Point2D . first fromInteger . second (negate . fromInteger)
 
 -----------------------------------------------------------------------------
 
@@ -77,9 +86,15 @@ edgesS = [ (1,6) --> (3,6), (4,6) --> (6,6) ]
 
 edgesE = [ (8,0) --> (8,3), (8,3) --> (9,3), (8,3) --> (8,6) ]
 
+
 labyrinthExample = Labyrinth nodes' edges' (0,2) (9,3)
     where nodes' = Set.fromList $ nodesC ++ nodesW ++ nodesN ++ nodesS ++ nodesE
           edges' = Set.fromList $ edgesC ++ edgesW ++ edgesN ++ edgesS ++ edgesE
+
+
+labyrinth2D = mapPoints mkpnt
+
+-----------------------------------------------------------------------------
 
 infixl 2 =->
 (a,b) =-> c = [(a,b), (b,c)]
@@ -109,12 +124,23 @@ chromosomeExamples = [
                     ]
   ]
 
-mkpnt = Point2D . second negate
+-----------------------------------------------------------------------------
 
-showExampleMap = tikzLabyrinth (mapPoints mkpnt labyrinthExample) [] []
 
-showExample = tikzLabyrinth (mapPoints mkpnt labyrinthExample)
-                            (map (second (map (first mkpnt . second mkpnt))) chromosomeExamples)
-                            [ "draw opacity=0.6" ]
+prepareChromosomeExample :: String -> ([Point2D], [Bool])
+prepareChromosomeExample color = (map mkpnt genes, conns)
+    where genes = case color `lookup` chromosomeExamples of
+                        Just ps -> nub $ concatMap (\(x,y) -> [x,y]) ps
+          conns = (`edgeOf` labyrinthExample) <$> lPairs genes
 
+-----------------------------------------------------------------------------
+
+
+
+
+chExViolet = prepareChromosomeExample "violet"
+
+
+
+-----------------------------------------------------------------------------
 

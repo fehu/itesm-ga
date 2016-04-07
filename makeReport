@@ -20,8 +20,8 @@ cabal haddock\
 
 
 # Generate Tikz examples.
-$RUN --map $SRC/MapExampleRaw.tikz.tex
-$RUN $SRC/MapExampleChromosomes.tikz.tex
+$RUN --map build/MapExampleRaw.tikz.tex
+$RUN build/MapExampleChromosomes.tikz.tex
 
 
 # Generate PDF for 'Parcial2/Labyrinth.lhs'.
