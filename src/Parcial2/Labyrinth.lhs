@@ -149,6 +149,7 @@ Aquí se presenta la construcción del grafo a partir del mapa leido.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Adoptación}
+\label{subsec:fitness}
 
 
 El valor de \emph{aptitud de adoptación} se llamará \emph{ruta} y se define
@@ -242,11 +243,13 @@ tendrá los mejores elementos en el principio.
         El orden de la comparación se cambia al opuesto.
 
         \begin{align*}
-            \begin{tabular}{l}
-                \forall x \in \textit{ruta parcial}, x \sim \langle v_x, i_x, l_x \rangle \\
-                \forall y \in \textit{ruta parcial}, y \sim \langle v_y, i_y, l_y \rangle
-            \end{tabular}
-            & \implies
+            \begin{aligned}
+                \forall ~ &x \in \textit{ruta parcial}\\
+                          &x \sim \langle v_x, i_x, l_x \rangle \\
+                \forall ~ &y \in \textit{ruta parcial}\\
+                          &y \sim \langle v_y, i_y, l_y \rangle
+            \end{aligned}
+            & \quad \implies
             & \begin{cases}
                 x < y & \mbox{si } \langle v_x, i_x, l_x \rangle > \langle v_y, i_y, l_y \rangle \\
                 x > y & \mbox{si } \langle v_x, i_x, l_x \rangle < \langle v_y, i_y, l_y \rangle \\
@@ -259,7 +262,8 @@ tendrá los mejores elementos en el principio.
 \begin{code}
   instance Ord Route where
     compare (CompleteRoute x)       (CompleteRoute y)       = compare x y
-    compare (PartialRoute v1 i1 l1) (PartialRoute v2 i2 l2) = compare (v2,i2,l2) (v1,i1,l1)
+    compare (PartialRoute v1 i1 l1) (PartialRoute v2 i2 l2) =
+        compare (v2,i2,l2) (v1,i1,l1)
     compare (CompleteRoute _)        PartialRoute{}         = LT
     compare  PartialRoute{}         (CompleteRoute _)       = GT
 \end{code}
@@ -346,32 +350,10 @@ su resultado se marca como un par de hijos.
 
 
 
-\item La \textbf{aptitud de adoptación} se define como:
-
-$$
-f(c) &= \begin{cases}
-  \mathit{Length} ~ \mathrm{length}
-    & \mbox{si } \begin{tabular}{l}
-             \forall i = \overline{[1,\mathrm{len}-1]} \Rightarrow \\
-             \qquad \exists \text{ arista, connectando } c_{i-1} \text{ y } c_i \\
-             \land ~\mathrm{initial} \in \{c\}\\
-             \land ~\mathrm{target} \in \{c\}
-      \end{tabular}
-  \\
-  \mathit{Validess} ~\mathrm{validess}
-    & \mbox{en otro caso}
-  \end{cases}
-$$
-
-\qquad\qquad  donde
-\begin{align*}
-\mathrm{length} &= \sum\limits_{i = 1}^{\mathrm{len}-1} \mathrm{dist}(c_{i-1}, c_i)
-\\
-\mathrm{validess} &= \text{grado de valides (se describe antes)}
-\end{align*}
+\item La \textbf{aptitud de adoptación} fue descrita en sección \ref{subsec:fitness}.
 
 \begin{code}
-    -- fitness :: ga \rightarrow$ Chromosome ga \rightarrow$ Fitness ga
+     -- fitness :: ga \rightarrow$ Chromosome ga \rightarrow$ Fitness ga
      fitness (GA l) genes = let
                             lPairs (f:s:t) = (f,s) : lPairs (s:t)
                             lPairs _       = []
@@ -380,10 +362,17 @@ $$
                              then -- is a valid route
                                   CompleteRoute . sum $ map fromJust dists
                              else -- is incomplete
-                                  let v = fromIntegral (length $ filter isJust dists)
+                                  let valid = filter isJust dists
+                                      v = fromIntegral (length valid)
                                         / fromIntegral (length dists)
-                                      poi = undefined
-                                      len = undefined
+                                      hasInit = elem (initial l) genes
+                                      hasFin = elem (target l) genes
+                                      poi = case (hasInit, hasFin) of
+                                              (True, True)  -> POIBoth
+                                              (True, False) -> POISome POIInit
+                                              (False, True) -> POISome POITarget
+                                              _             -> POINone
+                                      len = sum $ map fromJust valid
                                   in PartialRoute v poi len
 
 \end{code}
