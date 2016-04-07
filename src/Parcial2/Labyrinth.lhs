@@ -151,46 +151,118 @@ Aquí se presenta la construcción del grafo a partir del mapa leido.
 \subsection{Adoptación}
 
 
+El valor de \emph{aptitud de adoptación} se llamará \emph{ruta} y se define
+para permitir destinguir facilmente los dos tipos de rutas
+(encodificadas en los cromosomas) posibles:
 
-Se define el valor de \emph{aptitud de adoptación} como uno de los dos:
 \begin{itemize}
-  \item longitud de la ruta completa;
-  \item grado de valides $\dfrac
-    {\text{número de aristas existentes}}
-    {\text{número de aristas total}}$.
+  \item \textbf{Ruta completa}: es una ruta valida
+    ($\exists$ una conección entre cada par de genes adjuntos) que contiene
+    en punto inicial y el punto meta.
 
-    \textit{aristas existentes ---
-    aristas que existen entre los pares de genes ajustados.}
+    Se caracteriza por la \emph{longitud de la ruta}.
+
+    El resultado, esperado del algoritmo genético es la más corta de estas rutas.
+
+  \item \textbf{Ruta parcial}: es una ruta que
+    \begin{enumerate*}[1)]
+        \item contiene pares de genes adjuntos, los cuales no están conectados, o
+        \item no contiene los ambos puntos: inicio y meta.
+    \end{enumerate*}
+
+    Se caracteriza por los tres valores:
+    \begin{enumerate}
+
+        \item \emph{valides} $= \dfrac
+            {\text{número de aristas existentes}}
+            {\text{número de aristas total}}$.
+
+            \textit{aristas existentes ---
+                    aristas que existen entre los pares de genes adjuntos.}
+
+        \item los \emph{puntos de interés} que contiene la ruta.
+        \item la longitud sumatoria de las sub-rutas en el cromosoma.
+
+    \end{enumerate}
+
 \end{itemize}
 
-> data Route (dir :: OrdDir) = RouteLength Double | RouteValidess Double
->           deriving (Eq, Show)
 
-\noindent También tiene un parametro de tipo para establecer la dirección de busqueda,
-lo que determina el orden deseado.
-Se define la orden sobre la aptitud de tal manera que dependiendo en la dirección:
-\begin{itemize}
-  \item \emph{Min} --- $\forall x \in \textit{longitud}, y \in \textit{valides} \Rightarrow x < y$;
 
 \begin{code}
-  instance Ord (Route Min) where
-    compare (RouteLength x)   (RouteLength y)   = compare x y
-    compare (RouteValidess x) (RouteValidess y) = compare x y
-    compare (RouteLength _)   (RouteValidess _) = LT
-    compare (RouteValidess _) (RouteLength _)   = GT
+
+  data POI  = POIInit | POITarget deriving (Eq, Ord, Enum, Show)
+  data POIs = POINone | POISome POI | POIBoth deriving (Eq, Show)
+
+  instance Ord POIs where
+    x `compare` y = val x `compare` val y where
+        val POINone = 0
+        val (POISome _) = 1
+        val POIBoth = 2
+
+
+  data Route =
+      CompleteRoute { routeLength :: Double }
+    | PartialRoute  { partialValidess :: Double
+                    , partialPOI      :: POIs
+                    , partialLength   :: Double
+                    }
+    deriving (Eq, Show)
 \end{code}
 
-  \item \emph{Max} --- $\forall x \in \textit{longitud}, y \in \textit{valides} \Rightarrow x > y$.
+\noindent Para la busqueda de la ruta mas corta,
+se define el orden sobre las rutas de tal manera, que
+una lista de \emph{rutas}, ordenada ascendentamente,
+tendrá los mejores elementos en el principio.
+\begin{enumerate}
+
+  \item Cualquiera \emph{ruta completa} \underline{es minor} que cualquiera \emph{ruta parcial}.
+        $$\forall x \in \textit{ruta completa},
+                  y \in \textit{ruta parcial}     \implies x < y$$
+
+  \item Dos \emph{rutas completas} se comparan por su \underline{longitud} sin cambios de la orden.
+        \begin{align*}
+            \begin{tabular}{l}
+                \forall x \in \textit{ruta completa}, x \sim r_1\\
+                \forall y \in \textit{ruta completa}, y \sim r_2
+            \end{tabular}
+            & \implies
+            & \begin{cases}
+                x < y & \mbox{si } r_1 < r_2 \\
+                x > y & \mbox{si } r_1 > r_2 \\
+                x = y & \mbox{en otro caso}
+              \end{cases}
+        \end{align*}
+
+  \item Dos \emph{rutas parciales} se comparan por sus \underline{tres componentes} en orden
+        \underline{lexicográfico}, que quiere decir que
+        primero se comparan los primeros elementes, si son igual, se comparan los segundos, etc.,
+        hasta que la comparación da un resultado diferente de igualidad o se termina la lista.
+
+        El orden de la comparación se cambia al opuesto.
+
+        \begin{align*}
+            \begin{tabular}{l}
+                \forall x \in \textit{ruta parcial}, x \sim \langle v_x, i_x, l_x \rangle \\
+                \forall y \in \textit{ruta parcial}, y \sim \langle v_y, i_y, l_y \rangle
+            \end{tabular}
+            & \implies
+            & \begin{cases}
+                x < y & \mbox{si } \langle v_x, i_x, l_x \rangle > \langle v_y, i_y, l_y \rangle \\
+                x > y & \mbox{si } \langle v_x, i_x, l_x \rangle < \langle v_y, i_y, l_y \rangle \\
+                x = y & \mbox{en otro caso}
+              \end{cases}
+        \end{align*}
+
+\end{enumerate}
 
 \begin{code}
-  instance Ord (Route Max) where
-    compare (RouteLength x)   (RouteLength y)   = compare x y
-    compare (RouteValidess x) (RouteValidess y) = compare x y
-    compare (RouteLength _)   (RouteValidess _) = GT
-    compare (RouteValidess _) (RouteLength _)   = LT
+  instance Ord Route where
+    compare (CompleteRoute x)       (CompleteRoute y)       = compare x y
+    compare (PartialRoute v1 i1 l1) (PartialRoute v2 i2 l2) = compare (v2,i2,l2) (v1,i1,l1)
+    compare (CompleteRoute _)        PartialRoute{}         = LT
+    compare  PartialRoute{}         (CompleteRoute _)       = GT
 \end{code}
-
-\end{itemize}
 
 
 Las pruebas del contenedor \emph{Route} se encuentran en \hstest{Parcial2-Route}{Parcial2/Route.hs}.
@@ -256,7 +328,7 @@ empezando con los tipos y siguiendo con los métodos.
 
 \item Los valores de aptitud ya fueron descritos previamente.
 
->    type Fitness GA = Route Min
+>    type Fitness GA = Route
 
 
 \item Para denotar que la operación de \emph{crossover} preserva el tamaño de población,
@@ -298,20 +370,23 @@ $$
 \mathrm{validess} &= \text{grado de valides (se describe antes)}
 \end{align*}
 
+\begin{code}
+    -- fitness :: ga \rightarrow$ Chromosome ga \rightarrow$ Fitness ga
+     fitness (GA l) genes = let
+                            lPairs (f:s:t) = (f,s) : lPairs (s:t)
+                            lPairs _       = []
+                            dists = map (uncurry $ eDist l) (lPairs genes)
+                        in if isJust `all` dists
+                             then -- is a valid route
+                                  CompleteRoute . sum $ map fromJust dists
+                             else -- is incomplete
+                                  let v = fromIntegral (length $ filter isJust dists)
+                                        / fromIntegral (length dists)
+                                      poi = undefined
+                                      len = undefined
+                                  in PartialRoute v poi len
 
->    -- fitness :: ga \rightarrow$ Chromosome ga \rightarrow$ Fitness ga
->    fitness (GA l) genes = let
->                               lPairs (f:s:t) = (f,s) : lPairs (s:t)
->                               lPairs _       = []
->                               dists = map (uncurry $ eDist l) (lPairs genes)
->                           in if isJust `all` dists
->                                then -- is a valid route
->                                     RouteLength . sum $ map fromJust dists
->                                else -- is incomplete
->                                     RouteValidess $
->                                       fromIntegral (length $ filter isJust dists)
->                                       / fromIntegral (length dists)
-
+\end{code}
 
 
 

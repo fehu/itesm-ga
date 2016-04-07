@@ -14,7 +14,7 @@
 module Parcial2.Route( routeSpec, routeOrdSpec ) where
 
 import GeneticAlgorithm
-import Parcial2.Labyrinth
+import Parcial2.Labyrinth (Route(..), POI(..), POIs(..))
 
 import Test.Hspec
 import Test.QuickCheck
@@ -24,44 +24,47 @@ import GHC.Exts (Down(..), sortWith)
 
 -----------------------------------------------------------------------------
 
+instance Arbitrary POI where arbitrary = toEnum <$> arbitrary
+instance Arbitrary POIs where arbitrary = oneof [ elements [POINone, POIBoth]
+                                                , POISome <$> arbitrary ]
+
+-----------------------------------------------------------------------------
+
+
+
 routeSpec = describe "Route" $ do
 
-    context "direction set to 'Min'" $ do
-        specify "forall 'Length' < forall 'Validess'" $ property $
-            \x y -> (RouteLength x :: Route Min) `shouldSatisfy` (< RouteValidess y)
+    specify "Any 'CompleteRoute' < any 'PartialRoute'" $ property $
+        \x v i l -> (CompleteRoute x :: Route) `shouldSatisfy` (< PartialRoute v i l)
 
-        it "compares 'Length's underlying values normally" $ property $
-            \x y -> compare x y `shouldBe` compare (RouteLength x :: Route Min)
-                                                   (RouteLength y)
-        it "compares 'Validess' underlying values normally" $ property $
-            \x y -> compare x y `shouldBe` compare (RouteValidess x :: Route Min)
-                                                   (RouteValidess y)
-
-    context "direction set to 'Max'" $ do
-        specify "forall 'Length' > forall 'Validess'" $ property $
-            \x y -> (RouteLength x :: Route Max) `shouldSatisfy` (> RouteValidess y)
-
-        it "compares 'Length's underlying values normally" $ property $
-            \x y -> compare x y `shouldBe` compare (RouteLength x :: Route Max)
-                                                   (RouteLength y)
-        it "compares 'Validess' underlying values normally" $ property $
-            \x y -> compare x y `shouldBe` compare (RouteValidess x :: Route Max)
-                                                   (RouteValidess y)
+    it "compares 'CompleteRoute' by underlying value" $ property $
+        \x y -> compare x y `shouldBe` compare (CompleteRoute x)
+                                               (CompleteRoute y)
+    it "compares 'PartialRoute' by underlying values in lexografical order,\
+       \changing result to opposite" $ property $
+        \p1@(v1,i1,l1) p2@(v2,i2,l2) -> compare p1 p2 `shouldBe` compare (PartialRoute v2 i2 l2)
+                                                                         (PartialRoute v1 i1 l1)
 
 
-rl = RouteLength
-rv = RouteValidess
 
-rEx1 = [rl 2, rl 1, rv 0.6, rl 5, rv 0.9, rl 2, rv 0.2]
+cr = CompleteRoute
+pr = PartialRoute
 
-eEx1Min = [ rl 1, rl 2, rl 2, rl 5, rv 0.2, rv 0.6, rv 0.9 ]
-eEx1Max = [ rl 5, rl 2, rl 2, rl 1, rv 0.9, rv 0.6, rv 0.2 ]
+cr1 = cr 2
+cr2 = cr 1
+pr1 = pr 0.6 (POISome POIInit) 4
+cr3 = cr 5
+pr2 = pr 0.6 (POISome POITarget) 7
+cr4 = cr 2
+pr3 = pr 0.7 POINone 6
+
+rEx1 = [cr1, cr2, pr1, cr3, pr2, cr4, pr3]
+
+eEx1Min = [ cr2, cr1, cr4, cr3, pr3, pr2, pr1 ]
 
 
 routeOrdSpec = describe "Route ordering examples" $ do
     it "sorts correctly in 'Min' direction"
-        $ sort (rEx1 :: [Route Min]) `shouldBe` eEx1Min
-    it "sorts Down correctly in 'Max' direction"
-        $ sortWith Down (rEx1 :: [(Route Max)]) `shouldBe` eEx1Max
+        $ sort (rEx1 :: [Route]) `shouldBe` eEx1Min
 
 
