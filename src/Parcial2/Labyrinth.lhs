@@ -480,7 +480,9 @@ En caso que todas las opciones fallan, la cadena se queda de tamaño incompleto.
                                 if moreTries then nextRand' rev (c+1) chain g' -- 1 / 3
                                              else if rev then chain -- incomplete
                                                          else nextRand' True (c+1) chain g' -- 2
-                           else nextRand' rev c (r:chain) g' -- next
+                           else if length chain + 1 == len
+                            then r:chain -- return
+                            else nextRand' rev c (r:chain) g' -- next
 \end{code}
 
 Se selecciona alioriamente la longetud de \emph{cadenas}.
@@ -498,6 +500,9 @@ Se genera el cromosoma.
         let f _ = randChain g chainLen
         return $ foldr f [] [1..chainCnt]
 \end{code}
+
+
+
 
 \item ?
 
