@@ -8,7 +8,7 @@
 \usepackage{amsmath, hyperref, xcolor, tikz, mdframed}
 \usepackage[shortlabels, inline]{enumitem}
 
-% \usepackage{showframe}
+\usepackage{showframe}
 
 \newenvironment{note}
     {\begin{mdframed}[leftmargin=1cm,
@@ -42,9 +42,11 @@ module Parcial2.Labyrinth where
   import Control.Monad.Fix
 
   import Data.Tuple (swap)
-  import Data.Maybe (isJust, fromJust)
-  import Data.Set (Set, member)
+  import Data.Maybe (isJust, fromJust, fromMaybe)
+  import Data.Set (Set, member, elemAt)
   import qualified Data.Set as Set
+  import Data.Map (Map)
+  import qualified Data.Map as Map
   import GHC.Real (infinity)
 
 
@@ -235,7 +237,7 @@ tendrá los mejores elementos en el principio.
               \end{cases}
         \end{align*}
 
-  \item Dos \emph{rutas parciales} se comparan por sus \underline{tres componentes} en orden
+  \item Dos \emph{rutas parciales} se comparan por sus \underline{tres componentes} en orden \\
         \underline{lexicográfico}, que quiere decir que
         primero se comparan los primeros elementes, si son igual, se comparan los segundos, etc.,
         hasta que la comparación da un resultado diferente de igualidad o se termina la lista.
@@ -276,8 +278,21 @@ Las pruebas del contenedor \emph{Route} se encuentran en \hstest{Parcial2-Route}
 
 \subsection{Algoritmo genético}
 
+\begin{code}
 
-> data GA = GA Labyrinth2D
+  data GAParams = GAParams{
+      gaChromGenMaxChainLen :: Int,
+      gaChromGenMaxChains   :: Int
+    }
+
+  data GACache = GACache{
+        cacheNeighbours :: Map Point2D [Point2D]
+    }
+  neighboursOf cache point = fromMaybe []
+                           $ Map.lookup point (cacheNeighbours cache)
+
+  data GA = GA Labyrinth2D GAParams GACache
+\end{code}
 
 Se usa adelante un alias de tuple \verb|(a,a)| para denotar el número de hijos de \emph{crossover}.
 
@@ -325,6 +340,8 @@ empezando con los tipos y siguiendo con los métodos.
 \item Un \emph{gen} se define como \underline{nodo del laberinto}
       y un \emph{cromosoma} como una \underline{lista de genes}.
 
+      Los cromosomas no deben de tener repeticiones.
+
 >    type Gene GA = Point2D
 >    type Chromosome GA = [Point2D]
 >    -- listGenes :: Chromosome ga \rightarrow$ [Gene ga]
@@ -354,25 +371,25 @@ su resultado se marca como un par de hijos.
 
 \begin{code}
      -- fitness :: ga \rightarrow$ Chromosome ga \rightarrow$ Fitness ga
-     fitness (GA l) genes = let
-                            lPairs (f:s:t) = (f,s) : lPairs (s:t)
-                            lPairs _       = []
-                            dists = map (uncurry $ eDist l) (lPairs genes)
-                        in if isJust `all` dists
-                             then -- is a valid route
-                                  CompleteRoute . sum $ map fromJust dists
-                             else -- is incomplete
-                                  let valid = filter isJust dists
-                                      v = fromIntegral (length valid)
-                                        / fromIntegral (length dists)
-                                      hasInit = elem (initial l) genes
-                                      hasFin = elem (target l) genes
-                                      poi = case (hasInit, hasFin) of
-                                              (True, True)  -> POIBoth
-                                              (True, False) -> POISome POIInit
-                                              (False, True) -> POISome POITarget
-                                              _             -> POINone
-                                      len = sum $ map fromJust valid
+     fitness (GA l _ _) genes =
+                    let lPairs (f:s:t) = (f,s) : lPairs (s:t)
+                        lPairs _       = []
+                        dists = map (uncurry $ eDist l) (lPairs genes)
+                    in if isJust `all` dists
+                         then -- is a valid route
+                              CompleteRoute . sum $ map fromJust dists
+                         else -- is incomplete
+                              let valid = filter isJust dists
+                                  v = fromIntegral (length valid)
+                                    / fromIntegral (length dists)
+                                  hasInit = elem (initial l) genes
+                                  hasFin = elem (target l) genes
+                                  poi = case (hasInit, hasFin) of
+                                          (True, True)  -> POIBoth
+                                          (True, False) -> POISome POIInit
+                                          (False, True) -> POISome POITarget
+                                          _             -> POINone
+                                  len = sum $ map fromJust valid
                                   in PartialRoute v poi len
 
 \end{code}
@@ -403,32 +420,99 @@ su resultado se marca como un par de hijos.
 \end{figure}
 
 
-\noindent Para mejorar las poblaciones iniciales, las cromosomas se componen de
-secuencias de genes, que son sub-rutas validas de tamaños diferentes.
+\noindent Para mejorar las poblaciones iniciales, las cromosomas se componen de \emph{cadenas}
+-- secuencias de genes, que son sub-rutas validas de tamaños diferentes.
 
 En la figura \ref{fig:rawMapExample} se presenta un ejemplo de un mapa y
 en la figura \ref{fig:chromosomesMapExample} se presenta un exemplo de cromosomas generados.
 
-
-
-
-
-
-{\Huge \color{red} TBD \dots}
-
-
-
-
-
+\medskip
 
 >    -- randomChromosome :: ga \rightarrow$ IO (Chromosome ga)
->    randomChromosome (GA l) = undefined
+>    randomChromosome (GA l params cache) = do
+>       let
 
+
+Un gen aleatorio se selecciona entre todos los nodos del mapa, y se re-genera en caso de
+que este gen ya fue generado previamente.
+
+\begin{code}
+            randPoint = first (`elemAt` nodes l)
+                       . randomR (0, length (nodes l) - 1)
+            rand prev = fix $
+                        \f g ->
+                         let (r, g') = randPoint g
+                         in if r `elem` prev  then f g' else (r, g')
+\end{code}
+
+Se empieza con generación del primer punto
+
+\begin{code}
+            randChain :: StdGen -> Int -> [Point2D] -> [Point2D]
+            randChain g' len prev = nextRand [first'] g''
+                where (first', g'') = rand prev g'
+\end{code}
+
+Los demas de genes se seleccionan desde los vicinos (los nodos directamente connectados)
+del gen previo.
+
+Durante la generación de cadenas se consideran las cadenas, generadas previamente,
+para no permitir repeticiones de genes.
+
+Si se encontró una repetición, se intente
+\begin{enumerate*}[1)]
+  \item buscar a otro vicino, que no se repita;
+  \item cambiar la dirección de generación;
+  \item buscar a otro vicino, con la nueva dirección.
+\end{enumerate*}
+En caso que todas las opciones fallan, la cadena se queda de tamaño incompleto.
+
+
+\begin{code}
+                      oneOf xs = first (xs !!) . randomR(0, length xs - 1)
+                      nextRand = nextRand' False 0
+                      nextRand' rev c chain@(h:t) g =
+                          let neighbours = cache `neighboursOf` h
+                              (r, g') = oneOf neighbours (g :: StdGen)
+                              moreTries = c < 5 * length neighbours
+                          in if r `elem` prev || r `elem` chain
+                           then -- connected to some other chain
+                                if moreTries then nextRand' rev (c+1) chain g' -- 1 / 3
+                                             else if rev then chain -- incomplete
+                                                         else nextRand' True (c+1) chain g' -- 2
+                           else nextRand' rev c (r:chain) g' -- next
+\end{code}
+
+Se selecciona alioriamente la longetud de \emph{cadenas}.
+
+>       chainLen <- randomRIO (1, gaChromGenMaxChainLen params)
+
+Se selecciona alioriamente el número de \emph{cadenas}.
+
+>       chainCnt <- randomRIO (1, gaChromGenMaxChains params)
+
+Se genera el cromosoma.
+
+\begin{code}
+        g <- getStdGen
+        let f _ = randChain g chainLen
+        return $ foldr f [] [1..chainCnt]
+\end{code}
 
 \item ?
 
 >    -- crossover :: Chromosome ga \rightarrow$ Chromosome ga
 >    -- \qquad\qquad \rightarrow$ CrossoverChildren ga (Chromosome ga)
+
+
+
+
+>       undefined
+
+>       undefined
+
+>       undefined
+
 
 \item ?
 
