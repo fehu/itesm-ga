@@ -55,11 +55,47 @@ tikzRoute attrs chain pts reversed = tikzNode' (fit:attrs) ""
                                   ]
 
 
-tikzRoutes :: [TikzAttr] -> Int -> [([TikzAttr], ((Point2D, Point2D), Bool))] -> TikzExpr
+type TikzChrom = ([TikzAttr], [Point2D], [Bool])
+type TikzRoute = ([TikzAttr], ((Point2D, Point2D), Bool))
+
+
+type TikzChrom' = ([Point2D], [Bool])
+type TikzRoute' = (((Point2D, Point2D), Bool))
+
+
+
+tikzRoutes :: [TikzAttr] -> Int -> [TikzRoute] -> TikzExpr
 tikzRoutes attrsScope chain rts = tikzScope ("fill opacity=0.6" :attrsScope)
                                 . map f $ rts
     where f (attrs, pt) = uncurry (tikzRoute attrs chain) pt
 
+
+
+uncurry3 :: (x -> y -> z -> r) -> (x,y,z) -> r
+uncurry3 f (x,y,z) = f x y z
+
+tikzCrossover' :: Int -> TikzChrom -> Int -> TikzChrom
+               -> [TikzAttr] -> [TikzRoute]
+               -> [TikzAttr] -> [TikzRoute]
+               -> TikzExpr
+tikzCrossover' chain1 chrom1 chain2 chrom2 rsAttrs1 rs1 rsAttrs2 rs2 =
+    TikzExpr $ extract (uncurry3 (tikzCromosome chain1) chrom1)
+            ++ ""
+             : extract (tikzRoutes rsAttrs1 chain1 rs1)
+            ++ ""
+             : extract (uncurry3 (tikzCromosome chain2) chrom2)
+            ++ ""
+             : extract (tikzRoutes rsAttrs2 chain2 rs2)
+
+
+tikzCrossover :: Int -> TikzChrom' -> Int -> TikzChrom'
+               -> [TikzRoute'] -> [TikzRoute']
+               -> TikzExpr
+tikzCrossover chain1 chrom1 chain2 chrom2 rs1 rs2 =
+    tikzCrossover' chain1 (c chrom1) chain2 (c chrom2) [] (r rs1) [] (r rs2)
+        where c (x,y) = ([],x,y)
+              as = map (\c -> ["fill =" ++ lighter c 50]) stdColors
+              r q = zipWith (\p a -> (a,p)) q as
 
 
 

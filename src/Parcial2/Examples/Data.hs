@@ -139,6 +139,7 @@ prepareChromosomeExample color = (map mkpnt genes, conns)
 
 
 chExViolet = prepareChromosomeExample "violet"
+chExOrange = prepareChromosomeExample "orange"
 
 
 

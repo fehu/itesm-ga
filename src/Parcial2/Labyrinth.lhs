@@ -38,7 +38,7 @@
 module Parcial2.Labyrinth where
 
   import Control.Exception
-  import Control.Arrow (first, second)
+  import Control.Arrow (first, second, (&&&))
   import Control.Monad.Fix
 
   import Data.Tuple (swap)
@@ -152,11 +152,11 @@ Aquí se presenta la construcción del grafo a partir del mapa leido.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Adoptación}
+\subsection{Adaptación}
 \label{subsec:fitness}
 
 
-El valor de \emph{aptitud de adoptación} se llamará \emph{ruta} y se define
+El valor de \emph{aptitud de adaptación} se llamará \emph{ruta} y se define
 para permitir destinguir facilmente los dos tipos de rutas
 (encodificadas en los cromosomas) posibles:
 
@@ -172,13 +172,13 @@ para permitir destinguir facilmente los dos tipos de rutas
   \item \textbf{Ruta parcial}: es una ruta que
     \begin{enumerate*}[1)]
         \item contiene pares de genes adjuntos, los cuales no están conectados, o
-        \item no contiene los ambos puntos: inicio y meta.
+        \item no contiene ambos puntos: inicio y meta.
     \end{enumerate*}
 
-    Se caracteriza por los tres valores:
+    Se caracteriza por tres valores:
     \begin{enumerate}
 
-        \item \emph{valides} $= \dfrac
+        \item \emph{validez} $= \dfrac
             {\text{número de aristas existentes}}
             {\text{número de aristas total}}$.
 
@@ -221,11 +221,11 @@ una lista de \emph{rutas}, ordenada ascendentamente,
 tendrá los mejores elementos en el principio.
 \begin{enumerate}
 
-  \item Cualquiera \emph{ruta completa} \underline{es minor} que cualquiera \emph{ruta parcial}.
+  \item Cualquiera \emph{ruta completa} \underline{es menor} que cualquier \emph{ruta parcial}.
         $$\forall x \in \textit{ruta completa},
                   y \in \textit{ruta parcial}     \implies x < y$$
 
-  \item Dos \emph{rutas completas} se comparan por su \underline{longitud} sin cambios de la orden.
+  \item Dos \emph{rutas completas} se comparan por su \underline{longitud} sin cambios en el orden.
         \begin{align*}
             \begin{tabular}{l}
                 \forall x \in \textit{ruta completa}, x \sim r_1\\
@@ -241,10 +241,10 @@ tendrá los mejores elementos en el principio.
 
   \item Dos \emph{rutas parciales} se comparan por sus \underline{tres componentes} en orden \\
         \underline{lexicográfico}, que quiere decir que
-        primero se comparan los primeros elementes, si son igual, se comparan los segundos, etc.,
-        hasta que la comparación da un resultado diferente de igualidad o se termina la lista.
+        primero se comparan los primeros elementos, si son igual, se comparan los segundos, etc.,
+        hasta que la comparación de un resultado diferente de igualidad o se termine la lista.
 
-        El orden de la comparación se cambia al opuesto.
+        El orden de comparación se cambia al opuesto.
 
         \begin{align*}
             \begin{aligned}
@@ -304,7 +304,8 @@ Las pruebas del contenedor \emph{Route} se encuentran en \hstest{Parcial2-Route}
 
   data GAParams = GAParams{
       gaChromGenMaxChainLen :: Int,
-      gaChromGenMaxChains   :: Int
+      gaChromGenMaxChains   :: Int,
+      gaPopulationSize      :: Int
     }
 
   data GACache = GACache{
@@ -313,16 +314,10 @@ Las pruebas del contenedor \emph{Route} se encuentran en \hstest{Parcial2-Route}
   neighboursOf cache point = fromMaybe []
                            $ Map.lookup point (cacheNeighbours cache)
 
-  data GA = GA Labyrinth2D GAParams GACache
-\end{code}
-
-Se usa adelante un alias de tuple \verb|(a,a)| para denotar el número de hijos de
-\emph{recombinación} (\emph{crossover}).
-
-\begin{code}
-  newtype Pair a = Pair (a,a)
-  unwrapPair (Pair p) = p
-  pair2List (Pair (f,s)) = [f,s]
+  data GA = GA { gaLabyri :: Labyrinth2D
+               , gaParams :: GAParams
+               , gaCache  :: GACache
+               }
 \end{code}
 
 
@@ -380,13 +375,11 @@ empezando con los tipos y siguiendo con los métodos.
 
 >    type Fitness GA = Route
 
+\item Dirección de búsqueda -- minimización.
 
-\item Para denotar que la operación de \emph{recombinación} preserva el tamaño de población,
-su resultado se marca como un par de hijos.
+>    type Target GA = Min
 
->    type CrossoverChildren GA = Pair
-
-\item La información de entrada para generación de la población --- el laberinto.
+\item Información de entrada para generación de la población --- el laberinto.
 
 >    type InputData GA = Labyrinth2D
 
@@ -396,7 +389,7 @@ su resultado se marca como un par de hijos.
 
 
 
-\item La \textbf{aptitud de adoptación} fue descrita en subsección \ref{subsec:fitness}.
+\item La \textbf{aptitud de adaptación} fue descrita en subsección \ref{subsec:fitness}.
 
 \begin{code}
      -- fitness :: ga \rightarrow$ Chromosome ga \rightarrow$ Fitness ga
@@ -428,7 +421,7 @@ su resultado se marca como un par de hijos.
 \begin{figure}[h]
     \centering
     \input{MapExampleRaw.tikz}
-    \caption{Un exemplo de mapa, inicio: 0--2, meta: 9--3.}
+    \caption{Ejemplo de mapa, inicio: 0--2, meta: 9--3.}
     \label{fig:rawMapExample}
 \end{figure}
 
@@ -450,8 +443,8 @@ su resultado se marca como un par de hijos.
 \noindent Para mejorar las poblaciones iniciales, las cromosomas se componen de \emph{cadenas}
 -- secuencias de genes, que son sub-rutas validas de tamaños diferentes.
 
-En la figura \ref{fig:rawMapExample} se presenta un ejemplo de un mapa y
-en la figura \ref{fig:chromosomesMapExample} se presenta un exemplo de cromosomas generados.
+En la figura \ref{fig:rawMapExample} se presenta el ejemplo de un mapa y
+en la figura \ref{fig:chromosomesMapExample} se presenta un ejemplo de cromosomas generados.
 
 \medskip
 
@@ -461,7 +454,7 @@ en la figura \ref{fig:chromosomesMapExample} se presenta un exemplo de cromosoma
 
 
 Un gen aleatorio se selecciona entre todos los nodos del mapa, y se re-genera en caso de
-que este gen ya fue generado previamente.
+que este gen ya hubiera sido generado previamente.
 
 \begin{code}
             randPoint = first (`elemAt` nodes l)
@@ -472,7 +465,7 @@ que este gen ya fue generado previamente.
                          in if r `elem` prev  then f g' else (r, g')
 \end{code}
 
-Se empieza con generación del primer punto
+Se empieza con la generación del primer punto
 
 \begin{code}
             randChain :: StdGen -> Int -> [Point2D] -> [Point2D]
@@ -480,19 +473,19 @@ Se empieza con generación del primer punto
                 where (first', g'') = rand prev g'
 \end{code}
 
-Los demas de genes se seleccionan desde los vicinos (los nodos directamente connectados)
+Los demas genes se seleccionan desde los vecinos (los nodos directamente conectados)
 del gen previo.
 
 Durante la generación de cadenas se consideran las cadenas, generadas previamente,
 para no permitir repeticiones de genes.
 
-Si se encontró una repetición, se intente
+Si se encontró una repetición, se intenta
 \begin{enumerate*}[1)]
-  \item buscar a otro vicino, que no se repita;
+  \item buscar otro vecino, que no se repita;
   \item cambiar la dirección de generación;
-  \item buscar a otro vicino, con la nueva dirección.
+  \item buscar a otro vecino, con la nueva dirección.
 \end{enumerate*}
-En caso que todas las opciones fallan, la cadena se queda de tamaño incompleto.
+En caso que todas las opciones fallen, la cadena se queda de tamaño incompleto.
 
 
 \begin{code}
@@ -512,11 +505,11 @@ En caso que todas las opciones fallan, la cadena se queda de tamaño incompleto.
                             else nextRand' rev c (r:chain) g' -- next
 \end{code}
 
-Se selecciona alioriamente la longetud de \emph{cadenas}.
+Se selecciona aleatoriamente la longetud de \emph{cadenas}.
 
 >       chainLen <- randomRIO (1, gaChromGenMaxChainLen params)
 
-Se selecciona alioriamente el número de \emph{cadenas}.
+Se selecciona aleatoriamente el número de \emph{cadenas}.
 
 >       chainCnt <- randomRIO (1, gaChromGenMaxChains params)
 
@@ -531,19 +524,55 @@ Se genera el cromosoma.
 
 
 
-\item La \emph{recombinación} de cromosomas se enfoca en remplacamiento de
-      malas sub-rutas o extención de rutas existentes.
+\item La \emph{recombinación} de cromosomas se enfoca en remplacar las
+      malas sub-rutas o extender rutas existentes.
 
       Aquí solamente se define la recombinación de dos cromosomas, su selección
-      va ser descrito en la subsección \ref{subsec:gaRun}.
-
-      Se separan la rutas con función \emph{splitRoutes}
-      (fue descrita en subsección \ref{subsec:fitness}) para ambos cromosomas.
+      será descrita en la subsección \ref{subsec:gaRun}.
 
       \begin{enumerate}
-        \item Se buscan todos los puntos $x,y$, tales que son parte de una ruta dentro de un
-              de los cromosomas, pero no el otro.
-        \item
+        \item Se separan las rutas con función \emph{splitRoutes}
+              (fue descrita en subsección \ref{subsec:fitness}) para ambos cromosomas.
+
+        \item Se seleccionan los genes $\lbrace c \rbrace$, miembros de ambos cromosomas.
+
+        \item Para ambos cromosomas se encuentran \emph{sub-rutas intercambiables}:
+              \begin{align*}
+                \forall ~&x \in \lbrace c \rbrace \\
+                         &y \in \lbrace c \rbrace \quad \implies \\
+                         &
+                \begin{cases}
+                    \text{secuencia } \lbrace r_i \rbrace_{i=1}^{N_r}
+                        & \mbox{si } \begin{aligned}
+                            \forall &~r_{j-1}, r_j \in \lbrace r_i \rbrace_{i=1}^{N_r} \\
+                            \exists & \text{ arista entre } r_{j-1} \text{ y } r_j
+                          \end{alaigned} \\
+                        \lbrace\rbrace & \mbox{en otro caso}
+                \end{cases}
+              \end{align*}
+
+              Se guarda también la dirección de las sub-rutas para ambos cromosomas.
+
+        \item Las sub-rutas intercambiables se dividen dependiendo si se encuentran en ambos
+              cromosomas o solamente en uno. El último caso tiene más prioridad.
+
+              \begin{itemize}[leftmargin=2cm]
+                \item[Uno --] se ordenan por su longitud.
+                \item[Ambos --] se ordenan por la diferencia absoluta en sus dos longitudes.
+              \end{itemize}
+
+        \item Se aplica el remplazamiento para todas las rutas intercambiables ordenadas.
+              Se remplazan las sub-rutas no existentes por las existentes;
+              y se remplazan las existentes por mas cortas.
+
+              El remplazamiento se aplica solamente si
+              \begin{enumerate*}[1)]
+                \item los genes en cuestion no fueron eliminados con los remplazamientos previos;
+                \item remplazamiento no creará genes duplicados.
+              \end{enumerate*}
+
+         \item Se devuelve el par de cromosomas remplazados.
+
       \end{enumerate}
 
 >    -- crossover :: Chromosome ga \rightarrow$ Chromosome ga
@@ -580,17 +609,20 @@ Se genera el cromosoma.
 \subsection{??? gaRun ???}
 \label{subsec:gaRun}
 
+\begin{code}
+
+  instance RunGA GA [Point2D] [Point2D] Route Min where
+    type DebugData GA = ()
+
+
+\end{code}
+
 
 \newpage
 
 {\Huge \color{red} Esto es un reporte preliminar }
 
 \begin{note}
-  La intención es utilizar \emph{crossover} para:
-  \begin{enumerate*}[1)]
-    \item remplazar los ''hoyos'' en las rutas;
-    \item extender rutas existientes.
-  \end{enumerate*}
   La preferencia debe ser dada a las rutas que contienen un de los puntos de interes (inicio, meta).
 
   La mutación debe extender/remplacar un gen al inicio/meta si $\exists$ una ruta directa.
