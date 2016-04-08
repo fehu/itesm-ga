@@ -30,49 +30,66 @@ class GeneticAlgorithm ga where type InputData ga :: *
 
                                 listGenes :: Chromosome ga -> [Gene ga]
 
-                                -- | Denotes number of crossover children.
-                                type CrossoverChildren ga :: * -> *
-
                                 randomChromosome :: ga -> IO (Chromosome ga)
 
                                 fitness   :: ga -> Chromosome ga -> Fitness ga
-                                crossover :: Chromosome ga -> Chromosome ga
-                                          -> CrossoverChildren ga (Chromosome ga)
+                                crossover :: ga -> Chromosome ga -> Chromosome ga
+                                                -> (Chromosome ga, Chromosome ga)
                                 mutate    :: Chromosome ga -> Chromosome ga
 
-                                stopCriteria :: [Fitness ga] -> Bool
+                                stopCriteria :: ga -> [Fitness ga] -> Bool
 
                                 newGA :: InputData ga -> ga
 
+
+
+
+
 -- | Underlying list must be ordered descending.
-newtype Assessed ga = Assessed [(Chromosome ga, Fitness ga)]
+newtype Assessed chrom fit = Assessed [(chrom, fit)]
 
 -- | Creates a new 'Assessed', sorting the given list by 'Fitness' (descending).
-assessed :: (Ord (Fitness ga)) => [(Chromosome ga, Fitness ga)] -> Assessed ga
+assessed :: (Ord fit) => [(chrom, fit)] -> Assessed chrom fit
 assessed = Assessed . sortWith snd
 
 unwrapAssessed (Assessed l) = l
 
-class (GeneticAlgorithm ga) => RunGA ga where
-    type DebugData ga :: *
+class ( GeneticAlgorithm ga
+      , res ~ ResultData ga
+      , chrom ~ Chromosome ga
+      , fit ~ Fitness ga
+      , Ord fit
+      , target ~ Target ga
+      )
+  =>
+    RunGA ga res chrom fit (target :: OrdDir) where
+        type DebugData ga :: *
 
-    runGA :: ga -> Int -> IO (ResultData ga, DebugData ga)
+        runGA :: ga -> Int -> IO (res, DebugData ga)
 
-    selectIntact    :: Assessed ga -> Assessed ga
-    selectCrossover :: Assessed ga -> Assessed ga
-    selectMutate    :: Assessed ga -> Assessed ga
+        initialPopulation :: ga -> Int -> IO [chrom]
 
-    selectResult    :: Assessed ga -> (ResultData ga, DebugData ga)
+        selectIntact    :: ga -> Assessed chrom fit -> [chrom]
+        selectCrossover :: ga -> Assessed chrom fit -> [(chrom, chrom)]
+        selectMutate    :: ga -> Assessed chrom fit -> [chrom]
 
---    runGA ga = do pop <- initialPopulation ga
---                  let fit = assessed $ map (id &&& fitness) pop
---                      intact = selectIntact fit
---                      cross  = selectCrossover fit
---                      mut    = selectMutate fit
---
---                  if stopCriteria . map snd $ unwrapAssessed fit
---                    then return $ selectResult fit
---                    else  undefined
+        selectResult    :: ga -> Assessed chrom fit -> (res, DebugData ga)
 
+
+        runGA ga popSize = runGA' ga =<< initialPopulation ga popSize
+
+
+
+
+runGA' ga pop = let fit = assessed $ map (id &&& fitness ga) pop
+                    intact = selectIntact ga fit
+                    cross  = selectCrossover ga fit
+                    mut    = selectMutate ga fit
+
+                 in if stopCriteria ga . map snd $ unwrapAssessed fit
+                      then return $ selectResult ga fit
+                      else runGA' ga $ -- new population
+                                  intact ++
+                                  concatMap ((\(x,y) -> [x,y]) . uncurry (crossover ga)) cross
 
 
