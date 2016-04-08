@@ -28,11 +28,17 @@ class GeneticAlgorithm ga where type InputData ga :: *
                                 type Fitness ga :: *
                                 type Target ga :: OrdDir
 
+                                type CrossoverDebug ga :: *
+
                                 listGenes :: Chromosome ga -> [Gene ga]
 
                                 randomChromosome :: ga -> IO (Chromosome ga)
 
                                 fitness   :: ga -> Chromosome ga -> Fitness ga
+
+                                crossover' :: ga -> Chromosome ga -> Chromosome ga
+                                           -> ((Chromosome ga, Chromosome ga), CrossoverDebug ga)
+
                                 crossover :: ga -> Chromosome ga -> Chromosome ga
                                                 -> (Chromosome ga, Chromosome ga)
                                 mutate    :: Chromosome ga -> Chromosome ga
@@ -40,6 +46,8 @@ class GeneticAlgorithm ga where type InputData ga :: *
                                 stopCriteria :: ga -> [Fitness ga] -> Bool
 
                                 newGA :: InputData ga -> ga
+
+                                crossover ga c1 = fst . crossover' ga c1
 
 
 

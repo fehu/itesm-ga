@@ -42,6 +42,7 @@ module Parcial2.Labyrinth where
   import Control.Monad.Fix
 
   import Data.Tuple (swap)
+  import Data.List (elemIndex, sortBy)
   import Data.Maybe (isJust, fromJust, fromMaybe)
   import Data.Set (Set, member, elemAt)
   import qualified Data.Set as Set
@@ -575,17 +576,64 @@ Se genera el cromosoma.
 
       \end{enumerate}
 
->    -- crossover :: Chromosome ga \rightarrow$ Chromosome ga
->    -- \qquad\qquad \rightarrow$ CrossoverChildren ga (Chromosome ga)
+>    type CrossoverDebug GA = [((Point2D, Point2D), ( Maybe ([Point2D], Bool)
+>                                                   , Maybe ([Point2D], Bool))
+>                             )]
+
+>    -- crossover' :: ga \rightarrow$ Chromosome ga \rightarrow$ Chromosome ga
+>    -- \qquad\qquad \rightarrow$ ((Chromosome ga, Chromosome ga), CrossoverDebug ga)
+
+\begin{code}
+
+     crossover' (GA l _ _) ch1 ch2 = (replaceRoutes ch1 ch2 &&& id) subRoutes
+        where
+        rs1 = splitRoutes l ch1
+        rs2 = splitRoutes l ch2
+
+        set1 = Set.fromList ch1
+        set2 = Set.fromList ch2
+        cs = Set.toList $ Set.intersection set1 set2
+
+        subseq l r = take (r - l) . drop l
+
+        -- replacable sub-routes (unordered)
+        isrs = do x <- cs
+                  y <- cs
+                  let valid = any ((&&) <$> (x `elem`) <*> (y `elem`))
+                      valid1 = valid rs1
+                      valid2 = valid rs2
+
+                      valid' ch = let Just ix = x `elemIndex` ch
+                                      Just iy = y `elemIndex` ch
+
+                                      (left, right, rev) = if ix < iy then (ix,iy,False)
+                                                                      else (iy,ix,True)
+                             in (subseq left right ch, rev)
+
+                      valid1' = if valid1 then Just $ valid' ch1 else Nothing
+                      valid2' = if valid2 then Just $ valid' ch2 else Nothing
+
+                  if x /= y && (valid1 || valid2)
+                    then return ((x,y), (valid1', valid2'))
+                    else []
+        subRoutes = sortBy cmpSubRoute isrs
+
+        cmpSubRoute (_, (Just _, Nothing)) (_, (Just _, Just _))  = LT
+        cmpSubRoute (_, (Just _, Just _))  (_, (Just _, Nothing)) = GT
+        cmpSubRoute (_, (Just (x1,_), Just (y1,_)))(_, (Just (x2,_), Just (y2,_)))=
+            abs (length x1 - length y1) `compare` abs (length x2 - length y2)
+        cmpSubRoute (_, p1)                (_, p2) =  rt p1 `compare` rt p2
+                                                   where rt (Just x,  Nothing) = length x
+                                                         rt (Nothing, Just x)  = length x
+
+        replaceRoutes c1 c2 (((start, end), (mbFst, mbSnd)):rt) = undefined
+                where source = undefined
+                      target = undefined
+
+                      -- srcGenes = do x1 <- start elemIndex
 
 
-
-
->       undefined
-
->       undefined
-
->       undefined
+\end{code}
 
 
 \item ?
