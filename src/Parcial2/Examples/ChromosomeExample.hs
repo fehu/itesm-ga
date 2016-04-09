@@ -41,10 +41,18 @@ main = do -- print $ uncurry (tikzCromosome 1 ["draw"]) chExViolet
           let ga = GA (labyrinth2D labyrinthExample) undefined undefined
               (_, dd) = crossover' ga (fst chExViolet) (fst chExOrange)
 
+              prepareRoutes [] accFst accSnd = (accFst, accSnd)
+              prepareRoutes ((chain, (mbFst, mbSnd)):t) accFst accSnd =
+                prepareRoutes t (acc' accFst mbFst) (acc' accSnd mbSnd)
+                    where acc' a mb = case mb of Just (_, rev) -> (chain,rev):a
+                                                 _             -> a
+
+              (rV, rO) = prepareRoutes dd [] []
+
           print $ tikzCrossover 1 chExViolet
                                 2 chExOrange
-                                undefined
-                                undefined
+                                rV
+                                rO
 
 
 
