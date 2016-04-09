@@ -28,8 +28,9 @@ tikzCromosome :: Int -> [TikzAttr] -> [Point2D] -> [Bool] -> TikzExpr
 tikzCromosome _ _ genes conns | length genes /= length conns + 1 = error $
                                                                    "wrong list sizes in"
                                                                 ++ " `tikzCromosome`"
-tikzCromosome chain attrs genes conns = tikzScope [ "start chain=1 going right"
-                                                  , "node distance=-0.15mm"
+tikzCromosome chain attrs genes conns = tikzScope [ "start chain=" ++ show chain
+                                                                   ++ " going right"
+                                                  , "node distance=5 cm and -0.15mm"
                                                   ]
                                 $ do let conns' = map Just conns ++ [Nothing]
                                          onChain = "on chain=" ++ show chain
