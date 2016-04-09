@@ -26,20 +26,25 @@ import qualified Data.Set as Set
 
 -----------------------------------------------------------------------------
 
-main = do -- print $ uncurry (tikzCromosome 1 ["draw"]) chExViolet
---          print $ tikzRoute ["fill=green!50", "fill opacity=0.6"] 1
---                            (mkpnt (0,2) --> mkpnt (4,6)) False
---          print $ tikzRoute ["fill opacity=0.6", "fill=blue!50"] 1
---                            (mkpnt (6,1) --> mkpnt (3,2)) True
+main = do let ga = GA (labyrinth2D labyrinthExample) undefined undefined
+              chrom1 = fst chExViolet
+              chrom2 = fst chExOrange
+              (_, dd) = crossover' ga chrom1 chrom2
 
---          let routes = splitRoutes (labyrinth2D labyrinthExample) (fst chExViolet)
---              routes' = map ((head &&& last) &&& const False ) routes
---              attrs = map (\c -> ["fill =" ++ lighter c 50]) stdColors
---
---          print $ tikzRoutes [] 1 $ attrs `zip` routes'
+          print dd
+          putStrLn ""
 
-          let ga = GA (labyrinth2D labyrinthExample) undefined undefined
-              (_, dd) = crossover' ga (fst chExViolet) (fst chExOrange)
+
+          let prepareRoutes' [] accFst accSnd = (accFst, accSnd)
+              prepareRoutes' ((chain, (mbFst, mbSnd)):t) accFst accSnd =
+                    prepareRoutes t (rFst:accFst) (rSnd:accSnd)
+                    where r mbRoute chrom = case mbRoute of Just route -> first (head &&& last) route
+                                                            _          -> route' chrom
+                          route' chrom = let (i1, i2) = chain
+                                        in if i1 < i2 then ((i1,i2), False)
+                                                      else ((i2,i1), True)
+                          rFst = r mbFst chrom1
+                          rSnd = r mbSnd chrom2
 
               prepareRoutes [] accFst accSnd = (accFst, accSnd)
               prepareRoutes ((chain, (mbFst, mbSnd)):t) accFst accSnd =
@@ -47,23 +52,14 @@ main = do -- print $ uncurry (tikzCromosome 1 ["draw"]) chExViolet
                     where acc' a mb = case mb of Just (_, rev) -> (chain,rev):a
                                                  _             -> a
 
-              (rV, rO) = prepareRoutes dd [] []
-
-          print $ tikzCrossover 1 chExViolet
-                                2 chExOrange
-                                rV
-                                rO
+          print $ uncurry (tikzCrossover False 1 chExViolet 2 chExOrange)
+                          (prepareRoutes dd [] [])
 
 
 
 
------------------------------------------------------------------------------
-
---data ChromExample
 
 
---showExample :: [TikzAttr] -> Int -> String
---showExample
 
 
 

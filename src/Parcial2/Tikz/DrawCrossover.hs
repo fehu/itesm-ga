@@ -30,7 +30,8 @@ tikzCromosome _ _ genes conns | length genes /= length conns + 1 = error $
                                                                 ++ " `tikzCromosome`"
 tikzCromosome chain attrs genes conns = tikzScope [ "start chain=" ++ show chain
                                                                    ++ " going right"
-                                                  , "node distance=5 cm and -0.15mm"
+                                                  , "node distance=-0.15mm"
+                                                  , "yshift=" ++ show (-chain*2) ++ "cm"
                                                   ]
                                 $ do let conns' = map Just conns ++ [Nothing]
                                          onChain = "on chain=" ++ show chain
@@ -66,7 +67,7 @@ type TikzRoute' = (((Point2D, Point2D), Bool))
 
 
 tikzRoutes :: [TikzAttr] -> Int -> [TikzRoute] -> TikzExpr
-tikzRoutes attrsScope chain rts = tikzScope ("fill opacity=0.6" :attrsScope)
+tikzRoutes attrsScope chain rts = tikzScope ("fill opacity=0.3" :attrsScope)
                                 . map f $ rts
     where f (attrs, pt) = uncurry (tikzRoute attrs chain) pt
 
@@ -89,14 +90,19 @@ tikzCrossover' chain1 chrom1 chain2 chrom2 rsAttrs1 rs1 rsAttrs2 rs2 =
              : extract (tikzRoutes rsAttrs2 chain2 rs2)
 
 
-tikzCrossover :: Int -> TikzChrom' -> Int -> TikzChrom'
+tikzCrossover :: Bool -> Int -> TikzChrom' -> Int -> TikzChrom'
                -> [TikzRoute'] -> [TikzRoute']
                -> TikzExpr
-tikzCrossover chain1 chrom1 chain2 chrom2 rs1 rs2 =
-    tikzCrossover' chain1 (c chrom1) chain2 (c chrom2) [] (r rs1) [] (r rs2)
+tikzCrossover multi chain1 chrom1 chain2 chrom2 rs1 rs2 =
+    tikzCrossover' chain1 (c chrom1) chain2 (c chrom2) [] (r rs1 cls1) [] (r rs2 cls2)
         where c (x,y) = ([],x,y)
-              as = map (\c -> ["fill =" ++ lighter c 50]) stdColors
-              r q = zipWith (\p a -> (a,p)) q as
+              as = map (\(c,i) -> let as = ["yshift=" ++ show i ++ "pt" | multi]
+                              in ("fill =" ++ lighter c 50):as
+                       )
+              r q = zipWith (\p a -> (a,p)) q . as . (`zip` [0..])
+
+              cls1 = stdColors
+              cls2 = if multi then stdColors else drop (length rs1) stdColors
 
 
 
