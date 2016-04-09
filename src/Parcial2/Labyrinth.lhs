@@ -42,8 +42,9 @@ module Parcial2.Labyrinth where
   import Control.Monad.Fix
 
   import Data.Tuple (swap)
-  import Data.List (elemIndex, sortBy)
+  import Data.List (elemIndex, sortBy, nubBy)
   import Data.Maybe (isJust, fromJust, fromMaybe)
+  import Data.Function (on)
   import Data.Set (Set, member, elemAt)
   import qualified Data.Set as Set
   import Data.Map (Map)
@@ -616,7 +617,9 @@ Se genera el cromosoma.
                   if x /= y && (valid1 || valid2)
                     then return ((x,y), (valid1', valid2'))
                     else []
-        subRoutes = sortBy cmpSubRoute isrs
+
+        sameEdge par1 par2 = par1 == par2 || swap par1 == par2
+        subRoutes = sortBy cmpSubRoute $ nubBy (sameEdge `on` fst) isrs
 
         cmpSubRoute (_, (Just _, Nothing)) (_, (Just _, Just _))  = LT
         cmpSubRoute (_, (Just _, Just _))  (_, (Just _, Nothing)) = GT
