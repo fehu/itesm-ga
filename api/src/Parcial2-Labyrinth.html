@@ -14,10 +14,12 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage[spanish, mexico]{babel}
-\usepackage{amsmath, hyperref, xcolor, tikz, mdframed}
+\usepackage{amsmath, hyperref, xcolor, tikz, mdframed, subcaption}
 \usepackage[shortlabels, inline]{enumitem}
 
-\usepackage{showframe}
+\usetikzlibrary{chains, fit}
+
+% \usepackage{showframe}
 
 \newenvironment{note}
     {\begin{mdframed}[leftmargin=1cm,
@@ -38,6 +40,7 @@
 \newcommand{\hssrc} [2]{\href{\github/api/src/#1.html}{src/#2}}
 \newcommand{\hstest}[2]{\href{\github/api/tests/src/#1.html}{test/#2}}
 
+\newcommand{\resizeInput}[2][\textwidth]{\resizebox{#1}{!}{\input{#2}}}}
 
 \begin{document}
 
@@ -47,22 +50,24 @@
 <a name="line-3"></a><span class='hs-keyword'>module</span> <span class='hs-conid'>Parcial2</span><span class='hs-varop'>.</span><span class='hs-conid'>Labyrinth</span> <span class='hs-keyword'>where</span>
 <a name="line-4"></a>
 <a name="line-5"></a>  <span class='hs-keyword'>import</span> <span class='hs-conid'>Control</span><span class='hs-varop'>.</span><span class='hs-conid'>Exception</span>
-<a name="line-6"></a>  <span class='hs-keyword'>import</span> <span class='hs-conid'>Control</span><span class='hs-varop'>.</span><span class='hs-conid'>Arrow</span> <span class='hs-layout'>(</span><span class='hs-varid'>first</span><span class='hs-layout'>,</span> <span class='hs-varid'>second</span><span class='hs-layout'>)</span>
+<a name="line-6"></a>  <span class='hs-keyword'>import</span> <span class='hs-conid'>Control</span><span class='hs-varop'>.</span><span class='hs-conid'>Arrow</span> <span class='hs-layout'>(</span><span class='hs-varid'>first</span><span class='hs-layout'>,</span> <span class='hs-varid'>second</span><span class='hs-layout'>,</span> <span class='hs-layout'>(</span><span class='hs-varop'>&amp;&amp;&amp;</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
 <a name="line-7"></a>  <span class='hs-keyword'>import</span> <span class='hs-conid'>Control</span><span class='hs-varop'>.</span><span class='hs-conid'>Monad</span><span class='hs-varop'>.</span><span class='hs-conid'>Fix</span>
 <a name="line-8"></a>
 <a name="line-9"></a>  <span class='hs-keyword'>import</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Tuple</span> <span class='hs-layout'>(</span><span class='hs-varid'>swap</span><span class='hs-layout'>)</span>
-<a name="line-10"></a>  <span class='hs-keyword'>import</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Maybe</span> <span class='hs-layout'>(</span><span class='hs-varid'>isJust</span><span class='hs-layout'>,</span> <span class='hs-varid'>fromJust</span><span class='hs-layout'>,</span> <span class='hs-varid'>fromMaybe</span><span class='hs-layout'>)</span>
-<a name="line-11"></a>  <span class='hs-keyword'>import</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Set</span> <span class='hs-layout'>(</span><span class='hs-conid'>Set</span><span class='hs-layout'>,</span> <span class='hs-varid'>member</span><span class='hs-layout'>,</span> <span class='hs-varid'>elemAt</span><span class='hs-layout'>)</span>
-<a name="line-12"></a>  <span class='hs-keyword'>import</span> <span class='hs-keyword'>qualified</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Set</span> <span class='hs-keyword'>as</span> <span class='hs-conid'>Set</span>
-<a name="line-13"></a>  <span class='hs-keyword'>import</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Map</span> <span class='hs-layout'>(</span><span class='hs-conid'>Map</span><span class='hs-layout'>)</span>
-<a name="line-14"></a>  <span class='hs-keyword'>import</span> <span class='hs-keyword'>qualified</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Map</span> <span class='hs-keyword'>as</span> <span class='hs-conid'>Map</span>
-<a name="line-15"></a>  <span class='hs-keyword'>import</span> <span class='hs-conid'>GHC</span><span class='hs-varop'>.</span><span class='hs-conid'>Real</span> <span class='hs-layout'>(</span><span class='hs-varid'>infinity</span><span class='hs-layout'>)</span>
-<a name="line-16"></a>
-<a name="line-17"></a>
-<a name="line-18"></a>  <span class='hs-keyword'>import</span> <span class='hs-conid'>Parcial2</span><span class='hs-varop'>.</span><span class='hs-conid'>ReadLabyrinth</span>
-<a name="line-19"></a>  <span class='hs-keyword'>import</span> <span class='hs-conid'>GeneticAlgorithm</span>
-<a name="line-20"></a>
-<a name="line-21"></a>  <span class='hs-keyword'>import</span> <span class='hs-conid'>System</span><span class='hs-varop'>.</span><span class='hs-conid'>Random</span>
+<a name="line-10"></a>  <span class='hs-keyword'>import</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>List</span> <span class='hs-layout'>(</span><span class='hs-varid'>elemIndex</span><span class='hs-layout'>,</span> <span class='hs-varid'>sortBy</span><span class='hs-layout'>,</span> <span class='hs-varid'>nubBy</span><span class='hs-layout'>)</span>
+<a name="line-11"></a>  <span class='hs-keyword'>import</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Maybe</span> <span class='hs-layout'>(</span><span class='hs-varid'>isJust</span><span class='hs-layout'>,</span> <span class='hs-varid'>fromJust</span><span class='hs-layout'>,</span> <span class='hs-varid'>fromMaybe</span><span class='hs-layout'>)</span>
+<a name="line-12"></a>  <span class='hs-keyword'>import</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Function</span> <span class='hs-layout'>(</span><span class='hs-varid'>on</span><span class='hs-layout'>)</span>
+<a name="line-13"></a>  <span class='hs-keyword'>import</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Set</span> <span class='hs-layout'>(</span><span class='hs-conid'>Set</span><span class='hs-layout'>,</span> <span class='hs-varid'>member</span><span class='hs-layout'>,</span> <span class='hs-varid'>elemAt</span><span class='hs-layout'>)</span>
+<a name="line-14"></a>  <span class='hs-keyword'>import</span> <span class='hs-keyword'>qualified</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Set</span> <span class='hs-keyword'>as</span> <span class='hs-conid'>Set</span>
+<a name="line-15"></a>  <span class='hs-keyword'>import</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Map</span> <span class='hs-layout'>(</span><span class='hs-conid'>Map</span><span class='hs-layout'>)</span>
+<a name="line-16"></a>  <span class='hs-keyword'>import</span> <span class='hs-keyword'>qualified</span> <span class='hs-conid'>Data</span><span class='hs-varop'>.</span><span class='hs-conid'>Map</span> <span class='hs-keyword'>as</span> <span class='hs-conid'>Map</span>
+<a name="line-17"></a>  <span class='hs-keyword'>import</span> <span class='hs-conid'>GHC</span><span class='hs-varop'>.</span><span class='hs-conid'>Real</span> <span class='hs-layout'>(</span><span class='hs-varid'>infinity</span><span class='hs-layout'>)</span>
+<a name="line-18"></a>
+<a name="line-19"></a>
+<a name="line-20"></a>  <span class='hs-keyword'>import</span> <span class='hs-conid'>Parcial2</span><span class='hs-varop'>.</span><span class='hs-conid'>ReadLabyrinth</span>
+<a name="line-21"></a>  <span class='hs-keyword'>import</span> <span class='hs-conid'>GeneticAlgorithm</span>
+<a name="line-22"></a>
+<a name="line-23"></a>  <span class='hs-keyword'>import</span> <span class='hs-conid'>System</span><span class='hs-varop'>.</span><span class='hs-conid'>Random</span>
 </pre>\end{code}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -75,36 +80,36 @@ nodos --- un conjunto de puntos (con posiciones correspondientes);
 aristas --- la existencia de rutas directas.
 
 \begin{code}
-<pre><a name="line-22"></a>  <span class='hs-keyword'>data</span> <span class='hs-conid'>Labyrinth</span> <span class='hs-varid'>point</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Labyrinth</span> <span class='hs-layout'>{</span>
-<a name="line-23"></a>        <span class='hs-varid'>nodes</span>   <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Set</span> <span class='hs-varid'>point</span><span class='hs-layout'>,</span>
-<a name="line-24"></a>        <span class='hs-varid'>edges</span>   <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Set</span> <span class='hs-layout'>(</span><span class='hs-varid'>point</span><span class='hs-layout'>,</span> <span class='hs-varid'>point</span><span class='hs-layout'>)</span><span class='hs-layout'>,</span>
-<a name="line-25"></a>        <span class='hs-varid'>initial</span> <span class='hs-keyglyph'>::</span> <span class='hs-varid'>point</span><span class='hs-layout'>,</span>
-<a name="line-26"></a>        <span class='hs-varid'>target</span>  <span class='hs-keyglyph'>::</span> <span class='hs-varid'>point</span>
-<a name="line-27"></a>      <span class='hs-layout'>}</span>
-<a name="line-28"></a>
-<a name="line-29"></a>  <span class='hs-varid'>edgeOf</span> <span class='hs-varid'>p</span> <span class='hs-varid'>l</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>any</span> <span class='hs-layout'>(</span><span class='hs-varop'>`member`</span> <span class='hs-varid'>edges</span> <span class='hs-varid'>l</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>[</span><span class='hs-varid'>p</span><span class='hs-layout'>,</span> <span class='hs-varid'>swap</span> <span class='hs-varid'>p</span><span class='hs-keyglyph'>]</span>
+<pre><a name="line-24"></a>  <span class='hs-keyword'>data</span> <span class='hs-conid'>Labyrinth</span> <span class='hs-varid'>point</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Labyrinth</span> <span class='hs-layout'>{</span>
+<a name="line-25"></a>        <span class='hs-varid'>nodes</span>   <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Set</span> <span class='hs-varid'>point</span><span class='hs-layout'>,</span>
+<a name="line-26"></a>        <span class='hs-varid'>edges</span>   <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Set</span> <span class='hs-layout'>(</span><span class='hs-varid'>point</span><span class='hs-layout'>,</span> <span class='hs-varid'>point</span><span class='hs-layout'>)</span><span class='hs-layout'>,</span>
+<a name="line-27"></a>        <span class='hs-varid'>initial</span> <span class='hs-keyglyph'>::</span> <span class='hs-varid'>point</span><span class='hs-layout'>,</span>
+<a name="line-28"></a>        <span class='hs-varid'>target</span>  <span class='hs-keyglyph'>::</span> <span class='hs-varid'>point</span>
+<a name="line-29"></a>      <span class='hs-layout'>}</span>
 <a name="line-30"></a>
-<a name="line-31"></a>  <span class='hs-varid'>mapPoints</span> <span class='hs-varid'>f</span> <span class='hs-layout'>(</span><span class='hs-conid'>Labyrinth</span> <span class='hs-varid'>ns</span> <span class='hs-varid'>es</span> <span class='hs-varid'>i</span> <span class='hs-varid'>t</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Labyrinth</span> <span class='hs-layout'>{</span>
-<a name="line-32"></a>        <span class='hs-varid'>nodes</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Set</span><span class='hs-varop'>.</span><span class='hs-varid'>map</span> <span class='hs-varid'>f</span> <span class='hs-varid'>ns</span><span class='hs-layout'>,</span>
-<a name="line-33"></a>        <span class='hs-varid'>edges</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Set</span><span class='hs-varop'>.</span><span class='hs-varid'>map</span> <span class='hs-layout'>(</span><span class='hs-varid'>first</span> <span class='hs-varid'>f</span> <span class='hs-varop'>.</span> <span class='hs-varid'>second</span> <span class='hs-varid'>f</span><span class='hs-layout'>)</span> <span class='hs-varid'>es</span><span class='hs-layout'>,</span>
-<a name="line-34"></a>        <span class='hs-varid'>initial</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>f</span> <span class='hs-varid'>i</span><span class='hs-layout'>,</span>
-<a name="line-35"></a>        <span class='hs-varid'>target</span>  <span class='hs-keyglyph'>=</span> <span class='hs-varid'>f</span> <span class='hs-varid'>t</span>
-<a name="line-36"></a>    <span class='hs-layout'>}</span>
-<a name="line-37"></a>
-<a name="line-38"></a>  <span class='hs-varid'>isPOI</span> <span class='hs-varid'>p</span> <span class='hs-varid'>l</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>p</span> <span class='hs-varop'>==</span> <span class='hs-varid'>initial</span> <span class='hs-varid'>l</span> <span class='hs-varop'>||</span> <span class='hs-varid'>p</span> <span class='hs-varop'>==</span> <span class='hs-varid'>target</span> <span class='hs-varid'>l</span>
+<a name="line-31"></a>  <span class='hs-varid'>edgeOf</span> <span class='hs-varid'>p</span> <span class='hs-varid'>l</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>any</span> <span class='hs-layout'>(</span><span class='hs-varop'>`member`</span> <span class='hs-varid'>edges</span> <span class='hs-varid'>l</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>[</span><span class='hs-varid'>p</span><span class='hs-layout'>,</span> <span class='hs-varid'>swap</span> <span class='hs-varid'>p</span><span class='hs-keyglyph'>]</span>
+<a name="line-32"></a>
+<a name="line-33"></a>  <span class='hs-varid'>mapPoints</span> <span class='hs-varid'>f</span> <span class='hs-layout'>(</span><span class='hs-conid'>Labyrinth</span> <span class='hs-varid'>ns</span> <span class='hs-varid'>es</span> <span class='hs-varid'>i</span> <span class='hs-varid'>t</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Labyrinth</span> <span class='hs-layout'>{</span>
+<a name="line-34"></a>        <span class='hs-varid'>nodes</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Set</span><span class='hs-varop'>.</span><span class='hs-varid'>map</span> <span class='hs-varid'>f</span> <span class='hs-varid'>ns</span><span class='hs-layout'>,</span>
+<a name="line-35"></a>        <span class='hs-varid'>edges</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Set</span><span class='hs-varop'>.</span><span class='hs-varid'>map</span> <span class='hs-layout'>(</span><span class='hs-varid'>first</span> <span class='hs-varid'>f</span> <span class='hs-varop'>.</span> <span class='hs-varid'>second</span> <span class='hs-varid'>f</span><span class='hs-layout'>)</span> <span class='hs-varid'>es</span><span class='hs-layout'>,</span>
+<a name="line-36"></a>        <span class='hs-varid'>initial</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>f</span> <span class='hs-varid'>i</span><span class='hs-layout'>,</span>
+<a name="line-37"></a>        <span class='hs-varid'>target</span>  <span class='hs-keyglyph'>=</span> <span class='hs-varid'>f</span> <span class='hs-varid'>t</span>
+<a name="line-38"></a>    <span class='hs-layout'>}</span>
 <a name="line-39"></a>
+<a name="line-40"></a>  <span class='hs-varid'>isPOI</span> <span class='hs-varid'>p</span> <span class='hs-varid'>l</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>p</span> <span class='hs-varop'>==</span> <span class='hs-varid'>initial</span> <span class='hs-varid'>l</span> <span class='hs-varop'>||</span> <span class='hs-varid'>p</span> <span class='hs-varop'>==</span> <span class='hs-varid'>target</span> <span class='hs-varid'>l</span>
+<a name="line-41"></a>
 </pre>\end{code}
 
 
 Se define la \emph{distancia directa} entre los nodos que están conectados por una arista.
 
 \begin{code}
-<pre><a name="line-40"></a>  <span class='hs-keyword'>data</span> <span class='hs-conid'>DirectDistance</span> <span class='hs-varid'>point</span> <span class='hs-varid'>dist</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>DirectDistance</span> <span class='hs-layout'>{</span>
-<a name="line-41"></a>       <span class='hs-varid'>labyrinthDist</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Labyrinth</span> <span class='hs-varid'>point</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>point</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>point</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Maybe</span> <span class='hs-varid'>dist</span>
-<a name="line-42"></a>      <span class='hs-layout'>}</span>
-<a name="line-43"></a>
-<a name="line-44"></a>  <span class='hs-varid'>mkDirectDistance</span> <span class='hs-varid'>f</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>DirectDistance</span> <span class='hs-varop'>$</span> <span class='hs-keyglyph'>\</span><span class='hs-varid'>l</span> <span class='hs-varid'>v1</span> <span class='hs-varid'>v2</span> <span class='hs-keyglyph'>-&gt;</span>
-<a name="line-45"></a>    <span class='hs-keyword'>if</span> <span class='hs-layout'>(</span><span class='hs-varid'>v1</span><span class='hs-layout'>,</span><span class='hs-varid'>v2</span><span class='hs-layout'>)</span> <span class='hs-varop'>`edgeOf`</span> <span class='hs-varid'>l</span> <span class='hs-keyword'>then</span> <span class='hs-conid'>Just</span> <span class='hs-layout'>(</span><span class='hs-varid'>f</span> <span class='hs-varid'>v1</span> <span class='hs-varid'>v2</span><span class='hs-layout'>)</span> <span class='hs-keyword'>else</span> <span class='hs-conid'>Nothing</span>
+<pre><a name="line-42"></a>  <span class='hs-keyword'>data</span> <span class='hs-conid'>DirectDistance</span> <span class='hs-varid'>point</span> <span class='hs-varid'>dist</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>DirectDistance</span> <span class='hs-layout'>{</span>
+<a name="line-43"></a>       <span class='hs-varid'>labyrinthDist</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Labyrinth</span> <span class='hs-varid'>point</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>point</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>point</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Maybe</span> <span class='hs-varid'>dist</span>
+<a name="line-44"></a>      <span class='hs-layout'>}</span>
+<a name="line-45"></a>
+<a name="line-46"></a>  <span class='hs-varid'>mkDirectDistance</span> <span class='hs-varid'>f</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>DirectDistance</span> <span class='hs-varop'>$</span> <span class='hs-keyglyph'>\</span><span class='hs-varid'>l</span> <span class='hs-varid'>v1</span> <span class='hs-varid'>v2</span> <span class='hs-keyglyph'>-&gt;</span>
+<a name="line-47"></a>    <span class='hs-keyword'>if</span> <span class='hs-layout'>(</span><span class='hs-varid'>v1</span><span class='hs-layout'>,</span><span class='hs-varid'>v2</span><span class='hs-layout'>)</span> <span class='hs-varop'>`edgeOf`</span> <span class='hs-varid'>l</span> <span class='hs-keyword'>then</span> <span class='hs-conid'>Just</span> <span class='hs-layout'>(</span><span class='hs-varid'>f</span> <span class='hs-varid'>v1</span> <span class='hs-varid'>v2</span><span class='hs-layout'>)</span> <span class='hs-keyword'>else</span> <span class='hs-conid'>Nothing</span>
 </pre>\end{code}
 
 
@@ -125,11 +130,11 @@ Su implementación se presentará a continuación.
 
 Se utiliza un mapa 2D:
 
-<pre><a name="line-46"></a><span class='hs-varop'>&gt;</span> <span class='hs-keyword'>newtype</span> <span class='hs-conid'>Point2D</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Point2D</span> <span class='hs-layout'>(</span><span class='hs-conid'>Int</span><span class='hs-layout'>,</span> <span class='hs-conid'>Int</span><span class='hs-layout'>)</span> <span class='hs-keyword'>deriving</span> <span class='hs-layout'>(</span><span class='hs-conid'>Eq</span><span class='hs-layout'>,</span> <span class='hs-conid'>Ord</span><span class='hs-layout'>)</span>
-<a name="line-47"></a><span class='hs-varop'>&gt;</span> <span class='hs-keyword'>instance</span> <span class='hs-conid'>Show</span> <span class='hs-conid'>Point2D</span> <span class='hs-keyword'>where</span>
-<a name="line-48"></a><span class='hs-varop'>&gt;</span>   <span class='hs-varid'>show</span> <span class='hs-layout'>(</span><span class='hs-conid'>Point2D</span> <span class='hs-layout'>(</span><span class='hs-varid'>x</span><span class='hs-layout'>,</span><span class='hs-varid'>y</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>show</span> <span class='hs-varid'>x</span> <span class='hs-varop'>++</span> <span class='hs-str'>"-"</span> <span class='hs-varop'>++</span> <span class='hs-varid'>show</span> <span class='hs-varid'>y</span>
+<pre><a name="line-48"></a><span class='hs-varop'>&gt;</span> <span class='hs-keyword'>newtype</span> <span class='hs-conid'>Point2D</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Point2D</span> <span class='hs-layout'>(</span><span class='hs-conid'>Int</span><span class='hs-layout'>,</span> <span class='hs-conid'>Int</span><span class='hs-layout'>)</span> <span class='hs-keyword'>deriving</span> <span class='hs-layout'>(</span><span class='hs-conid'>Eq</span><span class='hs-layout'>,</span> <span class='hs-conid'>Ord</span><span class='hs-layout'>)</span>
+<a name="line-49"></a><span class='hs-varop'>&gt;</span> <span class='hs-keyword'>instance</span> <span class='hs-conid'>Show</span> <span class='hs-conid'>Point2D</span> <span class='hs-keyword'>where</span>
+<a name="line-50"></a><span class='hs-varop'>&gt;</span>   <span class='hs-varid'>show</span> <span class='hs-layout'>(</span><span class='hs-conid'>Point2D</span> <span class='hs-layout'>(</span><span class='hs-varid'>x</span><span class='hs-layout'>,</span><span class='hs-varid'>y</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>show</span> <span class='hs-varid'>x</span> <span class='hs-varop'>++</span> <span class='hs-str'>"-"</span> <span class='hs-varop'>++</span> <span class='hs-varid'>show</span> <span class='hs-varid'>y</span>
 </pre>
-<pre><a name="line-49"></a><span class='hs-varop'>&gt;</span> <span class='hs-keyword'>type</span> <span class='hs-conid'>Labyrinth2D</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Labyrinth</span> <span class='hs-conid'>Point2D</span>
+<pre><a name="line-51"></a><span class='hs-varop'>&gt;</span> <span class='hs-keyword'>type</span> <span class='hs-conid'>Labyrinth2D</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Labyrinth</span> <span class='hs-conid'>Point2D</span>
 </pre>
 
 La lectura del archivo del mapa se encuentra en
@@ -138,34 +143,34 @@ Aquí se presenta la construcción del grafo a partir del mapa leido.
 
 
 \begin{code}
-<pre><a name="line-50"></a>  <span class='hs-varid'>readLabyrinth2D</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>FilePath</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>IO</span> <span class='hs-layout'>(</span><span class='hs-conid'>Either</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>String</span><span class='hs-keyglyph'>]</span> <span class='hs-conid'>Labyrinth2D</span><span class='hs-layout'>)</span>
-<a name="line-51"></a>
-<a name="line-52"></a>  <span class='hs-varid'>readLabyrinth2D</span> <span class='hs-varid'>file</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>build</span> <span class='hs-varop'>&lt;$&gt;</span> <span class='hs-varid'>try</span> <span class='hs-layout'>(</span><span class='hs-varid'>readFile</span> <span class='hs-varid'>file</span><span class='hs-layout'>)</span>
-<a name="line-53"></a>    <span class='hs-keyword'>where</span>
-<a name="line-54"></a>        <span class='hs-varid'>build</span> <span class='hs-layout'>(</span><span class='hs-conid'>Left</span> <span class='hs-varid'>err</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Left</span> <span class='hs-keyglyph'>[</span><span class='hs-varid'>displayException</span> <span class='hs-layout'>(</span><span class='hs-varid'>err</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>SomeException</span><span class='hs-layout'>)</span><span class='hs-keyglyph'>]</span>
-<a name="line-55"></a>        <span class='hs-varid'>build</span> <span class='hs-layout'>(</span><span class='hs-conid'>Right</span> <span class='hs-varid'>s</span><span class='hs-layout'>)</span>  <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>case</span> <span class='hs-varid'>parseLabyrinth</span> <span class='hs-varid'>s</span> <span class='hs-keyword'>of</span>
-<a name="line-56"></a>                                   <span class='hs-conid'>Left</span> <span class='hs-varid'>errS</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Left</span> <span class='hs-varid'>errS</span>
-<a name="line-57"></a>                                   <span class='hs-conid'>Right</span> <span class='hs-varid'>l</span>   <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Right</span> <span class='hs-layout'>(</span><span class='hs-varid'>build'</span> <span class='hs-varid'>l</span><span class='hs-layout'>)</span>
-<a name="line-58"></a>
-<a name="line-59"></a>        <span class='hs-varid'>build'</span> <span class='hs-layout'>(</span><span class='hs-conid'>LabyrinthDescription</span> <span class='hs-varid'>n</span> <span class='hs-varid'>conn</span> <span class='hs-layout'>(</span><span class='hs-varid'>i</span><span class='hs-layout'>,</span><span class='hs-varid'>t</span><span class='hs-layout'>)</span> <span class='hs-varid'>coords</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span>
-<a name="line-60"></a>          <span class='hs-keyword'>let</span> <span class='hs-varid'>get</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Point2D</span> <span class='hs-varop'>.</span> <span class='hs-layout'>(</span><span class='hs-varid'>coords</span> <span class='hs-varop'>!!</span><span class='hs-layout'>)</span>
-<a name="line-61"></a>          <span class='hs-keyword'>in</span> <span class='hs-conid'>Labyrinth</span>
-<a name="line-62"></a>                       <span class='hs-layout'>(</span><span class='hs-conid'>Set</span><span class='hs-varop'>.</span><span class='hs-varid'>fromList</span> <span class='hs-varop'>$</span> <span class='hs-varid'>map</span> <span class='hs-conid'>Point2D</span> <span class='hs-varid'>coords</span><span class='hs-layout'>)</span>
-<a name="line-63"></a>                       <span class='hs-layout'>(</span><span class='hs-conid'>Set</span><span class='hs-varop'>.</span><span class='hs-varid'>fromList</span> <span class='hs-varop'>$</span> <span class='hs-varid'>map</span> <span class='hs-layout'>(</span><span class='hs-varid'>first</span> <span class='hs-varid'>get</span> <span class='hs-varop'>.</span> <span class='hs-varid'>second</span> <span class='hs-varid'>get</span><span class='hs-layout'>)</span> <span class='hs-varid'>coords</span><span class='hs-layout'>)</span>
-<a name="line-64"></a>                       <span class='hs-layout'>(</span><span class='hs-varid'>get</span> <span class='hs-varid'>i</span><span class='hs-layout'>)</span>
-<a name="line-65"></a>                       <span class='hs-layout'>(</span><span class='hs-varid'>get</span> <span class='hs-varid'>t</span><span class='hs-layout'>)</span>
-<a name="line-66"></a>
+<pre><a name="line-52"></a>  <span class='hs-varid'>readLabyrinth2D</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>FilePath</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>IO</span> <span class='hs-layout'>(</span><span class='hs-conid'>Either</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>String</span><span class='hs-keyglyph'>]</span> <span class='hs-conid'>Labyrinth2D</span><span class='hs-layout'>)</span>
+<a name="line-53"></a>
+<a name="line-54"></a>  <span class='hs-varid'>readLabyrinth2D</span> <span class='hs-varid'>file</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>build</span> <span class='hs-varop'>&lt;$&gt;</span> <span class='hs-varid'>try</span> <span class='hs-layout'>(</span><span class='hs-varid'>readFile</span> <span class='hs-varid'>file</span><span class='hs-layout'>)</span>
+<a name="line-55"></a>    <span class='hs-keyword'>where</span>
+<a name="line-56"></a>        <span class='hs-varid'>build</span> <span class='hs-layout'>(</span><span class='hs-conid'>Left</span> <span class='hs-varid'>err</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Left</span> <span class='hs-keyglyph'>[</span><span class='hs-varid'>displayException</span> <span class='hs-layout'>(</span><span class='hs-varid'>err</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>SomeException</span><span class='hs-layout'>)</span><span class='hs-keyglyph'>]</span>
+<a name="line-57"></a>        <span class='hs-varid'>build</span> <span class='hs-layout'>(</span><span class='hs-conid'>Right</span> <span class='hs-varid'>s</span><span class='hs-layout'>)</span>  <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>case</span> <span class='hs-varid'>parseLabyrinth</span> <span class='hs-varid'>s</span> <span class='hs-keyword'>of</span>
+<a name="line-58"></a>                                   <span class='hs-conid'>Left</span> <span class='hs-varid'>errS</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Left</span> <span class='hs-varid'>errS</span>
+<a name="line-59"></a>                                   <span class='hs-conid'>Right</span> <span class='hs-varid'>l</span>   <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Right</span> <span class='hs-layout'>(</span><span class='hs-varid'>build'</span> <span class='hs-varid'>l</span><span class='hs-layout'>)</span>
+<a name="line-60"></a>
+<a name="line-61"></a>        <span class='hs-varid'>build'</span> <span class='hs-layout'>(</span><span class='hs-conid'>LabyrinthDescription</span> <span class='hs-varid'>n</span> <span class='hs-varid'>conn</span> <span class='hs-layout'>(</span><span class='hs-varid'>i</span><span class='hs-layout'>,</span><span class='hs-varid'>t</span><span class='hs-layout'>)</span> <span class='hs-varid'>coords</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span>
+<a name="line-62"></a>          <span class='hs-keyword'>let</span> <span class='hs-varid'>get</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Point2D</span> <span class='hs-varop'>.</span> <span class='hs-layout'>(</span><span class='hs-varid'>coords</span> <span class='hs-varop'>!!</span><span class='hs-layout'>)</span>
+<a name="line-63"></a>          <span class='hs-keyword'>in</span> <span class='hs-conid'>Labyrinth</span>
+<a name="line-64"></a>                       <span class='hs-layout'>(</span><span class='hs-conid'>Set</span><span class='hs-varop'>.</span><span class='hs-varid'>fromList</span> <span class='hs-varop'>$</span> <span class='hs-varid'>map</span> <span class='hs-conid'>Point2D</span> <span class='hs-varid'>coords</span><span class='hs-layout'>)</span>
+<a name="line-65"></a>                       <span class='hs-layout'>(</span><span class='hs-conid'>Set</span><span class='hs-varop'>.</span><span class='hs-varid'>fromList</span> <span class='hs-varop'>$</span> <span class='hs-varid'>map</span> <span class='hs-layout'>(</span><span class='hs-varid'>first</span> <span class='hs-varid'>get</span> <span class='hs-varop'>.</span> <span class='hs-varid'>second</span> <span class='hs-varid'>get</span><span class='hs-layout'>)</span> <span class='hs-varid'>coords</span><span class='hs-layout'>)</span>
+<a name="line-66"></a>                       <span class='hs-layout'>(</span><span class='hs-varid'>get</span> <span class='hs-varid'>i</span><span class='hs-layout'>)</span>
+<a name="line-67"></a>                       <span class='hs-layout'>(</span><span class='hs-varid'>get</span> <span class='hs-varid'>t</span><span class='hs-layout'>)</span>
+<a name="line-68"></a>
 </pre>\end{code}
 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\subsection{Adoptación}
+\subsection{Adaptación}
 \label{subsec:fitness}
 
 
-El valor de \emph{aptitud de adoptación} se llamará \emph{ruta} y se define
+El valor de \emph{aptitud de adaptación} se llamará \emph{ruta} y se define
 para permitir destinguir facilmente los dos tipos de rutas
 (encodificadas en los cromosomas) posibles:
 
@@ -181,13 +186,13 @@ para permitir destinguir facilmente los dos tipos de rutas
   \item \textbf{Ruta parcial}: es una ruta que
     \begin{enumerate*}[1)]
         \item contiene pares de genes adjuntos, los cuales no están conectados, o
-        \item no contiene los ambos puntos: inicio y meta.
+        \item no contiene ambos puntos: inicio y meta.
     \end{enumerate*}
 
-    Se caracteriza por los tres valores:
+    Se caracteriza por tres valores:
     \begin{enumerate}
 
-        \item \emph{valides} $= \dfrac
+        \item \emph{validez} $= \dfrac
             {\text{número de aristas existentes}}
             {\text{número de aristas total}}$.
 
@@ -204,24 +209,24 @@ para permitir destinguir facilmente los dos tipos de rutas
 
 
 \begin{code}
-<pre><a name="line-67"></a>
-<a name="line-68"></a>  <span class='hs-keyword'>data</span> <span class='hs-conid'>POI</span>  <span class='hs-keyglyph'>=</span> <span class='hs-conid'>POIInit</span> <span class='hs-keyglyph'>|</span> <span class='hs-conid'>POITarget</span> <span class='hs-keyword'>deriving</span> <span class='hs-layout'>(</span><span class='hs-conid'>Eq</span><span class='hs-layout'>,</span> <span class='hs-conid'>Ord</span><span class='hs-layout'>,</span> <span class='hs-conid'>Enum</span><span class='hs-layout'>,</span> <span class='hs-conid'>Show</span><span class='hs-layout'>)</span>
-<a name="line-69"></a>  <span class='hs-keyword'>data</span> <span class='hs-conid'>POIs</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>POINone</span> <span class='hs-keyglyph'>|</span> <span class='hs-conid'>POISome</span> <span class='hs-conid'>POI</span> <span class='hs-keyglyph'>|</span> <span class='hs-conid'>POIBoth</span> <span class='hs-keyword'>deriving</span> <span class='hs-layout'>(</span><span class='hs-conid'>Eq</span><span class='hs-layout'>,</span> <span class='hs-conid'>Show</span><span class='hs-layout'>)</span>
-<a name="line-70"></a>
-<a name="line-71"></a>  <span class='hs-keyword'>instance</span> <span class='hs-conid'>Ord</span> <span class='hs-conid'>POIs</span> <span class='hs-keyword'>where</span>
-<a name="line-72"></a>    <span class='hs-varid'>x</span> <span class='hs-varop'>`compare`</span> <span class='hs-varid'>y</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>val</span> <span class='hs-varid'>x</span> <span class='hs-varop'>`compare`</span> <span class='hs-varid'>val</span> <span class='hs-varid'>y</span> <span class='hs-keyword'>where</span>
-<a name="line-73"></a>        <span class='hs-varid'>val</span> <span class='hs-conid'>POINone</span> <span class='hs-keyglyph'>=</span> <span class='hs-num'>0</span>
-<a name="line-74"></a>        <span class='hs-varid'>val</span> <span class='hs-layout'>(</span><span class='hs-conid'>POISome</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-num'>1</span>
-<a name="line-75"></a>        <span class='hs-varid'>val</span> <span class='hs-conid'>POIBoth</span> <span class='hs-keyglyph'>=</span> <span class='hs-num'>2</span>
-<a name="line-76"></a>
-<a name="line-77"></a>
-<a name="line-78"></a>  <span class='hs-keyword'>data</span> <span class='hs-conid'>Route</span> <span class='hs-keyglyph'>=</span>
-<a name="line-79"></a>      <span class='hs-conid'>CompleteRoute</span> <span class='hs-layout'>{</span> <span class='hs-varid'>routeLength</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Double</span> <span class='hs-layout'>}</span>
-<a name="line-80"></a>    <span class='hs-keyglyph'>|</span> <span class='hs-conid'>PartialRoute</span>  <span class='hs-layout'>{</span> <span class='hs-varid'>partialValidess</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Double</span>
-<a name="line-81"></a>                    <span class='hs-layout'>,</span> <span class='hs-varid'>partialPOI</span>      <span class='hs-keyglyph'>::</span> <span class='hs-conid'>POIs</span>
-<a name="line-82"></a>                    <span class='hs-layout'>,</span> <span class='hs-varid'>partialLength</span>   <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Double</span>
-<a name="line-83"></a>                    <span class='hs-layout'>}</span>
-<a name="line-84"></a>    <span class='hs-keyword'>deriving</span> <span class='hs-layout'>(</span><span class='hs-conid'>Eq</span><span class='hs-layout'>,</span> <span class='hs-conid'>Show</span><span class='hs-layout'>)</span>
+<pre><a name="line-69"></a>
+<a name="line-70"></a>  <span class='hs-keyword'>data</span> <span class='hs-conid'>POI</span>  <span class='hs-keyglyph'>=</span> <span class='hs-conid'>POIInit</span> <span class='hs-keyglyph'>|</span> <span class='hs-conid'>POITarget</span> <span class='hs-keyword'>deriving</span> <span class='hs-layout'>(</span><span class='hs-conid'>Eq</span><span class='hs-layout'>,</span> <span class='hs-conid'>Ord</span><span class='hs-layout'>,</span> <span class='hs-conid'>Enum</span><span class='hs-layout'>,</span> <span class='hs-conid'>Show</span><span class='hs-layout'>)</span>
+<a name="line-71"></a>  <span class='hs-keyword'>data</span> <span class='hs-conid'>POIs</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>POINone</span> <span class='hs-keyglyph'>|</span> <span class='hs-conid'>POISome</span> <span class='hs-conid'>POI</span> <span class='hs-keyglyph'>|</span> <span class='hs-conid'>POIBoth</span> <span class='hs-keyword'>deriving</span> <span class='hs-layout'>(</span><span class='hs-conid'>Eq</span><span class='hs-layout'>,</span> <span class='hs-conid'>Show</span><span class='hs-layout'>)</span>
+<a name="line-72"></a>
+<a name="line-73"></a>  <span class='hs-keyword'>instance</span> <span class='hs-conid'>Ord</span> <span class='hs-conid'>POIs</span> <span class='hs-keyword'>where</span>
+<a name="line-74"></a>    <span class='hs-varid'>x</span> <span class='hs-varop'>`compare`</span> <span class='hs-varid'>y</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>val</span> <span class='hs-varid'>x</span> <span class='hs-varop'>`compare`</span> <span class='hs-varid'>val</span> <span class='hs-varid'>y</span> <span class='hs-keyword'>where</span>
+<a name="line-75"></a>        <span class='hs-varid'>val</span> <span class='hs-conid'>POINone</span> <span class='hs-keyglyph'>=</span> <span class='hs-num'>0</span>
+<a name="line-76"></a>        <span class='hs-varid'>val</span> <span class='hs-layout'>(</span><span class='hs-conid'>POISome</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-num'>1</span>
+<a name="line-77"></a>        <span class='hs-varid'>val</span> <span class='hs-conid'>POIBoth</span> <span class='hs-keyglyph'>=</span> <span class='hs-num'>2</span>
+<a name="line-78"></a>
+<a name="line-79"></a>
+<a name="line-80"></a>  <span class='hs-keyword'>data</span> <span class='hs-conid'>Route</span> <span class='hs-keyglyph'>=</span>
+<a name="line-81"></a>      <span class='hs-conid'>CompleteRoute</span> <span class='hs-layout'>{</span> <span class='hs-varid'>routeLength</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Double</span> <span class='hs-layout'>}</span>
+<a name="line-82"></a>    <span class='hs-keyglyph'>|</span> <span class='hs-conid'>PartialRoute</span>  <span class='hs-layout'>{</span> <span class='hs-varid'>partialValidess</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Double</span>
+<a name="line-83"></a>                    <span class='hs-layout'>,</span> <span class='hs-varid'>partialPOI</span>      <span class='hs-keyglyph'>::</span> <span class='hs-conid'>POIs</span>
+<a name="line-84"></a>                    <span class='hs-layout'>,</span> <span class='hs-varid'>partialLength</span>   <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Double</span>
+<a name="line-85"></a>                    <span class='hs-layout'>}</span>
+<a name="line-86"></a>    <span class='hs-keyword'>deriving</span> <span class='hs-layout'>(</span><span class='hs-conid'>Eq</span><span class='hs-layout'>,</span> <span class='hs-conid'>Show</span><span class='hs-layout'>)</span>
 </pre>\end{code}
 
 \noindent Para la busqueda de la ruta mas corta,
@@ -230,11 +235,11 @@ una lista de \emph{rutas}, ordenada ascendentamente,
 tendrá los mejores elementos en el principio.
 \begin{enumerate}
 
-  \item Cualquiera \emph{ruta completa} \underline{es minor} que cualquiera \emph{ruta parcial}.
+  \item Cualquiera \emph{ruta completa} \underline{es menor} que cualquier \emph{ruta parcial}.
         $$\forall x \in \textit{ruta completa},
                   y \in \textit{ruta parcial}     \implies x < y$$
 
-  \item Dos \emph{rutas completas} se comparan por su \underline{longitud} sin cambios de la orden.
+  \item Dos \emph{rutas completas} se comparan por su \underline{longitud} sin cambios en el orden.
         \begin{align*}
             \begin{tabular}{l}
                 \forall x \in \textit{ruta completa}, x \sim r_1\\
@@ -250,10 +255,10 @@ tendrá los mejores elementos en el principio.
 
   \item Dos \emph{rutas parciales} se comparan por sus \underline{tres componentes} en orden \\
         \underline{lexicográfico}, que quiere decir que
-        primero se comparan los primeros elementes, si son igual, se comparan los segundos, etc.,
-        hasta que la comparación da un resultado diferente de igualidad o se termina la lista.
+        primero se comparan los primeros elementos, si son igual, se comparan los segundos, etc.,
+        hasta que la comparación de un resultado diferente de igualidad o se termine la lista.
 
-        El orden de la comparación se cambia al opuesto.
+        El orden de comparación se cambia al opuesto.
 
         \begin{align*}
             \begin{aligned}
@@ -273,12 +278,12 @@ tendrá los mejores elementos en el principio.
 \end{enumerate}
 
 \begin{code}
-<pre><a name="line-85"></a>  <span class='hs-keyword'>instance</span> <span class='hs-conid'>Ord</span> <span class='hs-conid'>Route</span> <span class='hs-keyword'>where</span>
-<a name="line-86"></a>    <span class='hs-varid'>compare</span> <span class='hs-layout'>(</span><span class='hs-conid'>CompleteRoute</span> <span class='hs-varid'>x</span><span class='hs-layout'>)</span>       <span class='hs-layout'>(</span><span class='hs-conid'>CompleteRoute</span> <span class='hs-varid'>y</span><span class='hs-layout'>)</span>       <span class='hs-keyglyph'>=</span> <span class='hs-varid'>compare</span> <span class='hs-varid'>x</span> <span class='hs-varid'>y</span>
-<a name="line-87"></a>    <span class='hs-varid'>compare</span> <span class='hs-layout'>(</span><span class='hs-conid'>PartialRoute</span> <span class='hs-varid'>v1</span> <span class='hs-varid'>i1</span> <span class='hs-varid'>l1</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-conid'>PartialRoute</span> <span class='hs-varid'>v2</span> <span class='hs-varid'>i2</span> <span class='hs-varid'>l2</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span>
-<a name="line-88"></a>        <span class='hs-varid'>compare</span> <span class='hs-layout'>(</span><span class='hs-varid'>v2</span><span class='hs-layout'>,</span><span class='hs-varid'>i2</span><span class='hs-layout'>,</span><span class='hs-varid'>l2</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-varid'>v1</span><span class='hs-layout'>,</span><span class='hs-varid'>i1</span><span class='hs-layout'>,</span><span class='hs-varid'>l1</span><span class='hs-layout'>)</span>
-<a name="line-89"></a>    <span class='hs-varid'>compare</span> <span class='hs-layout'>(</span><span class='hs-conid'>CompleteRoute</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span>        <span class='hs-conid'>PartialRoute</span><span class='hs-layout'>{</span><span class='hs-layout'>}</span>         <span class='hs-keyglyph'>=</span> <span class='hs-conid'>LT</span>
-<a name="line-90"></a>    <span class='hs-varid'>compare</span>  <span class='hs-conid'>PartialRoute</span><span class='hs-layout'>{</span><span class='hs-layout'>}</span>         <span class='hs-layout'>(</span><span class='hs-conid'>CompleteRoute</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span>       <span class='hs-keyglyph'>=</span> <span class='hs-conid'>GT</span>
+<pre><a name="line-87"></a>  <span class='hs-keyword'>instance</span> <span class='hs-conid'>Ord</span> <span class='hs-conid'>Route</span> <span class='hs-keyword'>where</span>
+<a name="line-88"></a>    <span class='hs-varid'>compare</span> <span class='hs-layout'>(</span><span class='hs-conid'>CompleteRoute</span> <span class='hs-varid'>x</span><span class='hs-layout'>)</span>       <span class='hs-layout'>(</span><span class='hs-conid'>CompleteRoute</span> <span class='hs-varid'>y</span><span class='hs-layout'>)</span>       <span class='hs-keyglyph'>=</span> <span class='hs-varid'>compare</span> <span class='hs-varid'>x</span> <span class='hs-varid'>y</span>
+<a name="line-89"></a>    <span class='hs-varid'>compare</span> <span class='hs-layout'>(</span><span class='hs-conid'>PartialRoute</span> <span class='hs-varid'>v1</span> <span class='hs-varid'>i1</span> <span class='hs-varid'>l1</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-conid'>PartialRoute</span> <span class='hs-varid'>v2</span> <span class='hs-varid'>i2</span> <span class='hs-varid'>l2</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span>
+<a name="line-90"></a>        <span class='hs-varid'>compare</span> <span class='hs-layout'>(</span><span class='hs-varid'>v2</span><span class='hs-layout'>,</span><span class='hs-varid'>i2</span><span class='hs-layout'>,</span><span class='hs-varid'>l2</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-varid'>v1</span><span class='hs-layout'>,</span><span class='hs-varid'>i1</span><span class='hs-layout'>,</span><span class='hs-varid'>l1</span><span class='hs-layout'>)</span>
+<a name="line-91"></a>    <span class='hs-varid'>compare</span> <span class='hs-layout'>(</span><span class='hs-conid'>CompleteRoute</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span>        <span class='hs-conid'>PartialRoute</span><span class='hs-layout'>{</span><span class='hs-layout'>}</span>         <span class='hs-keyglyph'>=</span> <span class='hs-conid'>LT</span>
+<a name="line-92"></a>    <span class='hs-varid'>compare</span>  <span class='hs-conid'>PartialRoute</span><span class='hs-layout'>{</span><span class='hs-layout'>}</span>         <span class='hs-layout'>(</span><span class='hs-conid'>CompleteRoute</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span>       <span class='hs-keyglyph'>=</span> <span class='hs-conid'>GT</span>
 </pre>\end{code}
 
 
@@ -286,16 +291,19 @@ Función de utilidad: separación de las sub-rutas que se encuentran dentro de u
 Separa los puntos de interes como sub-rutas.
 
 \begin{code}
-<pre><a name="line-91"></a>  <span class='hs-varid'>splitRoutes</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Chromosome</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyglyph'>[</span><span class='hs-keyglyph'>[</span><span class='hs-conid'>Gene</span> <span class='hs-conid'>GA</span><span class='hs-keyglyph'>]</span><span class='hs-keyglyph'>]</span>
-<a name="line-92"></a>  <span class='hs-varid'>splitRoutes</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>splitRoutes'</span> <span class='hs-conid'>[]</span> <span class='hs-conid'>[]</span>
-<a name="line-93"></a>
-<a name="line-94"></a>  <span class='hs-varid'>splitRoutes'</span> <span class='hs-varid'>accSplit</span> <span class='hs-varid'>accRoute</span> <span class='hs-keyword'>_</span> <span class='hs-conid'>[]</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>accRoute</span><span class='hs-conop'>:</span><span class='hs-varid'>accSplit</span>
-<a name="line-95"></a>  <span class='hs-varid'>splitRoutes'</span> <span class='hs-varid'>accSplit</span> <span class='hs-varid'>accRoute</span> <span class='hs-varid'>ga</span><span class='hs-keyglyph'>@</span><span class='hs-layout'>(</span><span class='hs-conid'>GA</span> <span class='hs-varid'>l</span> <span class='hs-keyword'>_</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-varid'>h</span><span class='hs-conop'>:</span><span class='hs-varid'>t</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span>
-<a name="line-96"></a>    <span class='hs-keyword'>case</span> <span class='hs-varid'>accRoute</span> <span class='hs-keyword'>of</span>
-<a name="line-97"></a>        <span class='hs-keyword'>_</span>      <span class='hs-keyglyph'>|</span> <span class='hs-varid'>h</span> <span class='hs-varop'>`isPOI`</span> <span class='hs-varid'>l</span>          <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>splitRoutes'</span> <span class='hs-layout'>(</span><span class='hs-varid'>accRoute</span><span class='hs-conop'>:</span><span class='hs-varid'>accSplit</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>[</span><span class='hs-varid'>h</span><span class='hs-keyglyph'>]</span> <span class='hs-varid'>ga</span> <span class='hs-varid'>t</span>
-<a name="line-98"></a>        <span class='hs-varid'>prev</span><span class='hs-conop'>:</span><span class='hs-keyword'>_</span> <span class='hs-keyglyph'>|</span> <span class='hs-varid'>prev</span> <span class='hs-varop'>`isPOI`</span> <span class='hs-varid'>l</span>       <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>splitRoutes'</span> <span class='hs-layout'>(</span><span class='hs-varid'>accRoute</span><span class='hs-conop'>:</span><span class='hs-varid'>accSplit</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>[</span><span class='hs-varid'>h</span><span class='hs-keyglyph'>]</span> <span class='hs-varid'>ga</span> <span class='hs-varid'>t</span>
-<a name="line-99"></a>        <span class='hs-varid'>prev</span><span class='hs-conop'>:</span><span class='hs-keyword'>_</span> <span class='hs-keyglyph'>|</span> <span class='hs-layout'>(</span><span class='hs-varid'>prev</span><span class='hs-layout'>,</span> <span class='hs-varid'>h</span><span class='hs-layout'>)</span> <span class='hs-varop'>`edgeOf`</span> <span class='hs-varid'>l</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>splitRoutes'</span> <span class='hs-varid'>accSplit</span> <span class='hs-layout'>(</span><span class='hs-varid'>h</span><span class='hs-conop'>:</span><span class='hs-varid'>accRoute</span><span class='hs-layout'>)</span> <span class='hs-varid'>ga</span> <span class='hs-varid'>t</span>
-<a name="line-100"></a>        <span class='hs-keyword'>_</span>                             <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>splitRoutes'</span> <span class='hs-layout'>(</span><span class='hs-varid'>accRoute</span><span class='hs-conop'>:</span><span class='hs-varid'>accSplit</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>[</span><span class='hs-varid'>h</span><span class='hs-keyglyph'>]</span> <span class='hs-varid'>ga</span> <span class='hs-varid'>t</span>
+<pre><a name="line-93"></a>  <span class='hs-varid'>splitRoutes</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Labyrinth2D</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Chromosome</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyglyph'>[</span><span class='hs-keyglyph'>[</span><span class='hs-conid'>Gene</span> <span class='hs-conid'>GA</span><span class='hs-keyglyph'>]</span><span class='hs-keyglyph'>]</span>
+<a name="line-94"></a>  <span class='hs-varid'>splitRoutes</span> <span class='hs-varid'>l</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>reverse</span> <span class='hs-varop'>.</span> <span class='hs-varid'>map</span> <span class='hs-varid'>reverse</span> <span class='hs-varop'>.</span> <span class='hs-varid'>splitRoutes'</span> <span class='hs-conid'>[]</span> <span class='hs-conid'>[]</span> <span class='hs-varid'>l</span>
+<a name="line-95"></a>
+<a name="line-96"></a>  <span class='hs-varid'>splitRoutes'</span> <span class='hs-varid'>accSplit</span> <span class='hs-conid'>[]</span> <span class='hs-keyword'>_</span> <span class='hs-conid'>[]</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>accSplit</span>
+<a name="line-97"></a>  <span class='hs-varid'>splitRoutes'</span> <span class='hs-varid'>accSplit</span> <span class='hs-varid'>accRoute</span> <span class='hs-keyword'>_</span> <span class='hs-conid'>[]</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>accRoute</span><span class='hs-conop'>:</span><span class='hs-varid'>accSplit</span>
+<a name="line-98"></a>  <span class='hs-varid'>splitRoutes'</span> <span class='hs-varid'>accSplit</span> <span class='hs-varid'>accRoute</span> <span class='hs-varid'>l</span> <span class='hs-layout'>(</span><span class='hs-varid'>h</span><span class='hs-conop'>:</span><span class='hs-varid'>t</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span>
+<a name="line-99"></a>    <span class='hs-keyword'>case</span> <span class='hs-varid'>accRoute</span> <span class='hs-keyword'>of</span>
+<a name="line-100"></a>        <span class='hs-keyword'>_</span>      <span class='hs-keyglyph'>|</span> <span class='hs-varid'>h</span> <span class='hs-varop'>`isPOI`</span> <span class='hs-varid'>l</span>          <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>splitRoutes'</span> <span class='hs-layout'>(</span><span class='hs-varid'>addR</span> <span class='hs-varid'>accRoute</span> <span class='hs-varid'>accSplit</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>[</span><span class='hs-varid'>h</span><span class='hs-keyglyph'>]</span> <span class='hs-varid'>l</span> <span class='hs-varid'>t</span>
+<a name="line-101"></a>        <span class='hs-varid'>prev</span><span class='hs-conop'>:</span><span class='hs-keyword'>_</span> <span class='hs-keyglyph'>|</span> <span class='hs-varid'>prev</span> <span class='hs-varop'>`isPOI`</span> <span class='hs-varid'>l</span>       <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>splitRoutes'</span> <span class='hs-layout'>(</span><span class='hs-varid'>addR</span> <span class='hs-varid'>accRoute</span> <span class='hs-varid'>accSplit</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>[</span><span class='hs-varid'>h</span><span class='hs-keyglyph'>]</span> <span class='hs-varid'>l</span> <span class='hs-varid'>t</span>
+<a name="line-102"></a>        <span class='hs-varid'>prev</span><span class='hs-conop'>:</span><span class='hs-keyword'>_</span> <span class='hs-keyglyph'>|</span> <span class='hs-layout'>(</span><span class='hs-varid'>prev</span><span class='hs-layout'>,</span> <span class='hs-varid'>h</span><span class='hs-layout'>)</span> <span class='hs-varop'>`edgeOf`</span> <span class='hs-varid'>l</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>splitRoutes'</span> <span class='hs-varid'>accSplit</span> <span class='hs-layout'>(</span><span class='hs-varid'>h</span><span class='hs-conop'>:</span><span class='hs-varid'>accRoute</span><span class='hs-layout'>)</span> <span class='hs-varid'>l</span> <span class='hs-varid'>t</span>
+<a name="line-103"></a>        <span class='hs-keyword'>_</span>                             <span class='hs-keyglyph'>-&gt;</span> <span class='hs-varid'>splitRoutes'</span> <span class='hs-layout'>(</span><span class='hs-varid'>addR</span> <span class='hs-varid'>accRoute</span> <span class='hs-varid'>accSplit</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>[</span><span class='hs-varid'>h</span><span class='hs-keyglyph'>]</span> <span class='hs-varid'>l</span> <span class='hs-varid'>t</span>
+<a name="line-104"></a>    <span class='hs-keyword'>where</span> <span class='hs-varid'>addR</span> <span class='hs-conid'>[]</span> <span class='hs-varid'>s</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>s</span>
+<a name="line-105"></a>          <span class='hs-varid'>addR</span> <span class='hs-varid'>r</span> <span class='hs-varid'>s</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>r</span><span class='hs-conop'>:</span><span class='hs-varid'>s</span>
 </pre>\end{code}
 
 
@@ -307,28 +315,23 @@ Las pruebas del contenedor \emph{Route} se encuentran en \hstest{Parcial2-Route}
 \subsection{Algoritmo genético}
 
 \begin{code}
-<pre><a name="line-101"></a>
-<a name="line-102"></a>  <span class='hs-keyword'>data</span> <span class='hs-conid'>GAParams</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>GAParams</span><span class='hs-layout'>{</span>
-<a name="line-103"></a>      <span class='hs-varid'>gaChromGenMaxChainLen</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Int</span><span class='hs-layout'>,</span>
-<a name="line-104"></a>      <span class='hs-varid'>gaChromGenMaxChains</span>   <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Int</span>
-<a name="line-105"></a>    <span class='hs-layout'>}</span>
-<a name="line-106"></a>
-<a name="line-107"></a>  <span class='hs-keyword'>data</span> <span class='hs-conid'>GACache</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>GACache</span><span class='hs-layout'>{</span>
-<a name="line-108"></a>        <span class='hs-varid'>cacheNeighbours</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Map</span> <span class='hs-conid'>Point2D</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>Point2D</span><span class='hs-keyglyph'>]</span>
-<a name="line-109"></a>    <span class='hs-layout'>}</span>
-<a name="line-110"></a>  <span class='hs-varid'>neighboursOf</span> <span class='hs-varid'>cache</span> <span class='hs-varid'>point</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>fromMaybe</span> <span class='hs-conid'>[]</span>
-<a name="line-111"></a>                           <span class='hs-varop'>$</span> <span class='hs-conid'>Map</span><span class='hs-varop'>.</span><span class='hs-varid'>lookup</span> <span class='hs-varid'>point</span> <span class='hs-layout'>(</span><span class='hs-varid'>cacheNeighbours</span> <span class='hs-varid'>cache</span><span class='hs-layout'>)</span>
+<pre><a name="line-106"></a>
+<a name="line-107"></a>  <span class='hs-keyword'>data</span> <span class='hs-conid'>GAParams</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>GAParams</span><span class='hs-layout'>{</span>
+<a name="line-108"></a>      <span class='hs-varid'>gaChromGenMaxChainLen</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Int</span><span class='hs-layout'>,</span>
+<a name="line-109"></a>      <span class='hs-varid'>gaChromGenMaxChains</span>   <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Int</span><span class='hs-layout'>,</span>
+<a name="line-110"></a>      <span class='hs-varid'>gaPopulationSize</span>      <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Int</span>
+<a name="line-111"></a>    <span class='hs-layout'>}</span>
 <a name="line-112"></a>
-<a name="line-113"></a>  <span class='hs-keyword'>data</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>GA</span> <span class='hs-conid'>Labyrinth2D</span> <span class='hs-conid'>GAParams</span> <span class='hs-conid'>GACache</span>
-</pre>\end{code}
-
-Se usa adelante un alias de tuple \verb|(a,a)| para denotar el número de hijos de
-\emph{recombinación} (\emph{crossover}).
-
-\begin{code}
-<pre><a name="line-114"></a>  <span class='hs-keyword'>newtype</span> <span class='hs-conid'>Pair</span> <span class='hs-varid'>a</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Pair</span> <span class='hs-layout'>(</span><span class='hs-varid'>a</span><span class='hs-layout'>,</span><span class='hs-varid'>a</span><span class='hs-layout'>)</span>
-<a name="line-115"></a>  <span class='hs-varid'>unwrapPair</span> <span class='hs-layout'>(</span><span class='hs-conid'>Pair</span> <span class='hs-varid'>p</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>p</span>
-<a name="line-116"></a>  <span class='hs-varid'>pair2List</span> <span class='hs-layout'>(</span><span class='hs-conid'>Pair</span> <span class='hs-layout'>(</span><span class='hs-varid'>f</span><span class='hs-layout'>,</span><span class='hs-varid'>s</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyglyph'>[</span><span class='hs-varid'>f</span><span class='hs-layout'>,</span><span class='hs-varid'>s</span><span class='hs-keyglyph'>]</span>
+<a name="line-113"></a>  <span class='hs-keyword'>data</span> <span class='hs-conid'>GACache</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>GACache</span><span class='hs-layout'>{</span>
+<a name="line-114"></a>        <span class='hs-varid'>cacheNeighbours</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Map</span> <span class='hs-conid'>Point2D</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>Point2D</span><span class='hs-keyglyph'>]</span>
+<a name="line-115"></a>    <span class='hs-layout'>}</span>
+<a name="line-116"></a>  <span class='hs-varid'>neighboursOf</span> <span class='hs-varid'>cache</span> <span class='hs-varid'>point</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>fromMaybe</span> <span class='hs-conid'>[]</span>
+<a name="line-117"></a>                           <span class='hs-varop'>$</span> <span class='hs-conid'>Map</span><span class='hs-varop'>.</span><span class='hs-varid'>lookup</span> <span class='hs-varid'>point</span> <span class='hs-layout'>(</span><span class='hs-varid'>cacheNeighbours</span> <span class='hs-varid'>cache</span><span class='hs-layout'>)</span>
+<a name="line-118"></a>
+<a name="line-119"></a>  <span class='hs-keyword'>data</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>GA</span> <span class='hs-layout'>{</span> <span class='hs-varid'>gaLabyri</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>Labyrinth2D</span>
+<a name="line-120"></a>               <span class='hs-layout'>,</span> <span class='hs-varid'>gaParams</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>GAParams</span>
+<a name="line-121"></a>               <span class='hs-layout'>,</span> <span class='hs-varid'>gaCache</span>  <span class='hs-keyglyph'>::</span> <span class='hs-conid'>GACache</span>
+<a name="line-122"></a>               <span class='hs-layout'>}</span>
 </pre>\end{code}
 
 
@@ -349,13 +352,18 @@ $$
 
 
 \begin{code}
-<pre><a name="line-117"></a>  <span class='hs-varid'>eDist'</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>mkDirectDistance</span> <span class='hs-varop'>$</span>
-<a name="line-118"></a>          <span class='hs-keyglyph'>\</span><span class='hs-layout'>(</span><span class='hs-conid'>Point2D</span> <span class='hs-layout'>(</span><span class='hs-varid'>x1</span><span class='hs-layout'>,</span><span class='hs-varid'>x2</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-conid'>Point2D</span> <span class='hs-layout'>(</span><span class='hs-varid'>y1</span><span class='hs-layout'>,</span><span class='hs-varid'>y2</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span>
-<a name="line-119"></a>                <span class='hs-varid'>sqrt</span> <span class='hs-varop'>$</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-varop'>$</span>
-<a name="line-120"></a>                <span class='hs-varid'>abs</span><span class='hs-layout'>(</span><span class='hs-varid'>x1</span><span class='hs-comment'>-</span><span class='hs-varid'>x2</span><span class='hs-layout'>)</span><span class='hs-varop'>^</span><span class='hs-num'>2</span> <span class='hs-varop'>+</span> <span class='hs-varid'>abs</span><span class='hs-layout'>(</span><span class='hs-varid'>y1</span><span class='hs-comment'>-</span><span class='hs-varid'>y2</span><span class='hs-layout'>)</span><span class='hs-varop'>^</span><span class='hs-num'>2</span>
-<a name="line-121"></a>  <span class='hs-varid'>eDist</span>  <span class='hs-keyglyph'>=</span> <span class='hs-varid'>labyrinthDist</span> <span class='hs-varid'>eDist'</span>
+<pre><a name="line-123"></a>  <span class='hs-varid'>eDist'</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>mkDirectDistance</span> <span class='hs-varop'>$</span>
+<a name="line-124"></a>          <span class='hs-keyglyph'>\</span><span class='hs-layout'>(</span><span class='hs-conid'>Point2D</span> <span class='hs-layout'>(</span><span class='hs-varid'>x1</span><span class='hs-layout'>,</span><span class='hs-varid'>x2</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-conid'>Point2D</span> <span class='hs-layout'>(</span><span class='hs-varid'>y1</span><span class='hs-layout'>,</span><span class='hs-varid'>y2</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span>
+<a name="line-125"></a>                <span class='hs-varid'>sqrt</span> <span class='hs-varop'>$</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-varop'>$</span>
+<a name="line-126"></a>                <span class='hs-varid'>abs</span><span class='hs-layout'>(</span><span class='hs-varid'>x1</span><span class='hs-comment'>-</span><span class='hs-varid'>x2</span><span class='hs-layout'>)</span><span class='hs-varop'>^</span><span class='hs-num'>2</span> <span class='hs-varop'>+</span> <span class='hs-varid'>abs</span><span class='hs-layout'>(</span><span class='hs-varid'>y1</span><span class='hs-comment'>-</span><span class='hs-varid'>y2</span><span class='hs-layout'>)</span><span class='hs-varop'>^</span><span class='hs-num'>2</span>
+<a name="line-127"></a>  <span class='hs-varid'>eDist</span>  <span class='hs-keyglyph'>=</span> <span class='hs-varid'>labyrinthDist</span> <span class='hs-varid'>eDist'</span>
 </pre>\end{code}
 
+
+\begin{code}
+<pre><a name="line-128"></a>  <span class='hs-varid'>lPairs</span> <span class='hs-layout'>(</span><span class='hs-varid'>f</span><span class='hs-conop'>:</span><span class='hs-varid'>s</span><span class='hs-conop'>:</span><span class='hs-varid'>t</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-layout'>(</span><span class='hs-varid'>f</span><span class='hs-layout'>,</span><span class='hs-varid'>s</span><span class='hs-layout'>)</span> <span class='hs-conop'>:</span> <span class='hs-varid'>lPairs</span> <span class='hs-layout'>(</span><span class='hs-varid'>s</span><span class='hs-conop'>:</span><span class='hs-varid'>t</span><span class='hs-layout'>)</span>
+<a name="line-129"></a>  <span class='hs-varid'>lPairs</span> <span class='hs-keyword'>_</span>       <span class='hs-keyglyph'>=</span> <span class='hs-conid'>[]</span>
+</pre>\end{code}
 
 \crule{1}
 \medskip
@@ -363,7 +371,7 @@ $$
 Se define la instancia de la clase \emph{GeneticAlgorithm} para \emph{GA}
 empezando con los tipos y siguiendo con los métodos.
 
-<pre><a name="line-122"></a><span class='hs-varop'>&gt;</span> <span class='hs-keyword'>instance</span> <span class='hs-conid'>GeneticAlgorithm</span> <span class='hs-conid'>GA</span> <span class='hs-keyword'>where</span>
+<pre><a name="line-130"></a><span class='hs-varop'>&gt;</span> <span class='hs-keyword'>instance</span> <span class='hs-conid'>GeneticAlgorithm</span> <span class='hs-conid'>GA</span> <span class='hs-keyword'>where</span>
 </pre>
 \begin{enumerate}[(1)]
 
@@ -372,70 +380,68 @@ empezando con los tipos y siguiendo con los métodos.
 
       Los cromosomas no deben de tener repeticiones.
 
-<pre><a name="line-123"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>Gene</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Point2D</span>
-<a name="line-124"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>Chromosome</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>Point2D</span><span class='hs-keyglyph'>]</span>
-<a name="line-125"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- listGenes :: Chromosome ga \rightarrow$ [Gene ga]</span>
-<a name="line-126"></a><span class='hs-varop'>&gt;</span>    <span class='hs-varid'>listGenes</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>id</span>
+<pre><a name="line-131"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>Gene</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Point2D</span>
+<a name="line-132"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>Chromosome</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>Point2D</span><span class='hs-keyglyph'>]</span>
+<a name="line-133"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- listGenes :: Chromosome ga \rightarrow$ [Gene ga]</span>
+<a name="line-134"></a><span class='hs-varop'>&gt;</span>    <span class='hs-varid'>listGenes</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>id</span>
 </pre>
 \item Los valores de aptitud ya fueron descritos previamente.
 
-<pre><a name="line-127"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>Fitness</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Route</span>
+<pre><a name="line-135"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>Fitness</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Route</span>
 </pre>
+\item Dirección de búsqueda -- minimización.
 
-\item Para denotar que la operación de \emph{recombinación} preserva el tamaño de población,
-su resultado se marca como un par de hijos.
-
-<pre><a name="line-128"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>CrossoverChildren</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Pair</span>
+<pre><a name="line-136"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>Target</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Min</span>
 </pre>
-\item La información de entrada para generación de la población --- el laberinto.
+\item Información de entrada para generación de la población --- el laberinto.
 
-<pre><a name="line-129"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>InputData</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Labyrinth2D</span>
+<pre><a name="line-137"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>InputData</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Labyrinth2D</span>
 </pre>
 \item El resultado es el \underline{mejor cromosoma} obtenido.
 
-<pre><a name="line-130"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>ResultData</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Chromosome</span> <span class='hs-conid'>GA</span>
+<pre><a name="line-138"></a><span class='hs-varop'>&gt;</span>    <span class='hs-keyword'>type</span> <span class='hs-conid'>ResultData</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Chromosome</span> <span class='hs-conid'>GA</span>
 </pre>
 
+%%%%%%%%%%%%%%%%%%%%%   %%%%%%%%%%%%%%%%%%%%
 
-\item La \textbf{aptitud de adoptación} fue descrita en subsección \ref{subsec:fitness}.
+\item La \textbf{aptitud de adaptación} fue descrita en subsección \ref{subsec:fitness}.
 
 \begin{code}
-<pre><a name="line-131"></a>     <span class='hs-comment'>-- fitness :: ga \rightarrow$ Chromosome ga \rightarrow$ Fitness ga</span>
-<a name="line-132"></a>     <span class='hs-varid'>fitness</span> <span class='hs-layout'>(</span><span class='hs-conid'>GA</span> <span class='hs-varid'>l</span> <span class='hs-keyword'>_</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span> <span class='hs-varid'>genes</span> <span class='hs-keyglyph'>=</span>
-<a name="line-133"></a>                    <span class='hs-keyword'>let</span> <span class='hs-varid'>lPairs</span> <span class='hs-layout'>(</span><span class='hs-varid'>f</span><span class='hs-conop'>:</span><span class='hs-varid'>s</span><span class='hs-conop'>:</span><span class='hs-varid'>t</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-layout'>(</span><span class='hs-varid'>f</span><span class='hs-layout'>,</span><span class='hs-varid'>s</span><span class='hs-layout'>)</span> <span class='hs-conop'>:</span> <span class='hs-varid'>lPairs</span> <span class='hs-layout'>(</span><span class='hs-varid'>s</span><span class='hs-conop'>:</span><span class='hs-varid'>t</span><span class='hs-layout'>)</span>
-<a name="line-134"></a>                        <span class='hs-varid'>lPairs</span> <span class='hs-keyword'>_</span>       <span class='hs-keyglyph'>=</span> <span class='hs-conid'>[]</span>
-<a name="line-135"></a>                        <span class='hs-varid'>dists</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>map</span> <span class='hs-layout'>(</span><span class='hs-varid'>uncurry</span> <span class='hs-varop'>$</span> <span class='hs-varid'>eDist</span> <span class='hs-varid'>l</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-varid'>lPairs</span> <span class='hs-varid'>genes</span><span class='hs-layout'>)</span>
-<a name="line-136"></a>                    <span class='hs-keyword'>in</span> <span class='hs-keyword'>if</span> <span class='hs-varid'>isJust</span> <span class='hs-varop'>`all`</span> <span class='hs-varid'>dists</span>
-<a name="line-137"></a>                         <span class='hs-keyword'>then</span> <span class='hs-comment'>-- is a valid route</span>
-<a name="line-138"></a>                              <span class='hs-conid'>CompleteRoute</span> <span class='hs-varop'>.</span> <span class='hs-varid'>sum</span> <span class='hs-varop'>$</span> <span class='hs-varid'>map</span> <span class='hs-varid'>fromJust</span> <span class='hs-varid'>dists</span>
-<a name="line-139"></a>                         <span class='hs-keyword'>else</span> <span class='hs-comment'>-- is incomplete</span>
-<a name="line-140"></a>                              <span class='hs-keyword'>let</span> <span class='hs-varid'>valid</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>filter</span> <span class='hs-varid'>isJust</span> <span class='hs-varid'>dists</span>
-<a name="line-141"></a>                                  <span class='hs-varid'>v</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-layout'>(</span><span class='hs-varid'>length</span> <span class='hs-varid'>valid</span><span class='hs-layout'>)</span>
-<a name="line-142"></a>                                    <span class='hs-varop'>/</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-layout'>(</span><span class='hs-varid'>length</span> <span class='hs-varid'>dists</span><span class='hs-layout'>)</span>
-<a name="line-143"></a>                                  <span class='hs-varid'>hasInit</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>elem</span> <span class='hs-layout'>(</span><span class='hs-varid'>initial</span> <span class='hs-varid'>l</span><span class='hs-layout'>)</span> <span class='hs-varid'>genes</span>
-<a name="line-144"></a>                                  <span class='hs-varid'>hasFin</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>elem</span> <span class='hs-layout'>(</span><span class='hs-varid'>target</span> <span class='hs-varid'>l</span><span class='hs-layout'>)</span> <span class='hs-varid'>genes</span>
-<a name="line-145"></a>                                  <span class='hs-varid'>poi</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>case</span> <span class='hs-layout'>(</span><span class='hs-varid'>hasInit</span><span class='hs-layout'>,</span> <span class='hs-varid'>hasFin</span><span class='hs-layout'>)</span> <span class='hs-keyword'>of</span>
-<a name="line-146"></a>                                          <span class='hs-layout'>(</span><span class='hs-conid'>True</span><span class='hs-layout'>,</span> <span class='hs-conid'>True</span><span class='hs-layout'>)</span>  <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>POIBoth</span>
-<a name="line-147"></a>                                          <span class='hs-layout'>(</span><span class='hs-conid'>True</span><span class='hs-layout'>,</span> <span class='hs-conid'>False</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>POISome</span> <span class='hs-conid'>POIInit</span>
-<a name="line-148"></a>                                          <span class='hs-layout'>(</span><span class='hs-conid'>False</span><span class='hs-layout'>,</span> <span class='hs-conid'>True</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>POISome</span> <span class='hs-conid'>POITarget</span>
-<a name="line-149"></a>                                          <span class='hs-keyword'>_</span>             <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>POINone</span>
-<a name="line-150"></a>                                  <span class='hs-varid'>len</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>sum</span> <span class='hs-varop'>$</span> <span class='hs-varid'>map</span> <span class='hs-varid'>fromJust</span> <span class='hs-varid'>valid</span>
-<a name="line-151"></a>                                  <span class='hs-keyword'>in</span> <span class='hs-conid'>PartialRoute</span> <span class='hs-varid'>v</span> <span class='hs-varid'>poi</span> <span class='hs-varid'>len</span>
-<a name="line-152"></a>
+<pre><a name="line-139"></a>     <span class='hs-comment'>-- fitness :: ga \rightarrow$ Chromosome ga \rightarrow$ Fitness ga</span>
+<a name="line-140"></a>     <span class='hs-varid'>fitness</span> <span class='hs-layout'>(</span><span class='hs-conid'>GA</span> <span class='hs-varid'>l</span> <span class='hs-keyword'>_</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span> <span class='hs-varid'>genes</span> <span class='hs-keyglyph'>=</span>
+<a name="line-141"></a>                    <span class='hs-keyword'>let</span> <span class='hs-varid'>dists</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>map</span> <span class='hs-layout'>(</span><span class='hs-varid'>uncurry</span> <span class='hs-varop'>$</span> <span class='hs-varid'>eDist</span> <span class='hs-varid'>l</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-varid'>lPairs</span> <span class='hs-varid'>genes</span><span class='hs-layout'>)</span>
+<a name="line-142"></a>                    <span class='hs-keyword'>in</span> <span class='hs-keyword'>if</span> <span class='hs-varid'>isJust</span> <span class='hs-varop'>`all`</span> <span class='hs-varid'>dists</span>
+<a name="line-143"></a>                         <span class='hs-keyword'>then</span> <span class='hs-comment'>-- is a valid route</span>
+<a name="line-144"></a>                              <span class='hs-conid'>CompleteRoute</span> <span class='hs-varop'>.</span> <span class='hs-varid'>sum</span> <span class='hs-varop'>$</span> <span class='hs-varid'>map</span> <span class='hs-varid'>fromJust</span> <span class='hs-varid'>dists</span>
+<a name="line-145"></a>                         <span class='hs-keyword'>else</span> <span class='hs-comment'>-- is incomplete</span>
+<a name="line-146"></a>                              <span class='hs-keyword'>let</span> <span class='hs-varid'>valid</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>filter</span> <span class='hs-varid'>isJust</span> <span class='hs-varid'>dists</span>
+<a name="line-147"></a>                                  <span class='hs-varid'>v</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-layout'>(</span><span class='hs-varid'>length</span> <span class='hs-varid'>valid</span><span class='hs-layout'>)</span>
+<a name="line-148"></a>                                    <span class='hs-varop'>/</span> <span class='hs-varid'>fromIntegral</span> <span class='hs-layout'>(</span><span class='hs-varid'>length</span> <span class='hs-varid'>dists</span><span class='hs-layout'>)</span>
+<a name="line-149"></a>                                  <span class='hs-varid'>hasInit</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>elem</span> <span class='hs-layout'>(</span><span class='hs-varid'>initial</span> <span class='hs-varid'>l</span><span class='hs-layout'>)</span> <span class='hs-varid'>genes</span>
+<a name="line-150"></a>                                  <span class='hs-varid'>hasFin</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>elem</span> <span class='hs-layout'>(</span><span class='hs-varid'>target</span> <span class='hs-varid'>l</span><span class='hs-layout'>)</span> <span class='hs-varid'>genes</span>
+<a name="line-151"></a>                                  <span class='hs-varid'>poi</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>case</span> <span class='hs-layout'>(</span><span class='hs-varid'>hasInit</span><span class='hs-layout'>,</span> <span class='hs-varid'>hasFin</span><span class='hs-layout'>)</span> <span class='hs-keyword'>of</span>
+<a name="line-152"></a>                                          <span class='hs-layout'>(</span><span class='hs-conid'>True</span><span class='hs-layout'>,</span> <span class='hs-conid'>True</span><span class='hs-layout'>)</span>  <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>POIBoth</span>
+<a name="line-153"></a>                                          <span class='hs-layout'>(</span><span class='hs-conid'>True</span><span class='hs-layout'>,</span> <span class='hs-conid'>False</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>POISome</span> <span class='hs-conid'>POIInit</span>
+<a name="line-154"></a>                                          <span class='hs-layout'>(</span><span class='hs-conid'>False</span><span class='hs-layout'>,</span> <span class='hs-conid'>True</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>POISome</span> <span class='hs-conid'>POITarget</span>
+<a name="line-155"></a>                                          <span class='hs-keyword'>_</span>             <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>POINone</span>
+<a name="line-156"></a>                                  <span class='hs-varid'>len</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>sum</span> <span class='hs-varop'>$</span> <span class='hs-varid'>map</span> <span class='hs-varid'>fromJust</span> <span class='hs-varid'>valid</span>
+<a name="line-157"></a>                                  <span class='hs-keyword'>in</span> <span class='hs-conid'>PartialRoute</span> <span class='hs-varid'>v</span> <span class='hs-varid'>poi</span> <span class='hs-varid'>len</span>
+<a name="line-158"></a>
 </pre>\end{code}
 
 
+%%%%%%%%%%%%%%%%%%%%%   %%%%%%%%%%%%%%%%%%%%
 
 \item Generación de cromosomas aleatorios.
 
-\begin{figure}[h]
+\begin{figure}
     \centering
     \input{MapExampleRaw.tikz}
-    \caption{Un exemplo de mapa, inicio: 0--2, meta: 9--3.}
+    \caption{Ejemplo de mapa, inicio: 0--2, meta: 9--3.}
     \label{fig:rawMapExample}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}
     \centering
     \input{MapExampleChromosomes.tikz}
     \caption{Se presentan algunos cromosomas en el mapa.
@@ -453,126 +459,313 @@ su resultado se marca como un par de hijos.
 \noindent Para mejorar las poblaciones iniciales, las cromosomas se componen de \emph{cadenas}
 -- secuencias de genes, que son sub-rutas validas de tamaños diferentes.
 
-En la figura \ref{fig:rawMapExample} se presenta un ejemplo de un mapa y
-en la figura \ref{fig:chromosomesMapExample} se presenta un exemplo de cromosomas generados.
+En la figura \ref{fig:rawMapExample} se presenta el ejemplo de un mapa y
+en la figura \ref{fig:chromosomesMapExample} se presenta un ejemplo de cromosomas generados.
 
 \medskip
 
-<pre><a name="line-153"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- randomChromosome :: ga \rightarrow$ IO (Chromosome ga)</span>
-<a name="line-154"></a><span class='hs-varop'>&gt;</span>    <span class='hs-varid'>randomChromosome</span> <span class='hs-layout'>(</span><span class='hs-conid'>GA</span> <span class='hs-varid'>l</span> <span class='hs-varid'>params</span> <span class='hs-varid'>cache</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>do</span>
-<a name="line-155"></a><span class='hs-varop'>&gt;</span>       <span class='hs-keyword'>let</span>
+<pre><a name="line-159"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- randomChromosome :: ga \rightarrow$ IO (Chromosome ga)</span>
+<a name="line-160"></a><span class='hs-varop'>&gt;</span>    <span class='hs-varid'>randomChromosome</span> <span class='hs-layout'>(</span><span class='hs-conid'>GA</span> <span class='hs-varid'>l</span> <span class='hs-varid'>params</span> <span class='hs-varid'>cache</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>do</span>
+<a name="line-161"></a><span class='hs-varop'>&gt;</span>       <span class='hs-keyword'>let</span>
 </pre>
 
 Un gen aleatorio se selecciona entre todos los nodos del mapa, y se re-genera en caso de
-que este gen ya fue generado previamente.
+que este gen ya hubiera sido generado previamente.
 
 \begin{code}
-<pre><a name="line-156"></a>            <span class='hs-varid'>randPoint</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>first</span> <span class='hs-layout'>(</span><span class='hs-varop'>`elemAt`</span> <span class='hs-varid'>nodes</span> <span class='hs-varid'>l</span><span class='hs-layout'>)</span>
-<a name="line-157"></a>                       <span class='hs-varop'>.</span> <span class='hs-varid'>randomR</span> <span class='hs-layout'>(</span><span class='hs-num'>0</span><span class='hs-layout'>,</span> <span class='hs-varid'>length</span> <span class='hs-layout'>(</span><span class='hs-varid'>nodes</span> <span class='hs-varid'>l</span><span class='hs-layout'>)</span> <span class='hs-comment'>-</span> <span class='hs-num'>1</span><span class='hs-layout'>)</span>
-<a name="line-158"></a>            <span class='hs-varid'>rand</span> <span class='hs-varid'>prev</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>fix</span> <span class='hs-varop'>$</span>
-<a name="line-159"></a>                        <span class='hs-keyglyph'>\</span><span class='hs-varid'>f</span> <span class='hs-varid'>g</span> <span class='hs-keyglyph'>-&gt;</span>
-<a name="line-160"></a>                         <span class='hs-keyword'>let</span> <span class='hs-layout'>(</span><span class='hs-varid'>r</span><span class='hs-layout'>,</span> <span class='hs-varid'>g'</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>randPoint</span> <span class='hs-varid'>g</span>
-<a name="line-161"></a>                         <span class='hs-keyword'>in</span> <span class='hs-keyword'>if</span> <span class='hs-varid'>r</span> <span class='hs-varop'>`elem`</span> <span class='hs-varid'>prev</span>  <span class='hs-keyword'>then</span> <span class='hs-varid'>f</span> <span class='hs-varid'>g'</span> <span class='hs-keyword'>else</span> <span class='hs-layout'>(</span><span class='hs-varid'>r</span><span class='hs-layout'>,</span> <span class='hs-varid'>g'</span><span class='hs-layout'>)</span>
+<pre><a name="line-162"></a>            <span class='hs-varid'>randPoint</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>first</span> <span class='hs-layout'>(</span><span class='hs-varop'>`elemAt`</span> <span class='hs-varid'>nodes</span> <span class='hs-varid'>l</span><span class='hs-layout'>)</span>
+<a name="line-163"></a>                       <span class='hs-varop'>.</span> <span class='hs-varid'>randomR</span> <span class='hs-layout'>(</span><span class='hs-num'>0</span><span class='hs-layout'>,</span> <span class='hs-varid'>length</span> <span class='hs-layout'>(</span><span class='hs-varid'>nodes</span> <span class='hs-varid'>l</span><span class='hs-layout'>)</span> <span class='hs-comment'>-</span> <span class='hs-num'>1</span><span class='hs-layout'>)</span>
+<a name="line-164"></a>            <span class='hs-varid'>rand</span> <span class='hs-varid'>prev</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>fix</span> <span class='hs-varop'>$</span>
+<a name="line-165"></a>                        <span class='hs-keyglyph'>\</span><span class='hs-varid'>f</span> <span class='hs-varid'>g</span> <span class='hs-keyglyph'>-&gt;</span>
+<a name="line-166"></a>                         <span class='hs-keyword'>let</span> <span class='hs-layout'>(</span><span class='hs-varid'>r</span><span class='hs-layout'>,</span> <span class='hs-varid'>g'</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>randPoint</span> <span class='hs-varid'>g</span>
+<a name="line-167"></a>                         <span class='hs-keyword'>in</span> <span class='hs-keyword'>if</span> <span class='hs-varid'>r</span> <span class='hs-varop'>`elem`</span> <span class='hs-varid'>prev</span>  <span class='hs-keyword'>then</span> <span class='hs-varid'>f</span> <span class='hs-varid'>g'</span> <span class='hs-keyword'>else</span> <span class='hs-layout'>(</span><span class='hs-varid'>r</span><span class='hs-layout'>,</span> <span class='hs-varid'>g'</span><span class='hs-layout'>)</span>
 </pre>\end{code}
 
-Se empieza con generación del primer punto
+Se empieza con la generación del primer punto
 
 \begin{code}
-<pre><a name="line-162"></a>            <span class='hs-varid'>randChain</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>StdGen</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Int</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>Point2D</span><span class='hs-keyglyph'>]</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>Point2D</span><span class='hs-keyglyph'>]</span>
-<a name="line-163"></a>            <span class='hs-varid'>randChain</span> <span class='hs-varid'>g'</span> <span class='hs-varid'>len</span> <span class='hs-varid'>prev</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>nextRand</span> <span class='hs-keyglyph'>[</span><span class='hs-varid'>first'</span><span class='hs-keyglyph'>]</span> <span class='hs-varid'>g''</span>
-<a name="line-164"></a>                <span class='hs-keyword'>where</span> <span class='hs-layout'>(</span><span class='hs-varid'>first'</span><span class='hs-layout'>,</span> <span class='hs-varid'>g''</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>rand</span> <span class='hs-varid'>prev</span> <span class='hs-varid'>g'</span>
+<pre><a name="line-168"></a>            <span class='hs-varid'>randChain</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>StdGen</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-conid'>Int</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>Point2D</span><span class='hs-keyglyph'>]</span> <span class='hs-keyglyph'>-&gt;</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>Point2D</span><span class='hs-keyglyph'>]</span>
+<a name="line-169"></a>            <span class='hs-varid'>randChain</span> <span class='hs-varid'>g'</span> <span class='hs-varid'>len</span> <span class='hs-varid'>prev</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>nextRand</span> <span class='hs-keyglyph'>[</span><span class='hs-varid'>first'</span><span class='hs-keyglyph'>]</span> <span class='hs-varid'>g''</span>
+<a name="line-170"></a>                <span class='hs-keyword'>where</span> <span class='hs-layout'>(</span><span class='hs-varid'>first'</span><span class='hs-layout'>,</span> <span class='hs-varid'>g''</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>rand</span> <span class='hs-varid'>prev</span> <span class='hs-varid'>g'</span>
 </pre>\end{code}
 
-Los demas de genes se seleccionan desde los vicinos (los nodos directamente connectados)
+Los demas genes se seleccionan desde los vecinos (los nodos directamente conectados)
 del gen previo.
 
 Durante la generación de cadenas se consideran las cadenas, generadas previamente,
 para no permitir repeticiones de genes.
 
-Si se encontró una repetición, se intente
+Si se encontró una repetición, se intenta
 \begin{enumerate*}[1)]
-  \item buscar a otro vicino, que no se repita;
+  \item buscar otro vecino, que no se repita;
   \item cambiar la dirección de generación;
-  \item buscar a otro vicino, con la nueva dirección.
+  \item buscar a otro vecino, con la nueva dirección.
 \end{enumerate*}
-En caso que todas las opciones fallan, la cadena se queda de tamaño incompleto.
+En caso que todas las opciones fallen, la cadena se queda de tamaño incompleto.
 
 
 \begin{code}
-<pre><a name="line-165"></a>                      <span class='hs-varid'>oneOf</span> <span class='hs-varid'>xs</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>first</span> <span class='hs-layout'>(</span><span class='hs-varid'>xs</span> <span class='hs-varop'>!!</span><span class='hs-layout'>)</span> <span class='hs-varop'>.</span> <span class='hs-varid'>randomR</span><span class='hs-layout'>(</span><span class='hs-num'>0</span><span class='hs-layout'>,</span> <span class='hs-varid'>length</span> <span class='hs-varid'>xs</span> <span class='hs-comment'>-</span> <span class='hs-num'>1</span><span class='hs-layout'>)</span>
-<a name="line-166"></a>                      <span class='hs-varid'>nextRand</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>nextRand'</span> <span class='hs-conid'>False</span> <span class='hs-num'>0</span>
-<a name="line-167"></a>                      <span class='hs-varid'>nextRand'</span> <span class='hs-varid'>rev</span> <span class='hs-varid'>c</span> <span class='hs-varid'>chain</span><span class='hs-keyglyph'>@</span><span class='hs-layout'>(</span><span class='hs-varid'>h</span><span class='hs-conop'>:</span><span class='hs-varid'>t</span><span class='hs-layout'>)</span> <span class='hs-varid'>g</span> <span class='hs-keyglyph'>=</span>
-<a name="line-168"></a>                          <span class='hs-keyword'>let</span> <span class='hs-varid'>neighbours</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>cache</span> <span class='hs-varop'>`neighboursOf`</span> <span class='hs-varid'>h</span>
-<a name="line-169"></a>                              <span class='hs-layout'>(</span><span class='hs-varid'>r</span><span class='hs-layout'>,</span> <span class='hs-varid'>g'</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>oneOf</span> <span class='hs-varid'>neighbours</span> <span class='hs-layout'>(</span><span class='hs-varid'>g</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>StdGen</span><span class='hs-layout'>)</span>
-<a name="line-170"></a>                              <span class='hs-varid'>moreTries</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>c</span> <span class='hs-varop'>&lt;</span> <span class='hs-num'>5</span> <span class='hs-varop'>*</span> <span class='hs-varid'>length</span> <span class='hs-varid'>neighbours</span>
-<a name="line-171"></a>                          <span class='hs-keyword'>in</span> <span class='hs-keyword'>if</span> <span class='hs-varid'>r</span> <span class='hs-varop'>`elem`</span> <span class='hs-varid'>prev</span> <span class='hs-varop'>||</span> <span class='hs-varid'>r</span> <span class='hs-varop'>`elem`</span> <span class='hs-varid'>chain</span>
-<a name="line-172"></a>                           <span class='hs-keyword'>then</span> <span class='hs-comment'>-- connected to some other chain</span>
-<a name="line-173"></a>                                <span class='hs-keyword'>if</span> <span class='hs-varid'>moreTries</span> <span class='hs-keyword'>then</span> <span class='hs-varid'>nextRand'</span> <span class='hs-varid'>rev</span> <span class='hs-layout'>(</span><span class='hs-varid'>c</span><span class='hs-varop'>+</span><span class='hs-num'>1</span><span class='hs-layout'>)</span> <span class='hs-varid'>chain</span> <span class='hs-varid'>g'</span> <span class='hs-comment'>-- 1 / 3</span>
-<a name="line-174"></a>                                             <span class='hs-keyword'>else</span> <span class='hs-keyword'>if</span> <span class='hs-varid'>rev</span> <span class='hs-keyword'>then</span> <span class='hs-varid'>chain</span> <span class='hs-comment'>-- incomplete</span>
-<a name="line-175"></a>                                                         <span class='hs-keyword'>else</span> <span class='hs-varid'>nextRand'</span> <span class='hs-conid'>True</span> <span class='hs-layout'>(</span><span class='hs-varid'>c</span><span class='hs-varop'>+</span><span class='hs-num'>1</span><span class='hs-layout'>)</span> <span class='hs-varid'>chain</span> <span class='hs-varid'>g'</span> <span class='hs-comment'>-- 2</span>
-<a name="line-176"></a>                           <span class='hs-keyword'>else</span> <span class='hs-keyword'>if</span> <span class='hs-varid'>length</span> <span class='hs-varid'>chain</span> <span class='hs-varop'>+</span> <span class='hs-num'>1</span> <span class='hs-varop'>==</span> <span class='hs-varid'>len</span>
-<a name="line-177"></a>                            <span class='hs-keyword'>then</span> <span class='hs-varid'>r</span><span class='hs-conop'>:</span><span class='hs-varid'>chain</span> <span class='hs-comment'>-- return</span>
-<a name="line-178"></a>                            <span class='hs-keyword'>else</span> <span class='hs-varid'>nextRand'</span> <span class='hs-varid'>rev</span> <span class='hs-varid'>c</span> <span class='hs-layout'>(</span><span class='hs-varid'>r</span><span class='hs-conop'>:</span><span class='hs-varid'>chain</span><span class='hs-layout'>)</span> <span class='hs-varid'>g'</span> <span class='hs-comment'>-- next</span>
+<pre><a name="line-171"></a>                      <span class='hs-varid'>oneOf</span> <span class='hs-varid'>xs</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>first</span> <span class='hs-layout'>(</span><span class='hs-varid'>xs</span> <span class='hs-varop'>!!</span><span class='hs-layout'>)</span> <span class='hs-varop'>.</span> <span class='hs-varid'>randomR</span><span class='hs-layout'>(</span><span class='hs-num'>0</span><span class='hs-layout'>,</span> <span class='hs-varid'>length</span> <span class='hs-varid'>xs</span> <span class='hs-comment'>-</span> <span class='hs-num'>1</span><span class='hs-layout'>)</span>
+<a name="line-172"></a>                      <span class='hs-varid'>nextRand</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>nextRand'</span> <span class='hs-conid'>False</span> <span class='hs-num'>0</span>
+<a name="line-173"></a>                      <span class='hs-varid'>nextRand'</span> <span class='hs-varid'>rev</span> <span class='hs-varid'>c</span> <span class='hs-varid'>chain</span><span class='hs-keyglyph'>@</span><span class='hs-layout'>(</span><span class='hs-varid'>h</span><span class='hs-conop'>:</span><span class='hs-varid'>t</span><span class='hs-layout'>)</span> <span class='hs-varid'>g</span> <span class='hs-keyglyph'>=</span>
+<a name="line-174"></a>                          <span class='hs-keyword'>let</span> <span class='hs-varid'>neighbours</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>cache</span> <span class='hs-varop'>`neighboursOf`</span> <span class='hs-varid'>h</span>
+<a name="line-175"></a>                              <span class='hs-layout'>(</span><span class='hs-varid'>r</span><span class='hs-layout'>,</span> <span class='hs-varid'>g'</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>oneOf</span> <span class='hs-varid'>neighbours</span> <span class='hs-layout'>(</span><span class='hs-varid'>g</span> <span class='hs-keyglyph'>::</span> <span class='hs-conid'>StdGen</span><span class='hs-layout'>)</span>
+<a name="line-176"></a>                              <span class='hs-varid'>moreTries</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>c</span> <span class='hs-varop'>&lt;</span> <span class='hs-num'>5</span> <span class='hs-varop'>*</span> <span class='hs-varid'>length</span> <span class='hs-varid'>neighbours</span>
+<a name="line-177"></a>                          <span class='hs-keyword'>in</span> <span class='hs-keyword'>if</span> <span class='hs-varid'>r</span> <span class='hs-varop'>`elem`</span> <span class='hs-varid'>prev</span> <span class='hs-varop'>||</span> <span class='hs-varid'>r</span> <span class='hs-varop'>`elem`</span> <span class='hs-varid'>chain</span>
+<a name="line-178"></a>                           <span class='hs-keyword'>then</span> <span class='hs-comment'>-- connected to some other chain</span>
+<a name="line-179"></a>                                <span class='hs-keyword'>if</span> <span class='hs-varid'>moreTries</span> <span class='hs-keyword'>then</span> <span class='hs-varid'>nextRand'</span> <span class='hs-varid'>rev</span> <span class='hs-layout'>(</span><span class='hs-varid'>c</span><span class='hs-varop'>+</span><span class='hs-num'>1</span><span class='hs-layout'>)</span> <span class='hs-varid'>chain</span> <span class='hs-varid'>g'</span> <span class='hs-comment'>-- 1 / 3</span>
+<a name="line-180"></a>                                             <span class='hs-keyword'>else</span> <span class='hs-keyword'>if</span> <span class='hs-varid'>rev</span> <span class='hs-keyword'>then</span> <span class='hs-varid'>chain</span> <span class='hs-comment'>-- incomplete</span>
+<a name="line-181"></a>                                                         <span class='hs-keyword'>else</span> <span class='hs-varid'>nextRand'</span> <span class='hs-conid'>True</span> <span class='hs-layout'>(</span><span class='hs-varid'>c</span><span class='hs-varop'>+</span><span class='hs-num'>1</span><span class='hs-layout'>)</span> <span class='hs-varid'>chain</span> <span class='hs-varid'>g'</span> <span class='hs-comment'>-- 2</span>
+<a name="line-182"></a>                           <span class='hs-keyword'>else</span> <span class='hs-keyword'>if</span> <span class='hs-varid'>length</span> <span class='hs-varid'>chain</span> <span class='hs-varop'>+</span> <span class='hs-num'>1</span> <span class='hs-varop'>==</span> <span class='hs-varid'>len</span>
+<a name="line-183"></a>                            <span class='hs-keyword'>then</span> <span class='hs-varid'>r</span><span class='hs-conop'>:</span><span class='hs-varid'>chain</span> <span class='hs-comment'>-- return</span>
+<a name="line-184"></a>                            <span class='hs-keyword'>else</span> <span class='hs-varid'>nextRand'</span> <span class='hs-varid'>rev</span> <span class='hs-varid'>c</span> <span class='hs-layout'>(</span><span class='hs-varid'>r</span><span class='hs-conop'>:</span><span class='hs-varid'>chain</span><span class='hs-layout'>)</span> <span class='hs-varid'>g'</span> <span class='hs-comment'>-- next</span>
 </pre>\end{code}
 
-Se selecciona alioriamente la longetud de \emph{cadenas}.
+Se selecciona aleatoriamente la longetud de \emph{cadenas}.
 
-<pre><a name="line-179"></a><span class='hs-varop'>&gt;</span>       <span class='hs-varid'>chainLen</span> <span class='hs-keyglyph'>&lt;-</span> <span class='hs-varid'>randomRIO</span> <span class='hs-layout'>(</span><span class='hs-num'>1</span><span class='hs-layout'>,</span> <span class='hs-varid'>gaChromGenMaxChainLen</span> <span class='hs-varid'>params</span><span class='hs-layout'>)</span>
+<pre><a name="line-185"></a><span class='hs-varop'>&gt;</span>       <span class='hs-varid'>chainLen</span> <span class='hs-keyglyph'>&lt;-</span> <span class='hs-varid'>randomRIO</span> <span class='hs-layout'>(</span><span class='hs-num'>1</span><span class='hs-layout'>,</span> <span class='hs-varid'>gaChromGenMaxChainLen</span> <span class='hs-varid'>params</span><span class='hs-layout'>)</span>
 </pre>
-Se selecciona alioriamente el número de \emph{cadenas}.
+Se selecciona aleatoriamente el número de \emph{cadenas}.
 
-<pre><a name="line-180"></a><span class='hs-varop'>&gt;</span>       <span class='hs-varid'>chainCnt</span> <span class='hs-keyglyph'>&lt;-</span> <span class='hs-varid'>randomRIO</span> <span class='hs-layout'>(</span><span class='hs-num'>1</span><span class='hs-layout'>,</span> <span class='hs-varid'>gaChromGenMaxChains</span> <span class='hs-varid'>params</span><span class='hs-layout'>)</span>
+<pre><a name="line-186"></a><span class='hs-varop'>&gt;</span>       <span class='hs-varid'>chainCnt</span> <span class='hs-keyglyph'>&lt;-</span> <span class='hs-varid'>randomRIO</span> <span class='hs-layout'>(</span><span class='hs-num'>1</span><span class='hs-layout'>,</span> <span class='hs-varid'>gaChromGenMaxChains</span> <span class='hs-varid'>params</span><span class='hs-layout'>)</span>
 </pre>
 Se genera el cromosoma.
 
 \begin{code}
-<pre><a name="line-181"></a>        <span class='hs-varid'>g</span> <span class='hs-keyglyph'>&lt;-</span> <span class='hs-varid'>getStdGen</span>
-<a name="line-182"></a>        <span class='hs-keyword'>let</span> <span class='hs-varid'>f</span> <span class='hs-keyword'>_</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>randChain</span> <span class='hs-varid'>g</span> <span class='hs-varid'>chainLen</span>
-<a name="line-183"></a>        <span class='hs-varid'>return</span> <span class='hs-varop'>$</span> <span class='hs-varid'>foldr</span> <span class='hs-varid'>f</span> <span class='hs-conid'>[]</span> <span class='hs-keyglyph'>[</span><span class='hs-num'>1</span><span class='hs-keyglyph'>..</span><span class='hs-varid'>chainCnt</span><span class='hs-keyglyph'>]</span>
+<pre><a name="line-187"></a>        <span class='hs-varid'>g</span> <span class='hs-keyglyph'>&lt;-</span> <span class='hs-varid'>getStdGen</span>
+<a name="line-188"></a>        <span class='hs-keyword'>let</span> <span class='hs-varid'>f</span> <span class='hs-keyword'>_</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>randChain</span> <span class='hs-varid'>g</span> <span class='hs-varid'>chainLen</span>
+<a name="line-189"></a>        <span class='hs-varid'>return</span> <span class='hs-varop'>$</span> <span class='hs-varid'>foldr</span> <span class='hs-varid'>f</span> <span class='hs-conid'>[]</span> <span class='hs-keyglyph'>[</span><span class='hs-num'>1</span><span class='hs-keyglyph'>..</span><span class='hs-varid'>chainCnt</span><span class='hs-keyglyph'>]</span>
 </pre>\end{code}
 
 
+%%%%%%%%%%%%%%%%%%%%%   %%%%%%%%%%%%%%%%%%%%
 
 
-\item La \emph{recombinación} de cromosomas se enfoca en remplacamiento de
-      malas sub-rutas o extención de rutas existentes.
+\item La \emph{recombinación} de cromosomas se enfoca en remplacar las
+      malas sub-rutas o extender rutas existentes.
 
       Aquí solamente se define la recombinación de dos cromosomas, su selección
-      va ser descrito en la subsección \ref{subsec:gaRun}.
-
-      Se separan la rutas con función \emph{splitRoutes}
-      (fue descrita en subsección \ref{subsec:fitness}) para ambos cromosomas.
+      será descrita en la subsección \ref{subsec:gaRun}.
 
       \begin{enumerate}
-        \item Se buscan todos los puntos $x,y$, tales que son parte de una ruta dentro de un
-              de los cromosomas, pero no el otro.
-        \item
+        \item Se separan las rutas con función \emph{splitRoutes}
+              (fue descrita en subsección \ref{subsec:fitness}) para ambos cromosomas.
+
+        \item Se seleccionan los genes $\lbrace c \rbrace$, miembros de ambos cromosomas.
+
+        \item Para ambos cromosomas se encuentran \emph{sub-rutas intercambiables}:
+              \begin{align*}
+                \forall ~&x \in \lbrace c \rbrace \\
+                         &y \in \lbrace c \rbrace \quad \implies \\
+                         &
+                \begin{cases}
+                    \text{secuencia } \lbrace r_i \rbrace_{i=1}^{N_r}
+                        & \mbox{si } \begin{aligned}
+                            \forall &~r_{j-1}, r_j \in \lbrace r_i \rbrace_{i=1}^{N_r} \\
+                            \exists & \text{ arista entre } r_{j-1} \text{ y } r_j
+                          \end{alaigned} \\
+                        \lbrace\rbrace & \mbox{en otro caso}
+                \end{cases}
+              \end{align*}
+
+              Se guarda también la dirección de las sub-rutas para ambos cromosomas.
+
+        \item Las sub-rutas intercambiables se dividen dependiendo si se encuentran en ambos
+              cromosomas o solamente en uno. El último caso tiene más prioridad.
+
+              \begin{itemize}[leftmargin=2cm]
+                \item[Uno --] se ordenan por su longitud.
+                \item[Ambos --] se ordenan por la diferencia absoluta en sus dos longitudes.
+              \end{itemize}
+
+        \item Se aplica el remplazamiento para todas las rutas intercambiables ordenadas.
+              Se remplazan las sub-rutas no existentes por las existentes;
+              y se remplazan las existentes por mas cortas.
+
+              El remplazamiento se aplica solamente si
+              \begin{enumerate*}[1)]
+                \item los genes en cuestion no fueron eliminados con los remplazamientos previos;
+                \item remplazamiento no creará genes duplicados.
+              \end{enumerate*}
+
+         \item Se devuelve el par de cromosomas remplazados.
+
       \end{enumerate}
 
-<pre><a name="line-184"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- crossover :: Chromosome ga \rightarrow$ Chromosome ga</span>
-<a name="line-185"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- \qquad\qquad \rightarrow$ CrossoverChildren ga (Chromosome ga)</span>
-</pre>
+      \begin{figure}
+        \centering
+        \caption{ Recombinación de cromosomas, marcados {\color{violet} •} y {\color{orange} •}
+                  en la figura \ref{fig:chromosomesMapExample}.
+                }
+
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletOrangeSources.tikz} }
+            \caption{ Los remplazamientos. }
+            \label{fig:crossVOsrc}
+          \end{subfigure}
+        \\
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletOrangeRoute0.tikz} }
+            \caption{ Remplazamiento {\color{orange} •} $\rightarrow$ {\color{violet} •} \#1. }
+            \label{fig:crossVOr0}
+          \end{subfigure}
+        \\
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletOrangeRoute1.tikz} }
+            \caption{ Remplazamiento {\color{orange} •} $\rightarrow$ {\color{violet} •} \#2. }
+            \label{fig:crossVOr1}
+          \end{subfigure}
+        \\
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletOrangeRoute2.tikz} }
+            \caption{ Remplazamiento {\color{violet} •} $\rightarrow$ {\color{orange} •}. }
+            \label{fig:crossVOr2}
+          \end{subfigure}
+
+        \label{fig:crossVO}
+      \end{figure}
 
 
+      \begin{figure}
+        \centering
+        \caption{ Recombinación de cromosomas, marcados {\color{violet} •} y {\color{blue} •}
+                  en la figura \ref{fig:chromosomesMapExample}.
+                }
 
-<pre><a name="line-186"></a><span class='hs-varop'>&gt;</span>       <span class='hs-varid'>undefined</span>
-</pre>
-<pre><a name="line-187"></a><span class='hs-varop'>&gt;</span>       <span class='hs-varid'>undefined</span>
-</pre>
-<pre><a name="line-188"></a><span class='hs-varop'>&gt;</span>       <span class='hs-varid'>undefined</span>
-</pre>
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletBlueSources.tikz} }
+            \caption{ Los remplazamientos. }
+            \label{fig:crossVBsrc}
+          \end{subfigure}
+        \\
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletBlueRoute0.tikz} }
+            \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
+            \label{fig:crossVBr0}
+          \end{subfigure}
+        \\
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletBlueRoute1.tikz} }
+            \caption{ Remplazamiento {\color{violet} •} $\rightarrow$ {\color{blue} •}. }
+            \label{fig:crossVBr1}
+          \end{subfigure}
+        \\
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletBlueRoute2.tikz} }
+            \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
+            \label{fig:crossVBr2}
+          \end{subfigure}
+        \\
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletBlueRoute3.tikz} }
+            \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
+            \label{fig:crossVBr3}
+          \end{subfigure}
+        \\
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletBlueRoute4.tikz} }
+            \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
+            \label{fig:crossVBr4}
+          \end{subfigure}
+        \\
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletBlueRoute5.tikz} }
+            \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
+            \label{fig:crossVBr5}
+          \end{subfigure}
+        \\
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletBlueRoute6.tikz} }
+            \caption{ Remplazamiento {\color{violet} •} $\rightarrow$ {\color{blue} •}. }
+            \label{fig:crossVBr6}
+          \end{subfigure}
+        \\
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletBlueRoute7.tikz} }
+            \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
+            \label{fig:crossVBr7}
+          \end{subfigure}
+
+        \label{fig:crossVB}
+      \end{figure}
+
+\begin{code}
+<pre><a name="line-190"></a>
+<a name="line-191"></a>     <span class='hs-keyword'>type</span> <span class='hs-conid'>CrossoverDebug</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyglyph'>[</span><span class='hs-layout'>(</span>
+<a name="line-192"></a>                                <span class='hs-layout'>(</span><span class='hs-conid'>Point2D</span><span class='hs-layout'>,</span> <span class='hs-conid'>Point2D</span><span class='hs-layout'>)</span><span class='hs-layout'>,</span>
+<a name="line-193"></a>                                <span class='hs-layout'>(</span> <span class='hs-conid'>Maybe</span> <span class='hs-layout'>(</span><span class='hs-keyglyph'>[</span><span class='hs-conid'>Point2D</span><span class='hs-keyglyph'>]</span><span class='hs-layout'>,</span> <span class='hs-conid'>Bool</span><span class='hs-layout'>)</span> <span class='hs-layout'>,</span> <span class='hs-conid'>Maybe</span> <span class='hs-layout'>(</span><span class='hs-keyglyph'>[</span><span class='hs-conid'>Point2D</span><span class='hs-keyglyph'>]</span><span class='hs-layout'>,</span> <span class='hs-conid'>Bool</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
+<a name="line-194"></a>                             <span class='hs-layout'>)</span><span class='hs-keyglyph'>]</span>
+<a name="line-195"></a>
+<a name="line-196"></a>     <span class='hs-comment'>-- crossover' :: ga \rightarrow$ Chromosome ga \rightarrow$ Chromosome ga</span>
+<a name="line-197"></a>     <span class='hs-comment'>-- \rightarrow$ ((Chromosome ga, Chromosome ga), CrossoverDebug ga)</span>
+<a name="line-198"></a>
+<a name="line-199"></a>     <span class='hs-varid'>crossover'</span> <span class='hs-layout'>(</span><span class='hs-conid'>GA</span> <span class='hs-varid'>l</span> <span class='hs-keyword'>_</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span> <span class='hs-varid'>ch1</span> <span class='hs-varid'>ch2</span> <span class='hs-keyglyph'>=</span>
+<a name="line-200"></a>        <span class='hs-layout'>(</span><span class='hs-varid'>replaceRoutes</span> <span class='hs-varid'>ch1</span> <span class='hs-varid'>ch2</span> <span class='hs-varop'>&amp;&amp;&amp;</span> <span class='hs-varid'>id</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-varid'>subRoutes</span> <span class='hs-varid'>isrs</span><span class='hs-layout'>)</span>
+<a name="line-201"></a>        <span class='hs-keyword'>where</span>
+<a name="line-202"></a>        <span class='hs-varid'>rs1</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>splitRoutes</span> <span class='hs-varid'>l</span> <span class='hs-varid'>ch1</span>
+<a name="line-203"></a>        <span class='hs-varid'>rs2</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>splitRoutes</span> <span class='hs-varid'>l</span> <span class='hs-varid'>ch2</span>
+<a name="line-204"></a>
+<a name="line-205"></a>        <span class='hs-varid'>set1</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Set</span><span class='hs-varop'>.</span><span class='hs-varid'>fromList</span> <span class='hs-varid'>ch1</span>
+<a name="line-206"></a>        <span class='hs-varid'>set2</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Set</span><span class='hs-varop'>.</span><span class='hs-varid'>fromList</span> <span class='hs-varid'>ch2</span>
+<a name="line-207"></a>        <span class='hs-varid'>cs</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>Set</span><span class='hs-varop'>.</span><span class='hs-varid'>toList</span> <span class='hs-varop'>$</span> <span class='hs-conid'>Set</span><span class='hs-varop'>.</span><span class='hs-varid'>intersection</span> <span class='hs-varid'>set1</span> <span class='hs-varid'>set2</span>
+<a name="line-208"></a>
+<a name="line-209"></a>        <span class='hs-varid'>subseq</span> <span class='hs-varid'>l</span> <span class='hs-varid'>r</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>take</span> <span class='hs-layout'>(</span><span class='hs-varid'>r</span> <span class='hs-comment'>-</span> <span class='hs-varid'>l</span> <span class='hs-varop'>+</span> <span class='hs-num'>1</span><span class='hs-layout'>)</span> <span class='hs-varop'>.</span> <span class='hs-varid'>drop</span> <span class='hs-varid'>l</span>
+<a name="line-210"></a>
+<a name="line-211"></a>        <span class='hs-comment'>-- replacable sub-routes (unordered)</span>
+<a name="line-212"></a>        <span class='hs-varid'>isrs</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>do</span> <span class='hs-varid'>x</span> <span class='hs-keyglyph'>&lt;-</span> <span class='hs-varid'>cs</span>
+<a name="line-213"></a>                  <span class='hs-varid'>y</span> <span class='hs-keyglyph'>&lt;-</span> <span class='hs-varid'>cs</span>
+<a name="line-214"></a>                  <span class='hs-keyword'>let</span> <span class='hs-varid'>valid</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>any</span> <span class='hs-layout'>(</span><span class='hs-layout'>(</span><span class='hs-varop'>&amp;&amp;</span><span class='hs-layout'>)</span> <span class='hs-varop'>&lt;$&gt;</span> <span class='hs-layout'>(</span><span class='hs-varid'>x</span> <span class='hs-varop'>`elem`</span><span class='hs-layout'>)</span> <span class='hs-varop'>&lt;*&gt;</span> <span class='hs-layout'>(</span><span class='hs-varid'>y</span> <span class='hs-varop'>`elem`</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
+<a name="line-215"></a>                      <span class='hs-varid'>valid1</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>valid</span> <span class='hs-varid'>rs1</span>
+<a name="line-216"></a>                      <span class='hs-varid'>valid2</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>valid</span> <span class='hs-varid'>rs2</span>
+<a name="line-217"></a>
+<a name="line-218"></a>                      <span class='hs-varid'>valid'</span> <span class='hs-varid'>ch</span> <span class='hs-keyglyph'>=</span> <span class='hs-layout'>(</span><span class='hs-varid'>subseq</span> <span class='hs-varid'>left</span> <span class='hs-varid'>right</span> <span class='hs-varid'>ch</span><span class='hs-layout'>,</span> <span class='hs-varid'>rev</span><span class='hs-layout'>)</span>
+<a name="line-219"></a>                        <span class='hs-keyword'>where</span>
+<a name="line-220"></a>                              <span class='hs-conid'>Just</span> <span class='hs-varid'>ix</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>x</span> <span class='hs-varop'>`elemIndex`</span> <span class='hs-varid'>ch</span>
+<a name="line-221"></a>                              <span class='hs-conid'>Just</span> <span class='hs-varid'>iy</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>y</span> <span class='hs-varop'>`elemIndex`</span> <span class='hs-varid'>ch</span>
+<a name="line-222"></a>                              <span class='hs-layout'>(</span><span class='hs-varid'>left</span><span class='hs-layout'>,</span> <span class='hs-varid'>right</span><span class='hs-layout'>,</span> <span class='hs-varid'>rev</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span>
+<a name="line-223"></a>                                    <span class='hs-keyword'>if</span> <span class='hs-varid'>ix</span> <span class='hs-varop'>&lt;</span> <span class='hs-varid'>iy</span> <span class='hs-keyword'>then</span> <span class='hs-layout'>(</span><span class='hs-varid'>ix</span><span class='hs-layout'>,</span><span class='hs-varid'>iy</span><span class='hs-layout'>,</span><span class='hs-conid'>False</span><span class='hs-layout'>)</span> <span class='hs-keyword'>else</span> <span class='hs-layout'>(</span><span class='hs-varid'>iy</span><span class='hs-layout'>,</span><span class='hs-varid'>ix</span><span class='hs-layout'>,</span><span class='hs-conid'>True</span><span class='hs-layout'>)</span>
+<a name="line-224"></a>
+<a name="line-225"></a>                      <span class='hs-varid'>valid1'</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>if</span> <span class='hs-varid'>valid1</span> <span class='hs-keyword'>then</span> <span class='hs-conid'>Just</span> <span class='hs-varop'>$</span> <span class='hs-varid'>valid'</span> <span class='hs-varid'>ch1</span> <span class='hs-keyword'>else</span> <span class='hs-conid'>Nothing</span>
+<a name="line-226"></a>                      <span class='hs-varid'>valid2'</span> <span class='hs-keyglyph'>=</span> <span class='hs-keyword'>if</span> <span class='hs-varid'>valid2</span> <span class='hs-keyword'>then</span> <span class='hs-conid'>Just</span> <span class='hs-varop'>$</span> <span class='hs-varid'>valid'</span> <span class='hs-varid'>ch2</span> <span class='hs-keyword'>else</span> <span class='hs-conid'>Nothing</span>
+<a name="line-227"></a>
+<a name="line-228"></a>                  <span class='hs-keyword'>if</span> <span class='hs-varid'>x</span> <span class='hs-varop'>/=</span> <span class='hs-varid'>y</span> <span class='hs-varop'>&amp;&amp;</span> <span class='hs-layout'>(</span><span class='hs-varid'>valid1</span> <span class='hs-varop'>||</span> <span class='hs-varid'>valid2</span><span class='hs-layout'>)</span>
+<a name="line-229"></a>                    <span class='hs-keyword'>then</span> <span class='hs-varid'>return</span> <span class='hs-layout'>(</span><span class='hs-layout'>(</span><span class='hs-varid'>x</span><span class='hs-layout'>,</span><span class='hs-varid'>y</span><span class='hs-layout'>)</span><span class='hs-layout'>,</span> <span class='hs-layout'>(</span><span class='hs-varid'>valid1'</span><span class='hs-layout'>,</span> <span class='hs-varid'>valid2'</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>
+<a name="line-230"></a>                    <span class='hs-keyword'>else</span> <span class='hs-conid'>[]</span>
+<a name="line-231"></a>
+<a name="line-232"></a>        <span class='hs-varid'>sameEdge</span> <span class='hs-varid'>par1</span> <span class='hs-varid'>par2</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>par1</span> <span class='hs-varop'>==</span> <span class='hs-varid'>par2</span> <span class='hs-varop'>||</span> <span class='hs-varid'>swap</span> <span class='hs-varid'>par1</span> <span class='hs-varop'>==</span> <span class='hs-varid'>par2</span>
+<a name="line-233"></a>        <span class='hs-varid'>subRoutes</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>sortBy</span> <span class='hs-varid'>cmpSubRoute</span> <span class='hs-varop'>.</span> <span class='hs-varid'>nubBy</span> <span class='hs-layout'>(</span><span class='hs-varid'>sameEdge</span> <span class='hs-varop'>`on`</span> <span class='hs-varid'>fst</span><span class='hs-layout'>)</span>
+<a name="line-234"></a>
+<a name="line-235"></a>        <span class='hs-varid'>cmpSubRoute</span> <span class='hs-layout'>(</span><span class='hs-keyword'>_</span><span class='hs-layout'>,</span> <span class='hs-layout'>(</span><span class='hs-conid'>Just</span> <span class='hs-keyword'>_</span><span class='hs-layout'>,</span> <span class='hs-conid'>Nothing</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-layout'>(</span><span class='hs-keyword'>_</span><span class='hs-layout'>,</span> <span class='hs-layout'>(</span><span class='hs-conid'>Just</span> <span class='hs-keyword'>_</span><span class='hs-layout'>,</span> <span class='hs-conid'>Just</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>  <span class='hs-keyglyph'>=</span> <span class='hs-conid'>LT</span>
+<a name="line-236"></a>        <span class='hs-varid'>cmpSubRoute</span> <span class='hs-layout'>(</span><span class='hs-keyword'>_</span><span class='hs-layout'>,</span> <span class='hs-layout'>(</span><span class='hs-conid'>Just</span> <span class='hs-keyword'>_</span><span class='hs-layout'>,</span> <span class='hs-conid'>Just</span> <span class='hs-keyword'>_</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span>  <span class='hs-layout'>(</span><span class='hs-keyword'>_</span><span class='hs-layout'>,</span> <span class='hs-layout'>(</span><span class='hs-conid'>Just</span> <span class='hs-keyword'>_</span><span class='hs-layout'>,</span> <span class='hs-conid'>Nothing</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>GT</span>
+<a name="line-237"></a>        <span class='hs-varid'>cmpSubRoute</span> <span class='hs-layout'>(</span><span class='hs-keyword'>_</span><span class='hs-layout'>,</span> <span class='hs-varid'>p1</span><span class='hs-layout'>)</span>                <span class='hs-layout'>(</span><span class='hs-keyword'>_</span><span class='hs-layout'>,</span> <span class='hs-varid'>p2</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span>  <span class='hs-varid'>rt</span> <span class='hs-varid'>p1</span> <span class='hs-varop'>`compare`</span> <span class='hs-varid'>rt</span> <span class='hs-varid'>p2</span>
+<a name="line-238"></a>               <span class='hs-keyword'>where</span> <span class='hs-varid'>rt</span> <span class='hs-layout'>(</span><span class='hs-conid'>Just</span> <span class='hs-varid'>x</span><span class='hs-layout'>,</span>  <span class='hs-conid'>Nothing</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>length</span> <span class='hs-varid'>x</span>
+<a name="line-239"></a>                     <span class='hs-varid'>rt</span> <span class='hs-layout'>(</span><span class='hs-conid'>Nothing</span><span class='hs-layout'>,</span> <span class='hs-conid'>Just</span> <span class='hs-varid'>x</span><span class='hs-layout'>)</span>  <span class='hs-keyglyph'>=</span> <span class='hs-varid'>length</span> <span class='hs-varid'>x</span>
+<a name="line-240"></a>                     <span class='hs-varid'>rt</span> <span class='hs-layout'>(</span><span class='hs-conid'>Just</span> <span class='hs-varid'>x</span><span class='hs-layout'>,</span>  <span class='hs-conid'>Just</span> <span class='hs-varid'>y</span><span class='hs-layout'>)</span>  <span class='hs-keyglyph'>=</span> <span class='hs-varid'>abs</span> <span class='hs-layout'>(</span><span class='hs-varid'>length</span> <span class='hs-varid'>x</span> <span class='hs-comment'>-</span> <span class='hs-varid'>length</span> <span class='hs-varid'>y</span><span class='hs-layout'>)</span>
+<a name="line-241"></a>
+<a name="line-242"></a>        <span class='hs-varid'>replaceRoutes</span> <span class='hs-varid'>c1</span> <span class='hs-varid'>c2</span> <span class='hs-layout'>(</span><span class='hs-layout'>(</span><span class='hs-layout'>(</span><span class='hs-varid'>start</span><span class='hs-layout'>,</span> <span class='hs-varid'>end</span><span class='hs-layout'>)</span><span class='hs-layout'>,</span> <span class='hs-layout'>(</span><span class='hs-varid'>mbFst</span><span class='hs-layout'>,</span> <span class='hs-varid'>mbSnd</span><span class='hs-layout'>)</span><span class='hs-layout'>)</span><span class='hs-conop'>:</span><span class='hs-varid'>rt</span><span class='hs-layout'>)</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>undefined</span>
+<a name="line-243"></a>                <span class='hs-keyword'>where</span> <span class='hs-varid'>source</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>undefined</span>
+<a name="line-244"></a>                      <span class='hs-varid'>target</span> <span class='hs-keyglyph'>=</span> <span class='hs-varid'>undefined</span>
+<a name="line-245"></a>
+<a name="line-246"></a>                      <span class='hs-comment'>-- srcGenes = do x1 &lt;- start elemIndex</span>
+<a name="line-247"></a>
+<a name="line-248"></a>
+</pre>\end{code}
+
+
+%%%%%%%%%%%%%%%%%%%%%   %%%%%%%%%%%%%%%%%%%%
+
 
 \item ?
 
-<pre><a name="line-189"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- mutate :: Chromosome ga \rightarrow$ Chromosome ga</span>
+<pre><a name="line-249"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- mutate :: Chromosome ga \rightarrow$ Chromosome ga</span>
 </pre>
 \item ?
 
-<pre><a name="line-190"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- stopCriteria :: [Fitness ga] \rightarrow$ Bool</span>
+<pre><a name="line-250"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- stopCriteria :: [Fitness ga] \rightarrow$ Bool</span>
 </pre>
 \item ?
 
-<pre><a name="line-191"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- newGA :: InputData ga \rightarrow$ ga</span>
+<pre><a name="line-251"></a><span class='hs-varop'>&gt;</span>    <span class='hs-comment'>-- newGA :: InputData ga \rightarrow$ ga</span>
 </pre>
 
 \end{enumerate}
@@ -583,17 +776,20 @@ Se genera el cromosoma.
 \subsection{??? gaRun ???}
 \label{subsec:gaRun}
 
+\begin{code}
+<pre><a name="line-252"></a>
+<a name="line-253"></a>  <span class='hs-keyword'>instance</span> <span class='hs-conid'>RunGA</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>Point2D</span><span class='hs-keyglyph'>]</span> <span class='hs-keyglyph'>[</span><span class='hs-conid'>Point2D</span><span class='hs-keyglyph'>]</span> <span class='hs-conid'>Route</span> <span class='hs-conid'>Min</span> <span class='hs-keyword'>where</span>
+<a name="line-254"></a>    <span class='hs-keyword'>type</span> <span class='hs-conid'>DebugData</span> <span class='hs-conid'>GA</span> <span class='hs-keyglyph'>=</span> <span class='hs-conid'>()</span>
+<a name="line-255"></a>
+<a name="line-256"></a>
+</pre>\end{code}
+
 
 \newpage
 
 {\Huge \color{red} Esto es un reporte preliminar }
 
 \begin{note}
-  La intención es utilizar \emph{crossover} para:
-  \begin{enumerate*}[1)]
-    \item remplazar los ''hoyos'' en las rutas;
-    \item extender rutas existientes.
-  \end{enumerate*}
   La preferencia debe ser dada a las rutas que contienen un de los puntos de interes (inicio, meta).
 
   La mutación debe extender/remplacar un gen al inicio/meta si $\exists$ una ruta directa.
