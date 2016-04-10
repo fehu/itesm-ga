@@ -5,8 +5,10 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage[spanish, mexico]{babel}
-\usepackage{amsmath, hyperref, xcolor, tikz, mdframed}
+\usepackage{amsmath, hyperref, xcolor, tikz, mdframed, subcaption}
 \usepackage[shortlabels, inline]{enumitem}
+
+\usetikzlibrary{chains, fit}
 
 \usepackage{showframe}
 
@@ -29,6 +31,7 @@
 \newcommand{\hssrc} [2]{\href{\github/api/src/#1.html}{src/#2}}
 \newcommand{\hstest}[2]{\href{\github/api/tests/src/#1.html}{test/#2}}
 
+\newcommand{\resizeInput}[2][\textwidth]{\resizebox{#1}{!}{\input{#2}}}}
 
 \begin{document}
 
@@ -390,6 +393,7 @@ empezando con los tipos y siguiendo con los métodos.
 >    type ResultData GA = Chromosome GA
 
 
+%%%%%%%%%%%%%%%%%%%%%   %%%%%%%%%%%%%%%%%%%%
 
 \item La \textbf{aptitud de adaptación} fue descrita en subsección \ref{subsec:fitness}.
 
@@ -417,17 +421,18 @@ empezando con los tipos y siguiendo con los métodos.
 \end{code}
 
 
+%%%%%%%%%%%%%%%%%%%%%   %%%%%%%%%%%%%%%%%%%%
 
 \item Generación de cromosomas aleatorios.
 
-\begin{figure}[h]
+\begin{figure}
     \centering
     \input{MapExampleRaw.tikz}
     \caption{Ejemplo de mapa, inicio: 0--2, meta: 9--3.}
     \label{fig:rawMapExample}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}
     \centering
     \input{MapExampleChromosomes.tikz}
     \caption{Se presentan algunos cromosomas en el mapa.
@@ -524,6 +529,7 @@ Se genera el cromosoma.
 \end{code}
 
 
+%%%%%%%%%%%%%%%%%%%%%   %%%%%%%%%%%%%%%%%%%%
 
 
 \item La \emph{recombinación} de cromosomas se enfoca en remplacar las
@@ -576,6 +582,46 @@ Se genera el cromosoma.
          \item Se devuelve el par de cromosomas remplazados.
 
       \end{enumerate}
+
+      \begin{figure}
+        \centering
+        \caption{ Recombinación de cromosomas, marcados {\color{violet} •} y {\color{orange} •}
+                  en la figura \ref{fig:chromosomesMapExample}.
+                }
+
+
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletOrangeSources.tikz} }
+            \caption{ CrossoverVioletOrangeSources }
+            \label{fig:crossVOsrc}
+          \end{subfigure}
+        \\
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletOrangeReplacements.tikz} }
+            \caption{ CrossoverVioletOrangeReplacements }
+            \label{fig:crossVOrepl}
+          \end{subfigure}
+        \\
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletOrangeRoute1.tikz} }
+            \caption{ CrossoverVioletOrangeRoute1 }
+            \label{fig:crossVOr1}
+          \end{subfigure}
+        \\
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletOrangeRoute2.tikz} }
+            \caption{ CrossoverVioletOrangeRoute2 }
+            \label{fig:crossVOr2}
+          \end{subfigure}
+%        \\
+%          \begin{subfigure}[b]{\textwidth}
+%            \fbox{ \resizeInput{CrossoverVioletOrangeRoute3.tikz} }
+%            \caption{ ? }
+%            \label{fig:?}
+%          \end{subfigure}
+        \label{fig:?}
+      \end{figure}
+
 
 >    type CrossoverDebug GA = [((Point2D, Point2D), ( Maybe ([Point2D], Bool)
 >                                                   , Maybe ([Point2D], Bool))
@@ -637,6 +683,9 @@ Se genera el cromosoma.
 
 
 \end{code}
+
+
+%%%%%%%%%%%%%%%%%%%%%   %%%%%%%%%%%%%%%%%%%%
 
 
 \item ?

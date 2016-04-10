@@ -1,27 +1,39 @@
 #!/bin/bash
 
-RUN=dist/build/LabyrinthExample/LabyrinthExample
+Labyrinth=dist/build/LabyrinthExample/LabyrinthExample
+Chromosome=dist/build/ChromosomeExample/ChromosomeExample
 
 SRC=src/Parcial2
 
-# Clean and build the project.
-cabal clean
-cabal configure --enable-tests
-cabal build
+if [ ! "${1,,}" = "--fast" ]; then
+
+    # Clean and build the project.
+    cabal clean
+    cabal configure --enable-tests
+    cabal build
 
 
-# Generate html sources (library+test+executables)
-cabal hscolour --all
+    # Generate html sources (library+test+executables)
+    cabal hscolour --all
 
-# Generate html documentation (library only).
-cabal haddock\
-    --hyperlink-sources\
-    --html-location='http://hackage.haskell.org/packages/archive/$pkg/latest/doc/html'
+    # Generate html documentation (library only).
+    cabal haddock\
+        --hyperlink-sources\
+        --html-location='http://hackage.haskell.org/packages/archive/$pkg/latest/doc/html'
+
+fi
+
+# Generate Tikz Labyrinth examples.
+$Labyrinth --map build/MapExampleRaw.tikz.tex &&\
+$Labyrinth build/MapExampleChromosomes.tikz.tex &&\
 
 
-# Generate Tikz examples.
-$RUN --map build/MapExampleRaw.tikz.tex
-$RUN build/MapExampleChromosomes.tikz.tex
+# Generate
+$Chromosome "violet" "orange" --shift -o build/CrossoverVioletOrangeReplacements.tikz &&\
+$Chromosome "violet" "orange" --only-sources -o build/CrossoverVioletOrangeSources.tikz &&\
+$Chromosome "violet" "orange" -r 1 -o build/CrossoverVioletOrangeRoute1.tikz &&\
+$Chromosome "violet" "orange" -r 2 -o build/CrossoverVioletOrangeRoute2.tikz &&\
+# $Chromosome "violet" "orange" -r 3 -o build/CrossoverVioletOrangeRoute3.tikz  &&\
 
 
 # Generate PDF for 'Parcial2/Labyrinth.lhs'.
