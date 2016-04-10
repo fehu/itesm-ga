@@ -79,20 +79,21 @@ uncurry3 f (x,y,z) = f x y z
 tikzCrossover' :: Int -> TikzChrom -> Int -> TikzChrom
                -> [TikzAttr] -> [TikzRoute]
                -> [TikzAttr] -> [TikzRoute]
-               -> TikzExpr
+               -> [TikzExpr]
 tikzCrossover' chain1 chrom1 chain2 chrom2 rsAttrs1 rs1 rsAttrs2 rs2 =
-    TikzExpr $ extract (uncurry3 (tikzCromosome chain1) chrom1)
-            ++ ""
-             : extract (tikzRoutes rsAttrs1 chain1 rs1)
-            ++ ""
-             : extract (uncurry3 (tikzCromosome chain2) chrom2)
-            ++ ""
-             : extract (tikzRoutes rsAttrs2 chain2 rs2)
+               [ uncurry3 (tikzCromosome chain1) chrom1
+               , newline
+               , tikzRoutes rsAttrs1 chain1 rs1
+               , newline
+               , uncurry3 (tikzCromosome chain2) chrom2
+               , newline
+               , tikzRoutes rsAttrs2 chain2 rs2
+               ]
 
 
 tikzCrossover :: Bool -> Int -> TikzChrom' -> Int -> TikzChrom'
                -> [TikzRoute'] -> [TikzRoute']
-               -> TikzExpr
+               -> [TikzExpr]
 tikzCrossover multi chain1 chrom1 chain2 chrom2 rs1 rs2 =
     tikzCrossover' chain1 (c chrom1) chain2 (c chrom2) [] (r rs1 cls1) [] (r rs2 cls2)
         where c (x,y) = ([],x,y)

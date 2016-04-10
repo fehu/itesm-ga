@@ -124,6 +124,7 @@ chromosomeExamples = [
                     ]
   ]
 
+
 -----------------------------------------------------------------------------
 
 
@@ -131,6 +132,7 @@ prepareChromosomeExample :: String -> ([Point2D], [Bool])
 prepareChromosomeExample color = (map mkpnt genes, conns)
     where genes = case color `lookup` chromosomeExamples of
                         Just ps -> nub $ concatMap (\(x,y) -> [x,y]) ps
+                        _ -> error $ "No such example chromosome: " ++ color
           conns = (`edgeOf` labyrinthExample) <$> lPairs genes
 
 -----------------------------------------------------------------------------
