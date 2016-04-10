@@ -23,6 +23,7 @@ import Parcial2.Examples.Data
 
 import Control.Arrow
 
+import Data.Tuple (swap)
 import Data.List (elemIndex)
 import qualified Data.Set as Set
 
@@ -37,7 +38,12 @@ data Setup = Setup { chromX :: String
                    , file :: Maybe FilePath
 
                    , onlySources :: Bool
-                   , shift :: Bool
+
+                   , shift :: Maybe (Int, String)
+
+                   , repeatColors :: Bool
+                   , routeColorInd :: Maybe Int
+
                    , singleRoute :: Maybe Int
                    }
 
@@ -52,6 +58,8 @@ argsDescr = CArgs{
   , optionalArguments = [ Opt optOutFile
                         , Opt optOnlySources
                         , Opt optShift
+                        , Opt optRepColors
+                        , Opt optColorInd
                         , Opt optSingleRoute
                         , Opt helpArg
                         ]
@@ -62,7 +70,19 @@ optOutFile :: Optional1 Text
 optOutFile = optional "o" ["write"]  ["Output file"] ["specify output file"]
 
 optOnlySources = optionalFlag "" ["only-sources"] ["Generate only source sub-routes"]
-optShift       = optionalFlag "" ["shift"] ["Shift sub-routes overlays vertically"]
+optRepColors   = optionalFlag "" ["repeat-colors"] ["Repeat colors at each chromosome"]
+
+optShift :: Optional '[Int, Text] (Int, String)
+optShift = optional2 "" ["shift"] ["Shift sub-routes overlays vertically"]
+                                  "value" [ "a numeric value" ]
+                                  "unit" [ "one of: cm, pt, em" ]
+                     (flip $ flip (,) . ensureUnit . text2str)
+
+ensureUnit u = if u `elem` ["cm", "pt", "em"] then u
+                else error $ "unknown unit '" ++ u ++ "'"
+
+optColorInd :: Optional1 Int
+optColorInd = optional "c" ["color-index"] ["Set route color"] ["`stdColors` index"]
 
 optSingleRoute :: Optional1 Int
 optSingleRoute = optional "r" ["route"] ["Generate only the sub-route specified"]
@@ -94,12 +114,17 @@ main = do args <- getArgs
                                 Just i -> first (get i) . second (get i) $ rts
                                 _      -> rts
               pic = tikzPicture []
-                  $ uncurry (tikzCrossover (shift setup) 1 chrom1 2 chrom2) routes
+                  $ uncurry (tikzCrossover (shift setup)
+                                           (repeatColors setup)
+                                           (routeColorInd setup)
+                                           1 chrom1 2 chrom2
+                            )
+                            routes -- first reverse . second reverse $
 
               writeIt f s = do writeFile f s
                                putStrLn $ "Wrote file " ++ f
 
-          -- print setup
+          print dd
 
           withHelp appName appDescr argsDescr cargs
             $ maybe (print pic) (`writeIt` show pic) $ file setup
@@ -115,7 +140,11 @@ parseArgs' (CArgValues chroms opts optErr) =
               , file = text2str <$> opts `get` optOutFile
 
               , onlySources = opts `flagSet` optOnlySources
-              , shift       = opts `flagSet` optShift
+              , repeatColors = opts `flagSet` optRepColors
+
+              , shift = opts `get` optShift
+              , routeColorInd = opts `get` optColorInd
+
               , singleRoute = opts `get` optSingleRoute
               }
             Left errs -> exitError errs
@@ -128,21 +157,31 @@ exitError errs = error $ unlines (("[ERROR ] " ++) <$> errs)
 
 prepareRoutes' _ _ [] accFst accSnd = (accFst, accSnd)
 prepareRoutes' chrom1 chrom2 ((chain, (mbFst, mbSnd)):t) accFst accSnd =
-    prepareRoutes' chrom1 chrom2 t (rFst:accFst) (rSnd:accSnd)
-    where r mbRoute chrom = case mbRoute of Just route -> first (head &&& last) route
-                                            _          -> route' chrom
-          route' chrom = let (i1, i2) = chain
-                        in if i1 < i2 then ((i1,i2), False)
-                                      else ((i2,i1), True)
+    prepareRoutes' chrom1 chrom2 t accFst' accSnd'
+    where r mbRoute chrom = case mbRoute of Just route           -> first (head &&& last) route
+--                                            Just route@(_, True) -> first (last &&& head) route
+--                                            Just route           -> first (head &&& last) route
+                                            _                    -> route' chrom
+          route' chrom = let (Just i1, Just  i2) = first (`elemIndex` fst chrom)
+                                                 . second (`elemIndex` fst chrom)
+                                                 $ chain
+--                         in (chain, i1 < i2)
+                        in if i1 < i2 then (chain, False)
+                                      else (swap chain, True)
           rFst = r mbFst chrom1
           rSnd = r mbSnd chrom2
 
+          rFst' = r Nothing chrom1
+          rSnd' = r Nothing chrom2
+
+          (accFst', accSnd') = case (mbFst, mbSnd) of
+                (Just _, Just _) -> (rFst':rFst:accFst, rSnd:rSnd':accSnd)
+                _                -> (rFst:accFst, rSnd:accSnd)
+
 prepareRoutes [] accFst accSnd = (accFst, accSnd)
-prepareRoutes ((chain, (mbFst, mbSnd)):t) accFst accSnd =
+prepareRoutes ((_, (mbFst, mbSnd)):t) accFst accSnd =
     prepareRoutes t (acc' accFst mbFst) (acc' accSnd mbSnd)
-    where acc' a mb = case mb of Just (_, rev) -> (chain,rev):a
-                                 _             -> a
-
-
+    where acc' a mb = case mb of Just route -> first (head &&& last) route :a
+                                 _          -> a
 
 

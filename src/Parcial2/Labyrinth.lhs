@@ -589,50 +589,109 @@ Se genera el cromosoma.
                   en la figura \ref{fig:chromosomesMapExample}.
                 }
 
-
           \begin{subfigure}[b]{\textwidth}
             \fbox{ \resizeInput{CrossoverVioletOrangeSources.tikz} }
-            \caption{ CrossoverVioletOrangeSources }
+            \caption{ Los remplazamientos. }
             \label{fig:crossVOsrc}
           \end{subfigure}
         \\
           \begin{subfigure}[b]{\textwidth}
-            \fbox{ \resizeInput{CrossoverVioletOrangeReplacements.tikz} }
-            \caption{ CrossoverVioletOrangeReplacements }
-            \label{fig:crossVOrepl}
+            \fbox{ \resizeInput{CrossoverVioletOrangeRoute0.tikz} }
+            \caption{ Remplazamiento {\color{orange} •} $\rightarrow$ {\color{violet} •} \#1. }
+            \label{fig:crossVOr0}
           \end{subfigure}
         \\
           \begin{subfigure}[b]{\textwidth}
             \fbox{ \resizeInput{CrossoverVioletOrangeRoute1.tikz} }
-            \caption{ CrossoverVioletOrangeRoute1 }
+            \caption{ Remplazamiento {\color{orange} •} $\rightarrow$ {\color{violet} •} \#2. }
             \label{fig:crossVOr1}
           \end{subfigure}
         \\
           \begin{subfigure}[b]{\textwidth}
             \fbox{ \resizeInput{CrossoverVioletOrangeRoute2.tikz} }
-            \caption{ CrossoverVioletOrangeRoute2 }
+            \caption{ Remplazamiento {\color{violet} •} $\rightarrow$ {\color{orange} •}. }
             \label{fig:crossVOr2}
           \end{subfigure}
-%        \\
-%          \begin{subfigure}[b]{\textwidth}
-%            \fbox{ \resizeInput{CrossoverVioletOrangeRoute3.tikz} }
-%            \caption{ ? }
-%            \label{fig:?}
-%          \end{subfigure}
-        \label{fig:?}
+
+        \label{fig:crossVO}
       \end{figure}
 
 
->    type CrossoverDebug GA = [((Point2D, Point2D), ( Maybe ([Point2D], Bool)
->                                                   , Maybe ([Point2D], Bool))
->                             )]
+      \begin{figure}
+        \centering
+        \caption{ Recombinación de cromosomas, marcados {\color{violet} •} y {\color{blue} •}
+                  en la figura \ref{fig:chromosomesMapExample}.
+                }
 
->    -- crossover' :: ga \rightarrow$ Chromosome ga \rightarrow$ Chromosome ga
->    -- \qquad\qquad \rightarrow$ ((Chromosome ga, Chromosome ga), CrossoverDebug ga)
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletBlueSources.tikz} }
+            \caption{ Los remplazamientos. }
+            \label{fig:crossVBsrc}
+          \end{subfigure}
+        \\
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletBlueRoute0.tikz} }
+            \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
+            \label{fig:crossVBr0}
+          \end{subfigure}
+        \\
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletBlueRoute1.tikz} }
+            \caption{ Remplazamiento {\color{violet} •} $\rightarrow$ {\color{blue} •}. }
+            \label{fig:crossVBr1}
+          \end{subfigure}
+        \\
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletBlueRoute2.tikz} }
+            \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
+            \label{fig:crossVBr2}
+          \end{subfigure}
+        \\
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletBlueRoute3.tikz} }
+            \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
+            \label{fig:crossVBr3}
+          \end{subfigure}
+        \\
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletBlueRoute4.tikz} }
+            \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
+            \label{fig:crossVBr4}
+          \end{subfigure}
+        \\
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletBlueRoute5.tikz} }
+            \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
+            \label{fig:crossVBr5}
+          \end{subfigure}
+        \\
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletBlueRoute6.tikz} }
+            \caption{ Remplazamiento {\color{violet} •} $\rightarrow$ {\color{blue} •}. }
+            \label{fig:crossVBr6}
+          \end{subfigure}
+        \\
+          \begin{subfigure}[b]{\textwidth}
+            \fbox{ \resizeInput{CrossoverVioletBlueRoute7.tikz} }
+            \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
+            \label{fig:crossVBr7}
+          \end{subfigure}
+
+        \label{fig:crossVB}
+      \end{figure}
 
 \begin{code}
 
-     crossover' (GA l _ _) ch1 ch2 = (replaceRoutes ch1 ch2 &&& id) subRoutes
+     type CrossoverDebug GA = [(
+                                (Point2D, Point2D),
+                                ( Maybe ([Point2D], Bool) , Maybe ([Point2D], Bool))
+                             )]
+
+     -- crossover' :: ga \rightarrow$ Chromosome ga \rightarrow$ Chromosome ga
+     -- \rightarrow$ ((Chromosome ga, Chromosome ga), CrossoverDebug ga)
+
+     crossover' (GA l _ _) ch1 ch2 =
+        (replaceRoutes ch1 ch2 &&& id) (subRoutes isrs)
         where
         rs1 = splitRoutes l ch1
         rs2 = splitRoutes l ch2
@@ -641,7 +700,7 @@ Se genera el cromosoma.
         set2 = Set.fromList ch2
         cs = Set.toList $ Set.intersection set1 set2
 
-        subseq l r = take (r - l) . drop l
+        subseq l r = take (r - l + 1) . drop l
 
         -- replacable sub-routes (unordered)
         isrs = do x <- cs
@@ -650,12 +709,12 @@ Se genera el cromosoma.
                       valid1 = valid rs1
                       valid2 = valid rs2
 
-                      valid' ch = let Just ix = x `elemIndex` ch
-                                      Just iy = y `elemIndex` ch
-
-                                      (left, right, rev) = if ix < iy then (ix,iy,False)
-                                                                      else (iy,ix,True)
-                             in (subseq left right ch, rev)
+                      valid' ch = (subseq left right ch, rev)
+                        where
+                              Just ix = x `elemIndex` ch
+                              Just iy = y `elemIndex` ch
+                              (left, right, rev) =
+                                    if ix < iy then (ix,iy,False) else (iy,ix,True)
 
                       valid1' = if valid1 then Just $ valid' ch1 else Nothing
                       valid2' = if valid2 then Just $ valid' ch2 else Nothing
@@ -665,15 +724,14 @@ Se genera el cromosoma.
                     else []
 
         sameEdge par1 par2 = par1 == par2 || swap par1 == par2
-        subRoutes = sortBy cmpSubRoute $ nubBy (sameEdge `on` fst) isrs
+        subRoutes = sortBy cmpSubRoute . nubBy (sameEdge `on` fst)
 
         cmpSubRoute (_, (Just _, Nothing)) (_, (Just _, Just _))  = LT
         cmpSubRoute (_, (Just _, Just _))  (_, (Just _, Nothing)) = GT
-        cmpSubRoute (_, (Just (x1,_), Just (y1,_)))(_, (Just (x2,_), Just (y2,_)))=
-            abs (length x1 - length y1) `compare` abs (length x2 - length y2)
         cmpSubRoute (_, p1)                (_, p2) =  rt p1 `compare` rt p2
-                                                   where rt (Just x,  Nothing) = length x
-                                                         rt (Nothing, Just x)  = length x
+               where rt (Just x,  Nothing) = length x
+                     rt (Nothing, Just x)  = length x
+                     rt (Just x,  Just y)  = abs (length x - length y)
 
         replaceRoutes c1 c2 (((start, end), (mbFst, mbSnd)):rt) = undefined
                 where source = undefined

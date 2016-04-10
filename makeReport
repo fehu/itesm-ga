@@ -28,13 +28,24 @@ $Labyrinth --map build/MapExampleRaw.tikz.tex &&\
 $Labyrinth build/MapExampleChromosomes.tikz.tex &&\
 
 
-# Generate
-$Chromosome "violet" "orange" --shift -o build/CrossoverVioletOrangeReplacements.tikz &&\
+# GenerateTikz Crossover examples.
+
+# $Chromosome "violet" "orange" --shift --repeat-colors -o build/CrossoverVioletOrangeReplacements.tikz &&\
 $Chromosome "violet" "orange" --only-sources -o build/CrossoverVioletOrangeSources.tikz &&\
-$Chromosome "violet" "orange" -r 1 -o build/CrossoverVioletOrangeRoute1.tikz &&\
-$Chromosome "violet" "orange" -r 2 -o build/CrossoverVioletOrangeRoute2.tikz &&\
+$Chromosome "violet" "orange" --repeat-colors -r 0 -c 1 -o build/CrossoverVioletOrangeRoute0.tikz &&\
+$Chromosome "violet" "orange" --repeat-colors -r 1 -c 2 -o build/CrossoverVioletOrangeRoute1.tikz &&\
+$Chromosome "violet" "orange" --repeat-colors -r 2 -c 0 -o build/CrossoverVioletOrangeRoute2.tikz &&\
 # $Chromosome "violet" "orange" -r 3 -o build/CrossoverVioletOrangeRoute3.tikz  &&\
 
+$Chromosome "violet" "blue" --only-sources --shift 4 pt -o build/CrossoverVioletBlueSources.tikz &&\
+$Chromosome "violet" "blue" --repeat-colors -r 0 -c 2 -o build/CrossoverVioletBlueRoute0.tikz &&\
+$Chromosome "violet" "blue" --repeat-colors -r 1 -c 0 -o build/CrossoverVioletBlueRoute1.tikz &&\
+$Chromosome "violet" "blue" --repeat-colors -r 2 -c 3 -o build/CrossoverVioletBlueRoute2.tikz &&\
+$Chromosome "violet" "blue" --repeat-colors -r 3 -c 4 -o build/CrossoverVioletBlueRoute3.tikz &&\
+$Chromosome "violet" "blue" --repeat-colors -r 4 -c 5 -o build/CrossoverVioletBlueRoute4.tikz &&\
+$Chromosome "violet" "blue" --repeat-colors -r 5 -c 6 -o build/CrossoverVioletBlueRoute5.tikz &&\
+$Chromosome "violet" "blue" --repeat-colors -r 6 -c 1 -o build/CrossoverVioletBlueRoute6.tikz &&\
+$Chromosome "violet" "blue" --repeat-colors -r 7 -c 7 -o build/CrossoverVioletBlueRoute7.tikz &&\
 
 # Generate PDF for 'Parcial2/Labyrinth.lhs'.
 scripts/lhs2pdf $SRC/Labyrinth.lhs
