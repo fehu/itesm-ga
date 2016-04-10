@@ -71,12 +71,11 @@ nodos --- un conjunto de puntos (con posiciones correspondientes);
 aristas --- la existencia de rutas directas.
 
 \begin{code}
-  data Labyrinth point = Labyrinth {
-        nodes   :: Set point,
-        edges   :: Set (point, point),
-        initial :: point,
-        target  :: point
-      }
+  data Labyrinth point = Labyrinth  { nodes   :: Set point
+                                    , edges   :: Set (point, point)
+                                    , initial :: point
+                                    , target  :: point
+                                    }
 
   edgeOf p l = any (`member` edges l) [p, swap p]
 
@@ -145,11 +144,10 @@ Aquí se presenta la construcción del grafo a partir del mapa leido.
 
         build' (LabyrinthDescription n conn (i,t) coords) =
           let get = Point2D . (coords !!)
-          in Labyrinth
-                       (Set.fromList $ map Point2D coords)
-                       (Set.fromList $ map (first get . second get) coords)
-                       (get i)
-                       (get t)
+          in Labyrinth  (Set.fromList $ map Point2D coords)
+                        (Set.fromList $ map (first get . second get) coords)
+                        (get i)
+                        (get t)
 
 \end{code}
 
@@ -293,8 +291,8 @@ Separa los puntos de interes como sub-rutas.
         prev:_ | prev `isPOI` l       -> splitRoutes' (addR accRoute accSplit) [h] l t
         prev:_ | (prev, h) `edgeOf` l -> splitRoutes' accSplit (h:accRoute) l t
         _                             -> splitRoutes' (addR accRoute accSplit) [h] l t
-    where addR [] s = s
-          addR r s = r:s
+    where   addR [] s = s
+            addR r s = r:s
 \end{code}
 
 
@@ -307,22 +305,20 @@ Las pruebas del contenedor \emph{Route} se encuentran en \hstest{Parcial2-Route}
 
 \begin{code}
 
-  data GAParams = GAParams{
-      gaChromGenMaxChainLen :: Int,
-      gaChromGenMaxChains   :: Int,
-      gaPopulationSize      :: Int
+  data GAParams = GAParams  { gaChromGenMaxChainLen :: Int
+                            , gaChromGenMaxChains   :: Int
+                            , gaPopulationSize      :: Int
     }
 
-  data GACache = GACache{
-        cacheNeighbours :: Map Point2D [Point2D]
-    }
+  data GACache = GACache    { cacheNeighbours :: Map Point2D [Point2D] }
+
   neighboursOf cache point = fromMaybe []
                            $ Map.lookup point (cacheNeighbours cache)
 
-  data GA = GA { gaLabyri :: Labyrinth2D
-               , gaParams :: GAParams
-               , gaCache  :: GACache
-               }
+  data GA = GA  { gaLabyri :: Labyrinth2D
+                , gaParams :: GAParams
+                , gaCache  :: GACache
+                }
 \end{code}
 
 
@@ -345,8 +341,7 @@ $$
 \begin{code}
   eDist' = mkDirectDistance $
           \(Point2D (x1,x2)) (Point2D (y1,y2)) ->
-                sqrt $ fromIntegral $
-                abs(x1-x2)^2 + abs(y1-y2)^2
+                    sqrt (fromIntegral $ abs(x1-x2)^2 + abs(y1-y2)^2)
   eDist  = labyrinthDist eDist'
 \end{code}
 
@@ -464,8 +459,8 @@ Un gen aleatorio se selecciona entre todos los nodos del mapa, y se re-genera en
 que este gen ya hubiera sido generado previamente.
 
 \begin{code}
-            randPoint = first (`elemAt` nodes l)
-                       . randomR (0, length (nodes l) - 1)
+            randPoint   = first (`elemAt` nodes l)
+                        . randomR (0, length (nodes l) - 1)
             rand prev = fix $
                         \f g ->
                          let (r, g') = randPoint g
@@ -703,25 +698,24 @@ Se genera el cromosoma.
         subseq l r = take (r - l + 1) . drop l
 
         -- replacable sub-routes (unordered)
-        isrs = do x <- cs
-                  y <- cs
-                  let valid = any ((&&) <$> (x `elem`) <*> (y `elem`))
-                      valid1 = valid rs1
-                      valid2 = valid rs2
+        isrs = do   x <- cs
+                    y <- cs
+                    let valid = any ((&&) <$> (x `elem`) <*> (y `elem`))
+                        valid1 = valid rs1
+                        valid2 = valid rs2
 
-                      valid' ch = (subseq left right ch, rev)
-                        where
-                              Just ix = x `elemIndex` ch
-                              Just iy = y `elemIndex` ch
-                              (left, right, rev) =
-                                    if ix < iy then (ix,iy,False) else (iy,ix,True)
+                        valid' ch = (subseq left right ch, rev)
+                            where   (Just ix, Just iy) =    elemIndex x &&&
+                                                            elemIndex y $ ch
+                                    rev = ix > iy
+                                    (left, right) = if rev then (iy,ix) else (ix,iy)
 
-                      valid1' = if valid1 then Just $ valid' ch1 else Nothing
-                      valid2' = if valid2 then Just $ valid' ch2 else Nothing
+                        valid1' = if valid1 then Just $ valid' ch1 else Nothing
+                        valid2' = if valid2 then Just $ valid' ch2 else Nothing
 
-                  if x /= y && (valid1 || valid2)
-                    then return ((x,y), (valid1', valid2'))
-                    else []
+                    if x /= y && (valid1 || valid2)
+                      then return ((x,y), (valid1', valid2'))
+                      else []
 
         sameEdge par1 par2 = par1 == par2 || swap par1 == par2
         subRoutes = sortBy cmpSubRoute . nubBy (sameEdge `on` fst)
@@ -729,7 +723,8 @@ Se genera el cromosoma.
         cmpSubRoute (_, (Just _, Nothing)) (_, (Just _, Just _))  = LT
         cmpSubRoute (_, (Just _, Just _))  (_, (Just _, Nothing)) = GT
         cmpSubRoute (_, p1)                (_, p2) =  rt p1 `compare` rt p2
-               where rt (Just x,  Nothing) = length x
+               where
+                     rt (Just x,  Nothing) = length x
                      rt (Nothing, Just x)  = length x
                      rt (Just x,  Just y)  = abs (length x - length y)
 
