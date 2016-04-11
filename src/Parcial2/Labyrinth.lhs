@@ -41,11 +41,11 @@
 module Parcial2.Labyrinth where
 
   import Control.Exception
-  import Control.Arrow (first, second, (&&&))
+  import Control.Arrow -- (first, second, (&&&))
   import Control.Monad.Fix
 
   import Data.Tuple (swap)
-  import Data.List (elemIndex, sortBy, nubBy)
+  import Data.List (elemIndex, sort, nubBy)
   import Data.Maybe (isJust, fromJust, fromMaybe)
   import Data.Function (on)
   import Data.Set (Set, member, elemAt)
@@ -216,6 +216,7 @@ para permitir destinguir facilmente los dos tipos de rutas
                     , partialLength   :: Double
                     }
     deriving (Eq, Show)
+
 \end{code}
 
 \noindent Para la busqueda de la ruta mas corta,
@@ -273,6 +274,50 @@ tendrá los mejores elementos en el principio.
         compare (v2,i2,l2) (v1,i1,l1)
     compare (CompleteRoute _)        PartialRoute{}         = LT
     compare  PartialRoute{}         (CompleteRoute _)       = GT
+
+\end{code}
+
+Se definan las sub-rutas: genes, connectados secuencialmente. Se discuta más en \ref{itm:crossover}.
+
+\begin{code}
+
+--  type SubRoute = Maybe ([Point2D], Bool)
+
+  data SubRoute = SubRoute  { subRoute      :: [Point2D]
+                            , isSubRouteRev :: Bool
+                            }
+                deriving (Eq, Show)
+
+  subRoute2Pair = subRoute &&& isSubRouteRev
+
+  data SubRoutePair = SubRouteUniDir{ subRange       :: (Point2D, Point2D)
+                                    , subRouteSource :: Either SubRoute SubRoute
+                                    , subRouteTarget :: Either SubRoute SubRoute
+                                    }
+                    | SubRouteBiDir { subRange          :: (Point2D, Point2D)
+                                    , subRouteSources   :: (SubRoute, SubRoute)
+                                    }
+        deriving (Show, Eq)
+
+  subRouteLeftSrc  rng src target = SubRouteUniDir rng (Left src) (Right target)
+  subRouteRightSrc rng target src = SubRouteUniDir rng (Right src) (Left target)
+  subRouteBothSrc  rng src1 src2  = SubRouteBiDir rng (src1, src2)
+
+  subRoutes (SubRouteUniDir _ src' target') = case (src', target') of
+                        (Left src, Right target) -> (src, target)
+                        (Right src, Left target) -> (target, src)
+
+  subRoutes (SubRouteBiDir _ srcs) = srcs
+
+  subRouteLen = length . subRoute
+  subRoutesDiff = uncurry (-) <$> (first subRouteLen . second subRouteLen) . subRoutes
+
+
+  instance Ord SubRoutePair where
+    SubRouteUniDir{}    `compare`   SubRouteBiDir{}     = LT
+    SubRouteBiDir{}     `compare`   SubRouteUniDir{}    = GT
+    a `compare` b = (compare `on` subRoutesDiff ) a b
+
 \end{code}
 
 
@@ -677,10 +722,7 @@ Se genera el cromosoma.
 
 \begin{code}
 
-     type CrossoverDebug GA = [(
-                                (Point2D, Point2D),
-                                ( Maybe ([Point2D], Bool) , Maybe ([Point2D], Bool))
-                             )]
+     type CrossoverDebug GA = [SubRoutePair]
 
      -- crossover' :: ga \rightarrow$ Chromosome ga \rightarrow$ Chromosome ga
      -- \rightarrow$ ((Chromosome ga, Chromosome ga), CrossoverDebug ga)
@@ -704,34 +746,56 @@ Se genera el cromosoma.
                         valid1 = valid rs1
                         valid2 = valid rs2
 
-                        valid' ch = (subseq left right ch, rev)
+                        valid' ch = SubRoute (subseq left right ch) rev
                             where   (Just ix, Just iy) =    elemIndex x &&&
                                                             elemIndex y $ ch
                                     rev = ix > iy
                                     (left, right) = if rev then (iy,ix) else (ix,iy)
 
-                        valid1' = if valid1 then Just $ valid' ch1 else Nothing
-                        valid2' = if valid2 then Just $ valid' ch2 else Nothing
+                        valid1' = valid' ch1
+                        valid2' = valid' ch2
 
-                    if x /= y && (valid1 || valid2)
-                      then return ((x,y), (valid1', valid2'))
-                      else []
+                    if x /= y   then case (valid1, valid2) of
+                                        (True, True) -> return $ subRouteBothSrc (x,y) valid1' valid2'
+                                        (True, _)    -> return $ subRouteLeftSrc (x,y) valid1' valid2'
+                                        (_, True)    -> return $ subRouteRightSrc (x,y) valid2' valid1'
+                                        _            -> [] -- error $ "invalid routes: " ++ show (x,y)
+                                else []
 
         sameEdge par1 par2 = par1 == par2 || swap par1 == par2
-        subRoutes = sortBy cmpSubRoute . nubBy (sameEdge `on` fst)
+        subRoutes :: CrossoverDebug GA -> CrossoverDebug GA
+        subRoutes = sort . nubBy (sameEdge `on` subRange)
 
-        cmpSubRoute (_, (Just _, Nothing)) (_, (Just _, Just _))  = LT
-        cmpSubRoute (_, (Just _, Just _))  (_, (Just _, Nothing)) = GT
-        cmpSubRoute (_, p1)                (_, p2) =  rt p1 `compare` rt p2
-               where
-                     rt (Just x,  Nothing) = length x
-                     rt (Nothing, Just x)  = length x
-                     rt (Just x,  Just y)  = abs (length x - length y)
+        countPOI = length . filter (`isPOI` l)
+        cmpSubRoute' (pts1, _) (pts2, _) = f pts1 `compare` f pts2
+                where f = countPOI &&& length
 
-        replaceRoutes c1 c2 (((start, end), (mbFst, mbSnd)):rt) = undefined
-                where source = undefined
-                      target = undefined
+        replaceRoutes = undefined
 
+--         replaceRoutes   :: [Point2D] -> [Point2D] -> CrossoverDebug GA
+--                         -> ([Point2D], [Point2D])
+
+--         replaceRoutes c1 c2 ((route, (mbFst, mbSnd)):rt) =
+--             case mb of  Nothing               -> (c1,c2)
+--                         Just (source, target) -> replace source
+--                 where
+--                 mb = case (mbFst, mbSnd) of
+--                         (Just fst', Just snd')  -> case cmpSubRoute' fst' snd'
+--                                                 of  LT -> Just ((c1, fst fst'), (c2, fst snd'))
+--                                                     GT -> Just ((c2, fst snd'), fst fst')
+--                                                     EQ -> Nothing
+--                         (Just fst', Nothing)    -> Just (fst fst', route' c2)
+--                         (Nothing, Just snd')    -> Just (route' c1, fst snd')
+--
+--                 route' chrom =  let eIndex = (`elemIndex` chrom)
+--                                     (Just i1, Just i2)  = first eIndex
+--                                                         . second eIndex
+--                                                         $ route
+--                                     sseq f = uncurry subseq (f (i1,i2)) chrom
+--                                 in if i1 < i2 then sseq id else sseq swap
+--                 replace donor receiver source target = undefined
+
+-- (source, target)
                       -- srcGenes = do x1 <- start elemIndex
 
 

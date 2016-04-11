@@ -119,7 +119,11 @@ main = do args <- getArgs
                                            (routeColorInd setup)
                                            1 chrom1 2 chrom2
                             )
-                            routes -- first reverse . second reverse $
+                            (first (map f) . second (map f) $ routes)
+                    where f p = case subRoute2Pair p of
+                                    sr@(_, rev) -> first (if rev then last &&& head
+                                                                 else head &&& last)
+                                                   sr
 
               writeIt f s = do writeFile f s
                                putStrLn $ "Wrote file " ++ f
@@ -156,32 +160,41 @@ exitError errs = error $ unlines (("[ERROR ] " ++) <$> errs)
 -----------------------------------------------------------------------------
 
 prepareRoutes' _ _ [] accFst accSnd = (accFst, accSnd)
-prepareRoutes' chrom1 chrom2 ((chain, (mbFst, mbSnd)):t) accFst accSnd =
+prepareRoutes' chrom1 chrom2 (srp:t) accFst accSnd =
     prepareRoutes' chrom1 chrom2 t accFst' accSnd'
-    where r mbRoute chrom = case mbRoute of Just route           -> first (head &&& last) route
+    where -- r mbRoute chrom = case mbRoute of Just route           -> first (head &&& last) route
 --                                            Just route@(_, True) -> first (last &&& head) route
 --                                            Just route           -> first (head &&& last) route
-                                            _                    -> route' chrom
+--                                            _                    -> route' chrom
           route' chrom = let (Just i1, Just  i2) = first (`elemIndex` fst chrom)
                                                  . second (`elemIndex` fst chrom)
-                                                 $ chain
---                         in (chain, i1 < i2)
-                        in if i1 < i2 then (chain, False)
-                                      else (swap chain, True)
-          rFst = r mbFst chrom1
-          rSnd = r mbSnd chrom2
+                                                 $ subRoutes srp
+                        in if i1 < i2 then (subRoutes srp, False)
+                                      else (swap $ subRoutes srp, True)
+--          rFst = r mbFst chrom1
+--          rSnd = r mbSnd chrom2
 
-          rFst' = r Nothing chrom1
-          rSnd' = r Nothing chrom2
+--          rFst' = r Nothing chrom1
+--          rSnd' = r Nothing chrom2
 
-          (accFst', accSnd') = case (mbFst, mbSnd) of
-                (Just _, Just _) -> (rFst':rFst:accFst, rSnd:rSnd':accSnd)
-                _                -> (rFst:accFst, rSnd:accSnd)
+          (fst', snd') = subRoutes srp
+          (accFst', accSnd') = case srp of
+                SubRouteBiDir {} -> (fst':snd':accFst, snd':fst':accSnd)
+                SubRouteUniDir{} -> (fst':accFst, snd':accSnd)
 
 prepareRoutes [] accFst accSnd = (accFst, accSnd)
-prepareRoutes ((_, (mbFst, mbSnd)):t) accFst accSnd =
-    prepareRoutes t (acc' accFst mbFst) (acc' accSnd mbSnd)
-    where acc' a mb = case mb of Just route -> first (head &&& last) route :a
-                                 _          -> a
+prepareRoutes (srp:t) accFst accSnd = case srp of
+        SubRouteBiDir {} ->
+                            uncurry (prepareRoutes t) . first (:accFst) . second (:accSnd)
+                            $ subRoutes srp
+        SubRouteUniDir{subRouteSource = src} ->
+                            uncurry (prepareRoutes t)
+                                    $ case src of   Left r  -> (r:accFst, accSnd)
+                                                    Right r -> (accFst, r:accSnd)
+
+
+--    prepareRoutes t (acc' accFst mbFst) (acc' accSnd mbSnd)
+--    where acc' a mb = case mb of Just route -> first (head &&& last) route :a
+--                                 _          -> a
 
 
