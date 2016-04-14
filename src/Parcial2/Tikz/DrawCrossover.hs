@@ -26,26 +26,30 @@ import Data.Tuple (swap)
 
 
 tikzCromosome :: Int -> [TikzAttr] -> [Point2D] -> [Bool] -> TikzExpr
-tikzCromosome _ _ genes conns | length genes /= length conns + 1 = error $
+tikzCromosome = tikzCromosome' True
+
+tikzCromosome' _ _ _ genes conns | length genes /= length conns + 1 = error $
                                                                    "wrong list sizes in"
                                                                 ++ " `tikzCromosome`"
-tikzCromosome chain attrs genes conns = tikzScope [ "start chain=" ++ show chain
-                                                                   ++ " going right"
-                                                  , "node distance=-0.15mm"
-                                                  , "yshift=" ++ show (-chain) ++ "cm"
-                                                  ]
-                                $ do let conns' = map Just conns ++ [Nothing]
-                                         onChain = "on chain=" ++ show chain
-                                     (g, mbConn) <- genes `zip` conns'
-                                     let gene = tikzNode (onChain:attrs)
-                                                         (show g)
-                                                         Nothing
-                                                         (show g)
-                                     let conn = case mbConn of
-                                            Just b -> tikzNode [onChain] ('c':show g) Nothing
-                                                               (if b then "+" else "-")
-                                            _      -> TikzExpr []
-                                     [gene, conn]
+tikzCromosome' shiftChain chain attrs genes conns =
+    tikzScope ([ "start chain=" ++ show chain
+                                ++ " going right"
+               , "node distance=-0.15mm"
+               ]
+               ++ ["yshift=" ++ show (-chain) ++ "cm" | shiftChain]
+              )
+    $ do let conns' = map Just conns ++ [Nothing]
+             onChain = "on chain=" ++ show chain
+         (g, mbConn) <- genes `zip` conns'
+         let gene = tikzNode (onChain:attrs)
+                             (show g)
+                             Nothing
+                             (show g)
+         let conn = case mbConn of
+                Just b -> tikzNode [onChain] ('c':show g) Nothing
+                                   (if b then "+" else "-")
+                _      -> TikzExpr []
+         [gene, conn]
 
 
 tikzRoute :: [TikzAttr] -> Int -> (Point2D, Point2D) -> Bool -> TikzExpr

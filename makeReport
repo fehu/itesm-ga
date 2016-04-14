@@ -45,5 +45,13 @@ $Chromosome "violet" "blue" --repeat-colors -r 5 -c 6 -o build/CrossoverVioletBl
 $Chromosome "violet" "blue" --repeat-colors -r 6 -c 1 -o build/CrossoverVioletBlueRoute6.tikz &&\
 $Chromosome "violet" "blue" --repeat-colors -r 7 -c 7 -o build/CrossoverVioletBlueRoute7.tikz &&\
 
+# GenerateTikz Crossover children examples.
+
+$Chromosome "violet" "orange" -x Fst -o build/CrossoverVioletOrangeChildrenFst.tikz &&\
+$Chromosome "violet" "orange" -x Snd -o build/CrossoverVioletOrangeChildrenSnd.tikz &&\
+
+$Chromosome "violet" "blue" -x Fst -o build/CrossoverVioletBlueChildrenFst.tikz &&\
+$Chromosome "violet" "blue" -x Snd -o build/CrossoverVioletBlueChildrenSnd.tikz &&\
+
 # Generate PDF for 'Parcial2/Labyrinth.lhs'.
 scripts/lhs2pdf $SRC/Labyrinth.lhs

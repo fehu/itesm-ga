@@ -31,7 +31,8 @@
 \newcommand{\hssrc} [2]{\href{\github/api/src/#1.html}{src/#2}}
 \newcommand{\hstest}[2]{\href{\github/api/tests/src/#1.html}{test/#2}}
 
-\newcommand{\resizeInput}[2][\textwidth]{\resizebox{#1}{!}{\input{#2}}}}
+\newcommand{\resizePicture}[2][\textwidth]{\resizebox{#1}{!}{#2}}}
+\newcommand{\resizeInput}[2][\textwidth]{\resizePicture[#1]{\input{#2}}}
 
 \begin{document}
 
@@ -47,13 +48,14 @@ module Parcial2.Labyrinth where
   import Data.Tuple (swap)
   import Data.List (elemIndex, sort, nub)
   import Data.Maybe (isJust, fromJust, fromMaybe, maybeToList)
+  import Data.Bits (xor)
+  import Data.Either (isLeft, isRight, Either(..))
   import Data.Function (on)
   import Data.Set (Set, member, elemAt)
   import qualified Data.Set as Set
   import Data.Map (Map)
   import qualified Data.Map as Map
-  import GHC.Real (infinity)
-  import GHC.Exts
+  import GHC.Exts (Down(..), sortWith)
 
 
   import Parcial2.ReadLabyrinth
@@ -351,21 +353,24 @@ Se comparan lexográficamente los sigientes valores:
                                 (Either SubRoutePoints SubRoutePoints)
         deriving Show
 
-  instance Eq SubRoutes where (==) = eqSubRoutes
-
-  (SubRoutes _ _ (Left _) _) `eqSubRoutes` (SubRoutes _ _ (Right _) _) = False
-  l@(SubRoutes l1 sr1 _ _) `eqSubRoutes` r@(SubRoutes l2 sr2 _ _) =
-            l1 == l2
-        &&  sr1 == sr2
-        &&  same subRouteDonor
-        &&  same subRouteReceiver
-    where same f = ((==) `on` (fst . f)) l r
+  instance Eq SubRoutes where
+      (SubRoutes _ _ (Left _) _)  ==  (SubRoutes _ _ (Right _) _)  = False
+      l@(SubRoutes l1 sr1 _ _)    ==  r@(SubRoutes l2 sr2 _ _)     =
+                l1 == l2
+            &&  sr1 == sr2
+            &&  same subRouteDonor
+            &&  same subRouteReceiver
+        where same f = ((==) `on` (fst . f)) l r
 
   subRouteDonor (SubRoutes _ _ donor _)     = case donor of     Left x   -> x
                                                                 Right x  -> x
 
   subRouteReceiver (SubRoutes _ _ _ recei)  = case recei of     Left x   -> x
                                                                 Right x  -> x
+
+  subRoutesBoth = subRouteDonor &&& subRouteReceiver
+
+  subRoutesLabyrinth (SubRoutes l _ _ _) = l
 
   subRoutesPts (SubRoutes _ pts _ _) = pts
 
@@ -635,9 +640,6 @@ Se genera el cromosoma.
       será descrita en la subsección \ref{subsec:gaRun}.
 
       \begin{enumerate}
-        \item Se separan las rutas con función \emph{splitRoutes}
-              (fue descrita en subsección \ref{subsec:fitness}) para ambos cromosomas.
-
         \item Se seleccionan los genes $\lbrace c \rbrace$, miembros de ambos cromosomas.
 
         \item Para ambos cromosomas se encuentran \emph{sub-rutas intercambiables}:
@@ -708,6 +710,46 @@ Se genera el cromosoma.
 
       \begin{figure}
         \centering
+        \begin{subfigure}[b]{\textwidth}
+            \input{CrossoverVioletOrangeChildrenFst.tikz }
+            \caption{ Resultados de recombinación de sub-rutas en cromosoma {\color{violet} •} desde
+                      {\color{orange} •}.
+                    }
+            \label{fig:crossOVchildren}
+        \end{subfigure}
+        \\
+        \begin{subfigure}[b]{\textwidth}
+            \input{CrossoverVioletOrangeChildrenSnd.tikz }
+            \caption{ Resultados de recombinación de sub-rutas en cromosoma {\color{orange} •} desde
+                      {\color{violet} •}.
+                    }
+            \label{fig:crossVOchildren}
+        \end{subfigure}
+
+        \caption{}
+      \end{figure}
+
+      %% \begin{figure}
+      %%   \centering
+      %%       \input{CrossoverVioletOrangeChildrenFst.tikz }
+      %%   \caption{ Resultados de recombinación de sub-rutas en cromosoma {\color{violet} •} desde
+      %%             {\color{orange} •}.
+      %%           }
+      %%   \label{fig:crossOVchildren}
+      %% \end{figure}
+
+      %% \begin{figure}
+      %%   \centering
+      %%       \input{CrossoverVioletOrangeChildrenSnd.tikz }
+      %%   \caption{ Resultados de recombinación de sub-rutas en cromosoma {\color{orange} •} desde
+      %%             {\color{violet} •}.
+      %%           }
+      %%   \label{fig:crossVOchildren}
+      %% \end{figure}
+
+
+      \begin{figure}
+        \centering
         \caption{ Recombinación de cromosomas, marcados {\color{violet} •} y {\color{blue} •}
                   en la figura \ref{fig:chromosomesMapExample}.
                 }
@@ -769,14 +811,36 @@ Se genera el cromosoma.
         \label{fig:crossVB}
       \end{figure}
 
+
+      \begin{figure}
+        \centering
+        \begin{subfigure}[b]{\textwidth}
+            \input{CrossoverVioletBlueChildrenFst.tikz }
+            \caption{ Resultados de recombinación de sub-rutas en cromosoma {\color{blue} •} desde
+                      {\color{violet} •}.
+                    }
+            \label{fig:crossVBchildren}
+        \end{subfigure}
+        \\
+        \begin{subfigure}[b]{\textwidth}
+            \input{CrossoverVioletBlueChildrenSnd.tikz }
+            \caption{ Resultados de recombinación de sub-rutas en cromosoma {\color{violet} •} desde
+                      {\color{blue} •}.
+                    }
+            \label{fig:crossBVchildren}
+        \end{subfigure}
+
+        \caption{}
+      \end{figure}
+
 \begin{code}
 
-     type CrossoverDebug GA = [SubRoutes]
+     type CrossoverDebug GA = ([SubRoutes], [(SubRoutes, Maybe [Point2D])])
 
      -- crossover' :: ga \rightarrow$ Chromosome ga \rightarrow$ Chromosome ga
      -- \rightarrow$ ((Chromosome ga, Chromosome ga), CrossoverDebug ga)
 
-     crossover' (GA l _ _) ch1 ch2 = (undefined, subRoutes)
+     crossover' (GA l _ _) ch1 ch2 = (replaced, (subRoutes, debugAcc))
         where   set1 = Set.fromList ch1
                 set2 = Set.fromList ch2
                 cs = Set.toList $  Set.intersection set1 set2
@@ -790,6 +854,54 @@ Se genera el cromosoma.
                 subRoutes = sortWith Down . nub $ sRoutes'
 
 
+                replaceList what with l =
+                        let (Just il, Just ir)  = ( (head what `elemIndex`)
+                                                &&& (last what `elemIndex`)) l
+                            (left, _)   = splitAt il l
+                            (_, right)  = splitAt (ir+1) l
+                        in left ++ with ++ right
+
+                replaceSafe lab what with l =
+                        let candidate = replaceList what with l
+                            poisTarget = length $ filter (`isPOI` lab) what
+                            poisSrc    = length $ filter (`isPOI` lab) with
+                        in  if poisSrc < poisTarget || candidate /= nub candidate
+                            then Nothing else Just candidate
+
+                tryReplace chrom _ _ [] debugAcc = (chrom, debugAcc)
+                tryReplace chrom thisSide getThatSide (sr:srs) debugAcc =
+                    tryReplace res thisSide getThatSide srs acc'
+                    where  acc' =  if mbRes == Just chrom then debugAcc
+                                   else (debug,mbRes):debugAcc
+                           (mbRes, debug) = fromMaybe (Just chrom, sr) res'
+                           res = fromMaybe chrom mbRes
+                           res' = case sr of
+                             SubRoutes l pts src' target' | thisSide target' ->
+                                    do  target <- findSubRoute pts chrom
+                                        let  src = getThatSide src'
+                                             rev = snd src `xor` snd target
+
+                                             debug = SubRoutes l pts
+                                                        (fmap (const src) src')
+                                                        (fmap (const target) target')
+
+                                        return  ( replaceSafe l  (fst target)
+                                                                 (fst src)
+                                                                 chrom
+                                                , debug )
+                             _ -> Nothing
+
+                (replaced1, debugAcc') = tryReplace  ch1
+                                                     isLeft
+                                                     (\(Right x) -> x)
+                                                     subRoutes
+                                                     []
+                (replaced2, debugAcc)  = tryReplace  ch2
+                                                     isRight
+                                                     (\(Left x) -> x)
+                                                     subRoutes
+                                                     debugAcc'
+                replaced  = (replaced1, replaced2)
 
 \end{code}
 
