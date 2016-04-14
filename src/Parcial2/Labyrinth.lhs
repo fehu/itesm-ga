@@ -41,7 +41,7 @@
 module Parcial2.Labyrinth where
 
   import Control.Exception
-  import Control.Arrow -- (first, second, (&&&))
+  import Control.Arrow (first, second, (&&&))
   import Control.Monad.Fix
 
   import Data.Tuple (swap)
@@ -53,6 +53,7 @@ module Parcial2.Labyrinth where
   import Data.Map (Map)
   import qualified Data.Map as Map
   import GHC.Real (infinity)
+  import GHC.Exts
 
 
   import Parcial2.ReadLabyrinth
@@ -316,8 +317,7 @@ El orden sobre las sub-rutas se define en contexto de dos cromosomas: donor y re
 Se comparan lexográficamente los sigientes valores:
 \begin{enumerate}
   \item Número de púntos de interes que tiene el donor pero no el recipiente.
-  \item Diferencia absoluta de las longitudes de la ruta en primer y segunda cromosoma.
-  \item No igualidad de las dos sub-rutas.
+  \item Diferencia entre las longitudes de donor y recipiente.
 \end{enumerate}
 
 
@@ -351,19 +351,20 @@ Se comparan lexográficamente los sigientes valores:
                                 (Either SubRoutePoints SubRoutePoints)
         deriving Show
 
-  instance Eq SubRoutes where
-    (SubRoutes _ _ (Left _) _) == (SubRoutes _ _ (Right _) _) = False
-    l@(SubRoutes l1 sr1 _ _) == r@(SubRoutes l2 sr2 _ _) =
-                l1 == l2
-            &&  sr1 == sr2
-            &&  same subRouteDonor
-            &&  same subRouteReceiver
-        where same f = ((==) `on` (fst . f)) l r
+  instance Eq SubRoutes where (==) = eqSubRoutes
+
+  (SubRoutes _ _ (Left _) _) `eqSubRoutes` (SubRoutes _ _ (Right _) _) = False
+  l@(SubRoutes l1 sr1 _ _) `eqSubRoutes` r@(SubRoutes l2 sr2 _ _) =
+            l1 == l2
+        &&  sr1 == sr2
+        &&  same subRouteDonor
+        &&  same subRouteReceiver
+    where same f = ((==) `on` (fst . f)) l r
 
   subRouteDonor (SubRoutes _ _ donor _)     = case donor of     Left x   -> x
                                                                 Right x  -> x
 
-  subRouteReceiver (SubRoutes _ _ donor _)  = case donor of     Left x   -> x
+  subRouteReceiver (SubRoutes _ _ _ recei)  = case recei of     Left x   -> x
                                                                 Right x  -> x
 
   subRoutesPts (SubRoutes _ pts _ _) = pts
@@ -391,13 +392,12 @@ Se comparan lexográficamente los sigientes valores:
                 _               -> []
 
 
-  subRoutesValue sr@(SubRoutes l _ _ _) = (pois, len, same)
+  subRoutesValue sr@(SubRoutes l _ _ _) = (pois, len)
     where   donor     = fst $ subRouteDonor sr
             receiver  = fst $ subRouteReceiver sr
             countPois = length . filter (`isPOI` l)
-            pois = countPois donor - countPois receiver -- to maximize
-            len = abs(length receiver - length donor)
-            same = receiver /= donor -- False $<$ True
+            pois = countPois donor - countPois receiver
+            len = length receiver - length donor
 
   instance Ord SubRoutes where compare = compare `on` subRoutesValue
 
@@ -657,15 +657,8 @@ Se genera el cromosoma.
 
               Se guarda también la dirección de las sub-rutas para ambos cromosomas.
 
-        \item Las sub-rutas intercambiables se dividen dependiendo si se encuentran en ambos
-              cromosomas o solamente en uno. El último caso tiene más prioridad.
-
-              \begin{itemize}[leftmargin=2cm]
-                \item[Uno --] se ordenan por su longitud.
-                \item[Ambos --] se ordenan por la diferencia absoluta en sus dos longitudes.
-              \end{itemize}
-
-        \item Se aplica el remplazamiento para todas las rutas intercambiables ordenadas.
+        \item Se aplica el remplazamiento para todas las rutas intercambiables ordenadas
+                (fue descrita en subsección \ref{subsec:subroutes}).
               Se remplazan las sub-rutas no existentes por las existentes;
               y se remplazan las existentes por mas cortas.
 
@@ -699,13 +692,13 @@ Se genera el cromosoma.
         \\
           \begin{subfigure}[b]{\textwidth}
             \fbox{ \resizeInput{CrossoverVioletOrangeRoute1.tikz} }
-            \caption{ Remplazamiento {\color{orange} •} $\rightarrow$ {\color{violet} •} \#2. }
+            \caption{ Remplazamiento {\color{violet} •} $\rightarrow$ {\color{orange} •}. }
             \label{fig:crossVOr1}
           \end{subfigure}
         \\
           \begin{subfigure}[b]{\textwidth}
             \fbox{ \resizeInput{CrossoverVioletOrangeRoute2.tikz} }
-            \caption{ Remplazamiento {\color{violet} •} $\rightarrow$ {\color{orange} •}. }
+            \caption{ Remplazamiento {\color{orange} •} $\rightarrow$ {\color{violet} •} \#2. }
             \label{fig:crossVOr2}
           \end{subfigure}
 
@@ -733,13 +726,13 @@ Se genera el cromosoma.
         \\
           \begin{subfigure}[b]{\textwidth}
             \fbox{ \resizeInput{CrossoverVioletBlueRoute1.tikz} }
-            \caption{ Remplazamiento {\color{violet} •} $\rightarrow$ {\color{blue} •}. }
+            \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
             \label{fig:crossVBr1}
           \end{subfigure}
         \\
           \begin{subfigure}[b]{\textwidth}
             \fbox{ \resizeInput{CrossoverVioletBlueRoute2.tikz} }
-            \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
+            \caption{ Remplazamiento {\color{violet} •} $\rightarrow$ {\color{blue} •}. }
             \label{fig:crossVBr2}
           \end{subfigure}
         \\
@@ -794,7 +787,7 @@ Se genera el cromosoma.
                                 if x == y then []
                                 else subRoutesIn l sr ch1 ch2
 
-                subRoutes = sort . nub $ sRoutes'
+                subRoutes = sortWith Down . nub $ sRoutes'
 
 
 

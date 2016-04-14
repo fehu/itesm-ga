@@ -116,13 +116,15 @@ main = do args <- getArgs
 
               getExtrs sr@(_, rev) = first (head &&& last) sr
                     where f = if rev then last &&& head else head &&& last
+              f = map getExtrs
+
               pic = tikzPicture []
                   $ uncurry ( tikzCrossover (shift setup)
                                             (repeatColors setup)
                                             (routeColorInd setup)
                                             1 chrom1 2 chrom2
                             )
-                            (first (map getExtrs) . second (map getExtrs) $ routes)
+                            (first f. second f $ routes)
 
               writeIt f s = do writeFile f s
                                putStrLn $ "Wrote file " ++ f
@@ -157,14 +159,14 @@ exitError errs = error $ unlines (("[ERROR ] " ++) <$> errs)
 
 -----------------------------------------------------------------------------
 
-prepareRoutes [] accFst accSnd = (accFst, accSnd)
+prepareRoutes [] accFst accSnd = (reverse accFst, reverse accSnd)
 prepareRoutes (srp:t) accFst accSnd = uncurry (prepareRoutes t) next
     where next = case srp of
             SubRoutes _ _ (Left donor) _ -> (donor:accFst, accSnd)
             SubRoutes _ _ (Right donor) _ -> (accFst, donor:accSnd)
 
 
-prepareRoutes' [] accFst accSnd = (accFst, accSnd)
+prepareRoutes' [] accFst accSnd = (reverse accFst, reverse accSnd)
 prepareRoutes' (srp:t) accFst accSnd = uncurry (prepareRoutes' t) next
     where next = case srp of
             SubRoutes _ _ (Left x) (Right y) -> (x:accFst, y:accSnd)
