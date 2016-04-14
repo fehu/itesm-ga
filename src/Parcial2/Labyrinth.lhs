@@ -45,8 +45,8 @@ module Parcial2.Labyrinth where
   import Control.Monad.Fix
 
   import Data.Tuple (swap)
-  import Data.List (elemIndex, sort, nubBy)
-  import Data.Maybe (isJust, fromJust, fromMaybe)
+  import Data.List (elemIndex, sort, nub)
+  import Data.Maybe (isJust, fromJust, fromMaybe, maybeToList)
   import Data.Function (on)
   import Data.Set (Set, member, elemAt)
   import qualified Data.Set as Set
@@ -76,6 +76,7 @@ aristas --- la existencia de rutas directas.
                                     , initial :: point
                                     , target  :: point
                                     }
+        deriving (Show, Eq)
 
   edgeOf p l = any (`member` edges l) [p, swap p]
 
@@ -209,7 +210,7 @@ para permitir destinguir facilmente los dos tipos de rutas
         val POIBoth = 2
 
 
-  data Route =
+  data RouteFitness =
       CompleteRoute { routeLength :: Double }
     | PartialRoute  { partialValidess :: Double
                     , partialPOI      :: POIs
@@ -268,7 +269,7 @@ tendrá los mejores elementos en el principio.
 \end{enumerate}
 
 \begin{code}
-  instance Ord Route where
+  instance Ord RouteFitness where
     compare (CompleteRoute x)       (CompleteRoute y)       = compare x y
     compare (PartialRoute v1 i1 l1) (PartialRoute v2 i2 l2) =
         compare (v2,i2,l2) (v1,i1,l1)
@@ -277,54 +278,13 @@ tendrá los mejores elementos en el principio.
 
 \end{code}
 
-Se definan las sub-rutas: genes, connectados secuencialmente. Se discuta más en \ref{itm:crossover}.
 
-\begin{code}
-
---  type SubRoute = Maybe ([Point2D], Bool)
-
-  data SubRoute = SubRoute  { subRoute      :: [Point2D]
-                            , isSubRouteRev :: Bool
-                            }
-                deriving (Eq, Show)
-
-  subRoute2Pair = subRoute &&& isSubRouteRev
-
-  data SubRoutePair = SubRouteUniDir{ subRange       :: (Point2D, Point2D)
-                                    , subRouteSource :: Either SubRoute SubRoute
-                                    , subRouteTarget :: Either SubRoute SubRoute
-                                    }
-                    | SubRouteBiDir { subRange          :: (Point2D, Point2D)
-                                    , subRouteSources   :: (SubRoute, SubRoute)
-                                    }
-        deriving (Show, Eq)
-
-  subRouteLeftSrc  rng src target = SubRouteUniDir rng (Left src) (Right target)
-  subRouteRightSrc rng target src = SubRouteUniDir rng (Right src) (Left target)
-  subRouteBothSrc  rng src1 src2  = SubRouteBiDir rng (src1, src2)
-
-  subRoutes (SubRouteUniDir _ src' target') = case (src', target') of
-                        (Left src, Right target) -> (src, target)
-                        (Right src, Left target) -> (target, src)
-
-  subRoutes (SubRouteBiDir _ srcs) = srcs
-
-  subRouteLen = length . subRoute
-  subRoutesDiff = uncurry (-) <$> (first subRouteLen . second subRouteLen) . subRoutes
-
-
-  instance Ord SubRoutePair where
-    SubRouteUniDir{}    `compare`   SubRouteBiDir{}     = LT
-    SubRouteBiDir{}     `compare`   SubRouteUniDir{}    = GT
-    a `compare` b = (compare `on` subRoutesDiff ) a b
-
-\end{code}
-
+\textbf{\Large No se usa}
 
 Función de utilidad: separación de las sub-rutas que se encuentran dentro de un cromosoma.
 Separa los puntos de interes como sub-rutas.
 
-\begin{code}
+\begin{spec}
   splitRoutes :: Labyrinth2D -> Chromosome GA -> [[Gene GA]]
   splitRoutes l = reverse . map reverse . splitRoutes' [] [] l
 
@@ -338,10 +298,110 @@ Separa los puntos de interes como sub-rutas.
         _                             -> splitRoutes' (addR accRoute accSplit) [h] l t
     where   addR [] s = s
             addR r s = r:s
-\end{code}
+\end{spec}
 
 
 Las pruebas del contenedor \emph{Route} se encuentran en \hstest{Parcial2-Route}{Parcial2/Route.hs}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Sub-Rutas}
+\label{subsec:subroutes}
+
+Se definen los contenedores de sub-rutas. Se guardan solamente los genes extremos de la ruta
+y se proveen funciones de busqueda de sub-ruta en cromosoma. Se implementa asi porque las
+cromosomas cambian durante operaciones geneticos, afectando las sub-rutas.
+
+El orden sobre las sub-rutas se define en contexto de dos cromosomas: donor y recipiente.
+Se comparan lexográficamente los sigientes valores:
+\begin{enumerate}
+  \item Número de púntos de interes que tiene el donor pero no el recipiente.
+  \item Diferencia absoluta de las longitudes de la ruta en primer y segunda cromosoma.
+  \item No igualidad de las dos sub-rutas.
+\end{enumerate}
+
+
+\begin{code}
+
+  newtype SubRoute = SubRoute (Point2D, Point2D)
+        deriving Show
+
+  instance Eq SubRoute where
+    (SubRoute p1) == (SubRoute p2) = p1 == p2 || swap p1 == p2
+
+  type Reversed = Bool
+  type SubRoutePoints = ([Point2D], Reversed)
+
+  subseq from to = take (to - from + 1) . drop from
+
+  findSubRoute :: SubRoute -> [Point2D] -> Maybe SubRoutePoints
+  findSubRoute (SubRoute (x,y)) route =
+        case (elemIndex x &&& elemIndex y) route of
+                (Just xi, Just yi)  ->  let     rev     = xi > yi
+                                                ids'    = (xi,yi)
+                                                ids     = if rev    then swap ids'
+                                                                    else ids'
+                                        in Just (uncurry subseq ids route, rev)
+                _                   -> Nothing
+
+  -- Sub-routes, found in 2 points sequences.
+  data SubRoutes = SubRoutes    Labyrinth2D
+                                SubRoute
+                                (Either SubRoutePoints SubRoutePoints)
+                                (Either SubRoutePoints SubRoutePoints)
+        deriving Show
+
+  instance Eq SubRoutes where
+    (SubRoutes _ _ (Left _) _) == (SubRoutes _ _ (Right _) _) = False
+    l@(SubRoutes l1 sr1 _ _) == r@(SubRoutes l2 sr2 _ _) =
+                l1 == l2
+            &&  sr1 == sr2
+            &&  same subRouteDonor
+            &&  same subRouteReceiver
+        where same f = ((==) `on` (fst . f)) l r
+
+  subRouteDonor (SubRoutes _ _ donor _)     = case donor of     Left x   -> x
+                                                                Right x  -> x
+
+  subRouteReceiver (SubRoutes _ _ donor _)  = case donor of     Left x   -> x
+                                                                Right x  -> x
+
+  subRoutesPts (SubRoutes _ pts _ _) = pts
+
+  lPairs (f:s:t)    = (f,s) : lPairs (s:t)
+  lPairs _          = []
+
+  subRoutesIn   :: Labyrinth2D -> SubRoute
+                -> [Point2D] -> [Point2D] -> [SubRoutes]
+  subRoutesIn l subRoute pts1 pts2 = do
+        route1 <- maybeToList $ findSubRoute subRoute pts1
+        route2 <- maybeToList $ findSubRoute subRoute pts2
+
+        let valid = all (`edgeOf` l) . lPairs . fst
+            sRoutes = SubRoutes l subRoute
+            r1 = Left route1
+            r2 = Right route2
+            sRoutesLeft = sRoutes r1 r2
+            sRoutesRight = sRoutes r2 r1
+
+        case (valid route1, valid route2) of
+                (True, True)    -> [sRoutesLeft, sRoutesRight]
+                (True, _)       -> return sRoutesLeft
+                (_, True)       -> return sRoutesRight
+                _               -> []
+
+
+  subRoutesValue sr@(SubRoutes l _ _ _) = (pois, len, same)
+    where   donor     = fst $ subRouteDonor sr
+            receiver  = fst $ subRouteReceiver sr
+            countPois = length . filter (`isPOI` l)
+            pois = countPois donor - countPois receiver -- to maximize
+            len = abs(length receiver - length donor)
+            same = receiver /= donor -- False $<$ True
+
+  instance Ord SubRoutes where compare = compare `on` subRoutesValue
+
+\end{code}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -350,19 +410,21 @@ Las pruebas del contenedor \emph{Route} se encuentran en \hstest{Parcial2-Route}
 
 \begin{code}
 
-  data GAParams = GAParams  { gaChromGenMaxChainLen :: Int
-                            , gaChromGenMaxChains   :: Int
-                            , gaPopulationSize      :: Int
+  data GAParams = GAParams  { gaChromGenMaxChainLen  :: Int
+                            , gaChromGenMaxChains    :: Int
+                            , gaPopulationSize       :: Int
     }
 
-  data GACache = GACache    { cacheNeighbours :: Map Point2D [Point2D] }
+  data GACache = GACache {
+        cacheNeighbours :: Map Point2D [Point2D]
+    }
 
   neighboursOf cache point = fromMaybe []
                            $ Map.lookup point (cacheNeighbours cache)
 
-  data GA = GA  { gaLabyri :: Labyrinth2D
-                , gaParams :: GAParams
-                , gaCache  :: GACache
+  data GA = GA  { gaLabyri  :: Labyrinth2D
+                , gaParams  :: GAParams
+                , gaCache   :: GACache
                 }
 \end{code}
 
@@ -390,12 +452,6 @@ $$
   eDist  = labyrinthDist eDist'
 \end{code}
 
-
-\begin{code}
-  lPairs (f:s:t) = (f,s) : lPairs (s:t)
-  lPairs _       = []
-\end{code}
-
 \crule{1}
 \medskip
 \noindent
@@ -418,7 +474,7 @@ empezando con los tipos y siguiendo con los métodos.
 
 \item Los valores de aptitud ya fueron descritos previamente.
 
->    type Fitness GA = Route
+>    type Fitness GA = RouteFitness
 
 \item Dirección de búsqueda -- minimización.
 
@@ -722,81 +778,24 @@ Se genera el cromosoma.
 
 \begin{code}
 
-     type CrossoverDebug GA = [SubRoutePair]
+     type CrossoverDebug GA = [SubRoutes]
 
      -- crossover' :: ga \rightarrow$ Chromosome ga \rightarrow$ Chromosome ga
      -- \rightarrow$ ((Chromosome ga, Chromosome ga), CrossoverDebug ga)
 
-     crossover' (GA l _ _) ch1 ch2 =
-        (replaceRoutes ch1 ch2 &&& id) (subRoutes isrs)
-        where
-        rs1 = splitRoutes l ch1
-        rs2 = splitRoutes l ch2
+     crossover' (GA l _ _) ch1 ch2 = (undefined, subRoutes)
+        where   set1 = Set.fromList ch1
+                set2 = Set.fromList ch2
+                cs = Set.toList $  Set.intersection set1 set2
 
-        set1 = Set.fromList ch1
-        set2 = Set.fromList ch2
-        cs = Set.toList $ Set.intersection set1 set2
+                sRoutes' = do   x <- cs
+                                y <- cs
+                                let sr = SubRoute (x,y)
+                                if x == y then []
+                                else subRoutesIn l sr ch1 ch2
 
-        subseq l r = take (r - l + 1) . drop l
+                subRoutes = sort . nub $ sRoutes'
 
-        -- replacable sub-routes (unordered)
-        isrs = do   x <- cs
-                    y <- cs
-                    let valid = any ((&&) <$> (x `elem`) <*> (y `elem`))
-                        valid1 = valid rs1
-                        valid2 = valid rs2
-
-                        valid' ch = SubRoute (subseq left right ch) rev
-                            where   (Just ix, Just iy) =    elemIndex x &&&
-                                                            elemIndex y $ ch
-                                    rev = ix > iy
-                                    (left, right) = if rev then (iy,ix) else (ix,iy)
-
-                        valid1' = valid' ch1
-                        valid2' = valid' ch2
-
-                    if x /= y   then case (valid1, valid2) of
-                                        (True, True) -> return $ subRouteBothSrc (x,y) valid1' valid2'
-                                        (True, _)    -> return $ subRouteLeftSrc (x,y) valid1' valid2'
-                                        (_, True)    -> return $ subRouteRightSrc (x,y) valid2' valid1'
-                                        _            -> [] -- error $ "invalid routes: " ++ show (x,y)
-                                else []
-
-        sameEdge par1 par2 = par1 == par2 || swap par1 == par2
-        subRoutes :: CrossoverDebug GA -> CrossoverDebug GA
-        subRoutes = sort . nubBy (sameEdge `on` subRange)
-
-        countPOI = length . filter (`isPOI` l)
-        cmpSubRoute' (pts1, _) (pts2, _) = f pts1 `compare` f pts2
-                where f = countPOI &&& length
-
-        replaceRoutes = undefined
-
---         replaceRoutes   :: [Point2D] -> [Point2D] -> CrossoverDebug GA
---                         -> ([Point2D], [Point2D])
-
---         replaceRoutes c1 c2 ((route, (mbFst, mbSnd)):rt) =
---             case mb of  Nothing               -> (c1,c2)
---                         Just (source, target) -> replace source
---                 where
---                 mb = case (mbFst, mbSnd) of
---                         (Just fst', Just snd')  -> case cmpSubRoute' fst' snd'
---                                                 of  LT -> Just ((c1, fst fst'), (c2, fst snd'))
---                                                     GT -> Just ((c2, fst snd'), fst fst')
---                                                     EQ -> Nothing
---                         (Just fst', Nothing)    -> Just (fst fst', route' c2)
---                         (Nothing, Just snd')    -> Just (route' c1, fst snd')
---
---                 route' chrom =  let eIndex = (`elemIndex` chrom)
---                                     (Just i1, Just i2)  = first eIndex
---                                                         . second eIndex
---                                                         $ route
---                                     sseq f = uncurry subseq (f (i1,i2)) chrom
---                                 in if i1 < i2 then sseq id else sseq swap
---                 replace donor receiver source target = undefined
-
--- (source, target)
-                      -- srcGenes = do x1 <- start elemIndex
 
 
 \end{code}
@@ -828,7 +827,7 @@ Se genera el cromosoma.
 
 \begin{code}
 
-  instance RunGA GA [Point2D] [Point2D] Route Min where
+  instance RunGA GA [Point2D] [Point2D] RouteFitness Min where
     type DebugData GA = ()
 
 

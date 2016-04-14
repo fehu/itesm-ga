@@ -108,22 +108,21 @@ main = do args <- getArgs
 
               routes = let rts = if onlySources setup
                                   then prepareRoutes dd [] []
-                                  else prepareRoutes' chrom1 chrom2 dd [] []
+                                  else prepareRoutes' dd [] []
                            get i l = [l !! i]
                      in case singleRoute setup of
                                 Just i -> first (get i) . second (get i) $ rts
                                 _      -> rts
+
+              getExtrs sr@(_, rev) = first (head &&& last) sr
+                    where f = if rev then last &&& head else head &&& last
               pic = tikzPicture []
-                  $ uncurry (tikzCrossover (shift setup)
-                                           (repeatColors setup)
-                                           (routeColorInd setup)
-                                           1 chrom1 2 chrom2
+                  $ uncurry ( tikzCrossover (shift setup)
+                                            (repeatColors setup)
+                                            (routeColorInd setup)
+                                            1 chrom1 2 chrom2
                             )
-                            (first (map f) . second (map f) $ routes)
-                    where f p = case subRoute2Pair p of
-                                    sr@(_, rev) -> first (if rev then last &&& head
-                                                                 else head &&& last)
-                                                   sr
+                            (first (map getExtrs) . second (map getExtrs) $ routes)
 
               writeIt f s = do writeFile f s
                                putStrLn $ "Wrote file " ++ f
@@ -132,7 +131,6 @@ main = do args <- getArgs
 
           withHelp appName appDescr argsDescr cargs
             $ maybe (print pic) (`writeIt` show pic) $ file setup
-
 
 parseArgs' :: CArgValues '[Text, Text] -> Setup
 parseArgs' (CArgValues chroms opts optErr) =
@@ -159,42 +157,19 @@ exitError errs = error $ unlines (("[ERROR ] " ++) <$> errs)
 
 -----------------------------------------------------------------------------
 
-prepareRoutes' _ _ [] accFst accSnd = (accFst, accSnd)
-prepareRoutes' chrom1 chrom2 (srp:t) accFst accSnd =
-    prepareRoutes' chrom1 chrom2 t accFst' accSnd'
-    where -- r mbRoute chrom = case mbRoute of Just route           -> first (head &&& last) route
---                                            Just route@(_, True) -> first (last &&& head) route
---                                            Just route           -> first (head &&& last) route
---                                            _                    -> route' chrom
-          route' chrom = let (Just i1, Just  i2) = first (`elemIndex` fst chrom)
-                                                 . second (`elemIndex` fst chrom)
-                                                 $ subRoutes srp
-                        in if i1 < i2 then (subRoutes srp, False)
-                                      else (swap $ subRoutes srp, True)
---          rFst = r mbFst chrom1
---          rSnd = r mbSnd chrom2
-
---          rFst' = r Nothing chrom1
---          rSnd' = r Nothing chrom2
-
-          (fst', snd') = subRoutes srp
-          (accFst', accSnd') = case srp of
-                SubRouteBiDir {} -> (fst':snd':accFst, snd':fst':accSnd)
-                SubRouteUniDir{} -> (fst':accFst, snd':accSnd)
-
 prepareRoutes [] accFst accSnd = (accFst, accSnd)
-prepareRoutes (srp:t) accFst accSnd = case srp of
-        SubRouteBiDir {} ->
-                            uncurry (prepareRoutes t) . first (:accFst) . second (:accSnd)
-                            $ subRoutes srp
-        SubRouteUniDir{subRouteSource = src} ->
-                            uncurry (prepareRoutes t)
-                                    $ case src of   Left r  -> (r:accFst, accSnd)
-                                                    Right r -> (accFst, r:accSnd)
+prepareRoutes (srp:t) accFst accSnd = uncurry (prepareRoutes t) next
+    where next = case srp of
+            SubRoutes _ _ (Left donor) _ -> (donor:accFst, accSnd)
+            SubRoutes _ _ (Right donor) _ -> (accFst, donor:accSnd)
 
 
---    prepareRoutes t (acc' accFst mbFst) (acc' accSnd mbSnd)
---    where acc' a mb = case mb of Just route -> first (head &&& last) route :a
---                                 _          -> a
+prepareRoutes' [] accFst accSnd = (accFst, accSnd)
+prepareRoutes' (srp:t) accFst accSnd = uncurry (prepareRoutes' t) next
+    where next = case srp of
+            SubRoutes _ _ (Left x) (Right y) -> (x:accFst, y:accSnd)
+            SubRoutes _ _ (Right x) (Left y) -> (y:accFst, x:accSnd)
+
+
 
 

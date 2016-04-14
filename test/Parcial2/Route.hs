@@ -14,7 +14,7 @@
 module Parcial2.Route( routeSpec, routeOrdSpec ) where
 
 import GeneticAlgorithm
-import Parcial2.Labyrinth (Route(..), POI(..), POIs(..))
+import Parcial2.Labyrinth (RouteFitness(..), POI(..), POIs(..))
 
 import Test.Hspec
 import Test.QuickCheck
@@ -32,10 +32,10 @@ instance Arbitrary POIs where arbitrary = oneof [ elements [POINone, POIBoth]
 
 
 
-routeSpec = describe "Route" $ do
+routeSpec = describe "RouteFitness" $ do
 
     specify "Any 'CompleteRoute' < any 'PartialRoute'" $ property $
-        \x v i l -> (CompleteRoute x :: Route) `shouldSatisfy` (< PartialRoute v i l)
+        \x v i l -> (CompleteRoute x :: RouteFitness) `shouldSatisfy` (< PartialRoute v i l)
 
     it "compares 'CompleteRoute' by underlying value" $ property $
         \x y -> compare x y `shouldBe` compare (CompleteRoute x)
@@ -63,8 +63,8 @@ rEx1 = [cr1, cr2, pr1, cr3, pr2, cr4, pr3]
 eEx1Min = [ cr2, cr1, cr4, cr3, pr3, pr2, pr1 ]
 
 
-routeOrdSpec = describe "Route ordering examples" $ do
+routeOrdSpec = describe "RouteFitness ordering" $ do
     it "sorts correctly in 'Min' direction"
-        $ sort (rEx1 :: [Route]) `shouldBe` eEx1Min
+        $ sort (rEx1 :: [RouteFitness]) `shouldBe` eEx1Min
 
 
