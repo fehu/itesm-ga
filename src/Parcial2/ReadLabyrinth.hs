@@ -62,20 +62,10 @@ labyrinthFile = do n' <- many1 digit
                    let n = read n' :: Int
 
                    many newline
-                   conns <- count n $ do
-                                         r <- count n $ do b <- digit
-                                                           readComma
-                                                           return $ case b of '0' -> False
-                                                                              '1' -> True
-
---                                         r <- many $ do b <- digit
---                                                        readComma
---                                                        return $ case b of '0' -> False
---                                                                           '1' -> True
-
-
---                                         newline
-                                         return r
+                   conns <- count n $ count n $ do b <- digit
+                                                   readComma
+                                                   return $ case b of '0' -> False
+                                                                      '1' -> True
                    many newline
                    (vI, vF) <- readPair
                    many newline
@@ -86,7 +76,7 @@ labyrinthFile = do n' <- many1 digit
 
                    return $ LabyrinthDescription n
                                                  (buildConnections conns)
-                                                 (vI, vF)
+                                                 (vI-1, vF-1)
                                                  coords
 
 
