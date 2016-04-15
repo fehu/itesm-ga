@@ -1,5 +1,6 @@
 ##### TODO
 
+- [ ] fix runtime errors
 
 ### GA
 
@@ -18,4 +19,5 @@
 
 ### GA Tests
 
-- [ ] test on `labyrinthExample`
+- [x] test on `labyrinthExample`
+- [ ] assess tests on `labyrinthExample`
