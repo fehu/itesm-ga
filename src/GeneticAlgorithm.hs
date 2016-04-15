@@ -85,11 +85,19 @@ class ( GeneticAlgorithm ga
 
         selectResult    :: ga -> Assessed chrom fit -> (res, DebugData ga)
 
+        initHook        :: ga -> Int -> IO ()
+        iterationHook   :: ga -> IO ()
+
+
+        initHook _ _ = return ()
+        iterationHook _ = return ()
 
         initialPopulation ga pop = sequence $ do _ <- [1..pop]
                                                  return $ randomChromosome ga
 
-        runGA ga popSize = runGA' ga =<< initialPopulation ga popSize
+        runGA ga popSize = do
+            initHook ga popSize
+            runGA' ga =<< initialPopulation ga popSize
 
 
 
@@ -109,6 +117,8 @@ runGA' ga pop = do
         newPop  =  intact
                 ++ concatMap (pairToList . uncurry (crossover ga)) cross
                 ++ mutated
+
+    iterationHook ga
 
     if stop  then return $ selectResult ga fit
              else runGA' ga newPop

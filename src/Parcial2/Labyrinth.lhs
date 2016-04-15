@@ -958,7 +958,6 @@ Se definen las siguientes \emph{operaciones sobre genes} con la probabilidad de 
 
   data GAParams = GAParams  { gaChromGenMaxChainLen  :: Int
                             , gaChromGenMaxChains    :: Int
-                            , gaPopulationSize       :: Int
 
                             , gaMutateMaxChainsGen   :: Int
                             , gaMutateMaxChainLen    :: Int
@@ -966,9 +965,9 @@ Se definen las siguientes \emph{operaciones sobre genes} con la probabilidad de 
                             , gaMaxUnchangedIter     :: Int
                             , gaMaxIters             :: Int
 
-                            , gaSelIntactFrac        :: Ratio Int
-                            , gaSelCrossoverFrac     :: Ratio Int
-                            , gaSelMutateFrac        :: Ratio Int
+                            , gaSelIntactFrac        :: Rational
+                            , gaSelCrossoverFrac     :: Rational
+                            , gaSelMutateFrac        :: Rational
     }
 
   data GACache = GACache {
@@ -1335,10 +1334,10 @@ de un cromosoma, dependiendo de su índice en la lista.
                isum = sum is
 
 
-  assessedRandIndexGen  :: Integer  -- Population size.
+  assessedRandIndexGen  :: Int      -- Population size.
                         -> IO Int   -- Random index.
   assessedRandIndexGen n = randIdx
-    where  probs    = assessedProbs n
+    where  probs    = assessedProbs $ toInteger n
            -- accumulated probabilities
            accProbs = snd $ foldr  (\p (p', acc) -> (p'+p, p'+p : acc))
                                    (0,[]) probs
@@ -1431,6 +1430,17 @@ de un cromosoma, dependiendo de su índice en la lista.
 
 \subsection{Ejecución de algoritmo genético}
 \label{subsec:gaRun}
+
+\noindent Se implementan los actualizaciónes de cache.
+
+\begin{code}
+
+    initHook ga pop = setCachedIdxGen (gaCache ga) (assessedRandIndexGen pop)
+
+    iterationHook ga = affectCachedIter (gaCache ga) (+1)
+
+\end{code}
+
 
 \noindent Se presenta aquí parte de código desde \hssrc{GeneticAlgorithm}{GeneticAlgorithm}.
 
