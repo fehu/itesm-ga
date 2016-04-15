@@ -11,7 +11,7 @@
 
   - [ ] sub-routes mutation must preserve uniquness of genes.
 
-- [ ] selection must be unique
+- [x] selection must be unique
 
 - [x] select intact
 - [x] select crossover

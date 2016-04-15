@@ -879,7 +879,7 @@ que se dividen en los que cambian un gen o una sub-ruta.
 
 \end{code}
 
-Se definen las siguientes \emph{operaciones sobre sub-rutas}:
+Se definen las siguientes \emph{operaciones sobre sub-rutas}: {\color{red} \Large disactivados}
 \begin{itemize}
   \item Cambia una sub-ruta valida por otra aleatoria (valida),
         con misma longitud.
@@ -930,8 +930,8 @@ Se definen las siguientes \emph{operaciones sobre genes} con la probabilidad de 
 
   mutGenePOI = (0.01, mutGenePOI')
   mutGenePOI' :: GA -> MutateGene
-  mutGenePOI' ga ch gene  = do print "mutGenePOI"
-                               fromMaybe gene <$>  randChoiceSafe notFound
+  mutGenePOI' ga ch gene  =    fromMaybe gene
+                          <$>  randChoiceSafe notFound
         where  l = gaLabyri ga
                notFound = filter (not . (`elem` ch)) $ labyrinthPOIs l
 
@@ -944,7 +944,6 @@ Se definen las siguientes \emph{operaciones sobre genes} con la probabilidad de 
   mutGeneAny = (0.005, mutGeneAny')
   mutGeneAny' :: GA -> MutateGene
   mutGeneAny' ga chrom gene = do
-        print "mutGeneAny"
         gen <- getStdGen
         let (gene', _) = randUnique (gaLabyri ga) chrom gen
         return gene'
@@ -982,7 +981,7 @@ Se definen las siguientes \emph{operaciones sobre genes} con la probabilidad de 
       , cacheBestRepeats   :: IORef Int
       , cacheBestFitness   :: IORef (Maybe RouteFitness)
       , cacheIter          :: IORef Int
-      , cacheSelIndexGen   :: IORef (IO Int)
+      , cacheSelIndexGen   :: IORef ([Int] -> IO Int)
     }
 
   cachedBestFit :: GACache -> IO (Maybe RouteFitness)
@@ -1255,7 +1254,7 @@ Se genera el cromosoma.
         bestRepeats  <- newIORef 0
         bestFitness  <- newIORef Nothing
         iter         <- newIORef 0
-        selIndexGen  <- newIORef (return (-1))
+        selIndexGen  <- newIORef (const $ return (-1))
 
         let cache = GACache  neighbours
                              bestRepeats
@@ -1341,8 +1340,9 @@ de un cromosoma, dependiendo de su índice en la lista.
                isum = sum is
 
 
-  assessedRandIndexGen  :: Int      -- Population size.
-                        -> IO Int   -- Random index.
+  assessedRandIndexGen  :: Int    -- Population size.
+                        -> [Int]  -- Previous indices.
+                        -> IO Int -- Random index.
   assessedRandIndexGen n = randIdx
     where  probs    = assessedProbs $ toInteger n
            -- accumulated probabilities
@@ -1356,7 +1356,15 @@ de un cromosoma, dependiendo de su índice en la lista.
                                     else length less - 1  -- max of P(A < a)
 
            -- Generate a random assessed index.
-           randIdx = selIdx <$> randomIO
+           randIdx prev = do
+                r <- selIdx <$> randomIO
+                if r `elem` prev  then randIdx prev
+                                  else return r
+
+  replicateRandIndices prev' n igen = foldr f (return prev') [1..n]
+        where f _ prev = do p <- prev
+                            i <- igen p
+                            return $ i:p
 
   assessedRand selFrac ga assessed = do
         iGen <- cachedIdxGen $ gaCache ga
@@ -1364,7 +1372,7 @@ de un cromosoma, dependiendo de su índice en la lista.
             frac  = selFrac (gaParams ga)
             count = round $ pSize * frac
 
-        ids <- replicateM count iGen
+        ids <- replicateRandIndices [] count iGen --replicateM count iGen
 
         let ua = map fst $ unwrapAssessed assessed
         return $ map (ua !!) ids
