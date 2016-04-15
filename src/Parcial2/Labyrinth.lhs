@@ -222,11 +222,11 @@ para permitir destinguir facilmente los dos tipos de rutas
   data POIs = POINone | POISome POI | POIBoth deriving (Eq, Show)
 
   instance Ord POIs where
-    x `compare` y = poiIntVal x `compare` poiIntVal y
+    x `compare` y = poisIntVal x `compare` poisIntVal y
 
-  poiIntVal POINone = 0
-  poiIntVal (POISome _) = 1
-  poiIntVal POIBoth = 2
+  poisIntVal POINone = 0
+  poisIntVal (POISome _) = 1
+  poisIntVal POIBoth = 2
 
 
   data RouteFitness =
@@ -293,8 +293,10 @@ tendrá los mejores elementos en el principio.
   instance Ord RouteFitness where
     compare (CompleteRoute x)       (CompleteRoute y)       = compare x y
     compare (PartialRoute v1 i1 l1) (PartialRoute v2 i2 l2) =
---        compare (v2,i2,l2) (v1,i1,l1)
-        compare (-l2 - v2, i2) (-l1 - v1, i1)
+--        compare (-l2 - v2 - poisIntVal i2/10) (-l1 - v1 - poisIntVal i1/10)
+--        compare (l2 + v2*10, i2) (l1 + v1*10, i1)
+        compare (- l2 * v2 * (poisIntVal i2 + 1)) (- l1 * v1 * (poisIntVal i1 + 1))
+--        compare (-l2 - v2, i2) (-l1 - v1, i1)
     compare (CompleteRoute _)        PartialRoute{}         = LT
     compare  PartialRoute{}         (CompleteRoute _)       = GT
 
@@ -1097,7 +1099,7 @@ empezando con los tipos y siguiendo con los métodos.
                                           (False, True) -> POISome POITarget
                                           _             -> POINone
                                   len = sum $ map fromJust valid
-                                  v' = if isNaN v then 0 else v
+                                  v' = if isNaN v then 1 else v
                                   in PartialRoute v' poi len
 
 \end{code}
