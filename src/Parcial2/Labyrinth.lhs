@@ -1035,9 +1035,9 @@ empezando con los tipos y siguiendo con los métodos.
 
 >    type Target GA = Min
 
-\item Información de entrada para generación de la población --- el laberinto.
+\item Información de entrada para generación de la población --- el laberinto y los parametros.
 
->    type InputData GA = Labyrinth2D
+>    type InputData GA = (Labyrinth2D, GAParams)
 
 \item El resultado es el \underline{mejor cromosoma} obtenido.
 
@@ -1214,10 +1214,26 @@ Se genera el cromosoma.
 \end{code}
 
 
-\item ?
+\item Creación de instancia de \emph{GA}. Se crea el cache.
 
->    -- newGA :: InputData ga \rightarrow$ ga
+\begin{code}
 
+     -- newGA :: InputData ga \rightarrow$ IO ga
+     newGA (labyrinth, params) = do
+        let  nodes' = Set.toList $ nodes labyrinth
+             neighbours = Map.fromList $ do
+                node <- nodes'
+                let connected = filter ((`edgeOf` labyrinth) . (,) node) nodes'
+                return (node, connected)
+
+        bestRepeats  <- newIORef 0
+        bestFitness  <- newIORef Nothing
+        iter         <- newIORef 0
+
+        let cache = GACache neighbours bestRepeats bestFitness iter
+        return $ GA labyrinth params cache
+
+\end{code}
 
 \end{enumerate}
 
