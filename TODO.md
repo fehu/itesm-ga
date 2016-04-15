@@ -6,7 +6,7 @@
 - [x] crossover: replacement
 - [x] crossover: extension
 
-- [ ] mutation
+- [x] mutation
 
 - [ ] select intact
 - [ ] select crossover

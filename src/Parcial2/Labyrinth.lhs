@@ -92,6 +92,8 @@ aristas --- la existencia de rutas directas.
 
   isPOI p l = p == initial l || p == target l
 
+  labyrinthPOIs l = map ($ l) [initial, target]
+
 \end{code}
 
 
@@ -317,7 +319,7 @@ que este gen ya hubiera sido generado previamente.
 \begin{code}
   randPoint l  = first (`elemAt` nodes l)
                . randomR (0, length (nodes l) - 1)
-  rand l prev = fix $
+  randUnique l prev = fix $
               \f g ->
                let (r, g') = randPoint l g
                in if r `elem` prev  then f g' else (r, g')
@@ -328,7 +330,7 @@ Se empieza con la generación del primer punto
 \begin{code}
   randChain :: GA -> StdGen -> Int -> [Point2D] -> [Point2D]
   randChain ga g' len prev = nextRand ga [first'] g''
-      where (first', g'') = rand (gaLabyri ga) prev g'
+      where (first', g'') = randUnique (gaLabyri ga) prev g'
 \end{code}
 
 Los demas genes se seleccionan desde los vecinos (los nodos directamente conectados)
@@ -827,6 +829,113 @@ Se extienden los extremos del recipiente con los del donador:
 \end{figure}
 
 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Mutación de cromosomas}
+\label{subsec:mutation}
+
+
+La mutación de cromosomas consiste de varios operaciones,
+que se dividen en los que cambian un gen o una sub-ruta.
+
+\begin{code}
+
+  type MutateSubRoute  = [Point2D] -> IO [Point2D]
+  type MutateGene      = [Point2D] -> Point2D -> IO Point2D
+
+
+  -- Choose randomly an element from a list.
+  randChoice = fmap fst . randChoice'
+  randChoice' xs = do ind <- randomRIO (0, length xs - 1)
+                      return $ (xs !!) &&& id $ ind
+
+  randChoiceSafe [] = return Nothing
+  randChoiceSafe xs = Just <$> randChoice xs
+
+  randRange xs = do
+        (_,i1) <- randChoice' xs
+        (_,i2) <- randChoice' xs
+
+        return $ if i2 > i1 then (i1,i2) else (i2,i1)
+
+\end{code}
+
+Se definen las siguientes \emph{operaciones sobre sub-rutas}:
+\begin{itemize}
+  \item Cambia una sub-ruta valida por otra aleatoria (valida),
+        con misma longitud.
+
+\begin{code}
+  mutSubRouteSame :: GA -> MutateSubRoute
+  mutSubRouteSame ga ch = do
+      let srs = splitRoutes (gaLabyri ga) ch
+      (sr, sri) <- randChoice' srs
+      gen <- getStdGen
+      let len = length sr
+          rChain = randChain ga gen len []
+
+      return . concat  $   subseq 0 (sri-1) srs
+                       ++  rChain
+                       :   subseq (sri+1) len srs
+\end{code}
+
+  \item Cambia una sub-ruta, aleatoriamente seleccionada, por otra(s) aleatoria(s).
+
+\begin{code}
+  mutSubRouteAny :: GA -> MutateSubRoute
+  mutSubRouteAny ga ch = do
+    let maxGen  = gaMutateMaxChainsGen $ gaParams ga
+    let maxLen  = gaMutateMaxChainLen $ gaParams ga
+    n <- randomRIO (1, maxGen)
+
+    cut <- flip (uncurry subseq) ch <$> randRange ch
+
+    paste <- sequence $ do  _ <- [1..n]
+                            return $ do  len <- randomRIO (1, maxLen)
+                                         gen <- getStdGen
+                                         return $ randChain ga gen len []
+    return $ replaceList cut (concat paste) ch
+
+\end{code}
+
+\end{itemize}
+
+Se definen las siguientes \emph{operaciones sobre genes} con la probabilidad de aplicación:
+\begin{itemize}[leftmargin=2.5cm]
+  \item[$P=0.01$ ---] Cambia un gen a un de los puntos de interés (inicio/meta),
+    si todavía no existe en el cromosoma.
+
+\begin{code}
+
+  mutGenePOI = (0.01, mutGenePOI')
+  mutGenePOI' :: GA -> MutateGene
+  mutGenePOI' ga ch gene  =    fromMaybe gene
+                          <$>  randChoiceSafe notFound
+        where  l = gaLabyri ga
+               notFound = filter (not . (`elem` ch)) $ labyrinthPOIs l
+
+\end{code}
+
+  \item[$P=0.005$ ---] Cambia un gen a un aleatorio.
+
+\begin{code}
+
+  mutGeneAny = (0.005, mutGeneAny')
+  mutGeneAny' :: GA -> MutateGene
+  mutGeneAny' ga chrom gene = do
+        gen <- getStdGen
+        let (gene', _) = randUnique (gaLabyri ga) chrom gen
+        return gene'
+
+\end{code}
+
+\end{itemize}
+
+\noindent La aplicación de las mutaciones se encuentra en subsección \ref{subsec:ga}.
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Algoritmo genético}
@@ -837,6 +946,9 @@ Se extienden los extremos del recipiente con los del donador:
   data GAParams = GAParams  { gaChromGenMaxChainLen  :: Int
                             , gaChromGenMaxChains    :: Int
                             , gaPopulationSize       :: Int
+
+                            , gaMutateMaxChainsGen   :: Int
+                            , gaMutateMaxChainLen    :: Int
     }
 
   data GACache = GACache {
@@ -1017,11 +1129,7 @@ Se genera el cromosoma.
 %%%%%%%%%%%%%%%%%%%%%   %%%%%%%%%%%%%%%%%%%%
 
 
-\item La \emph{mutación} de cromosomas consiste de varios operaciones,
-      para cada de las cuales está definida la probabilidad de aplicación.
-      Se dividen en los que cambian un gen o una sub-ruta.
-
-      La mutación funciona en la siguiente manera:
+\item La \emph{mutación} funciona en la siguiente manera:
       \begin{enumerate}
         \item Se escoge y se aplique una de las \emph{operaciones sobre sub-rutas}.
         \item Para cada gen del resultado del punto previo,
@@ -1029,56 +1137,30 @@ Se genera el cromosoma.
               con su probabilidad asignada.
       \end{enumerate}
 
-      Se definen las siguientes \emph{operaciones sobre sub-rutas}:
-      \begin{itemize}
-        \item Cambia una sub-ruta valida por otra aleatoria (valida),
-              con misma longitud.
-        \item Cambia una sub-ruta, aleatoriamente seleccionada, por otra(s) aleatoria(s).
-      \end{itemize}
-
-      Se definen las siguientes \emph{operaciones sobre genes}:
-        \begin{itemize}[leftmargin=2cm]
-          \item[$P=0.01$ ---] Cambia un gen a un de los puntos de interés (inicio/meta),
-            si todavía no existe en el cromosoma.
-          \item[$P=0.005$ ---] Cambia un gen a un aleatorio.
-        \end{itemize}
-
-
 \begin{code}
 
      -- mutate :: ga \rightarrow$ Chromosome ga \rightarrow$ IO (Chromosome ga)
-     mutate ga chrom = do chrom' <- ($ chrom) =<< randChoice subRouteMuts
+     mutate ga chrom = do
+        chrom' <- ($ chrom) =<< randChoice (map ($ ga) subRouteMuts)
+        mutateGenes chrom' geneMuts
 
-                          sequence $ do  gene <- chrom'
-                                         let mutF (p, mut) g' = do d <- randomIO :: IO Double
-                                                                   g <- g'
-                                                                   if p < d  then mut g
-                                                                             else return g
-                                         return $ foldr mutF (return gene) geneMuts
+        where  subRouteMuts  = [ mutSubRouteSame, mutSubRouteAny ]
+               geneMuts      = [ mutGenePOI, mutGeneAny ]
 
-        where  subRouteMuts = [mutSubRouteSame, mutSubRouteAny]
-               geneMuts     = [ (0.01, mutGenePOI)
-                              , (0.005, mutGeneAny)
-                              ]
+               mutateGenes ch = mutateGenes' ch []
+               mutateGenes' [] mutated _ = return mutated
+               mutateGenes' orig@(gene:t) mutated muts =
+                    do  g <- gene'
+                        mutateGenes' t (mutated ++ [g]) muts
 
-               randChoice = fmap fst . randChoice'
-               randChoice' xs = do ind <- randomRIO (0, length xs - 1)
-                                   return $ (xs !!) &&& id $ ind
+                    where  chrom = mutated ++ orig
+                           mutF (p, mut) g' = do
+                                 d <- randomIO :: IO Double
+                                 g <- g'
+                                 if p < d then mut ga chrom g else return g
+                           gene' = foldr mutF (return gene) muts
 
-               mutSubRouteSame ch = do let srs = splitRoutes (gaLabyri ga) ch
-                                       (sr, sri) <- randChoice' srs
-                                       gen <- getStdGen
-                                       let len = length sr
-                                           rChain = randChain ga gen len []
-                                       undefined
-                                       return . concat  $   subseq 0 (sri-1) srs
-                                                        ++  rChain
-                                                        :   subseq (sri+1) len srs
 
-               mutSubRouteAny ch = undefined
-
-               mutGenePOI gene = undefined
-               mutGeneAny gene = undefined
 
 \end{code}
 
