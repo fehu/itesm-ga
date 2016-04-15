@@ -44,6 +44,7 @@ appArgs = CArgs {
     , Opt optSelIntactFrac
     , Opt optSelCrossoverFrac
     , Opt optSelMutateFrac
+    , Opt optSelFracs
     , Opt helpArg
     ]
   }
@@ -99,13 +100,26 @@ optSelMutateFrac = optional "" ["frac-mutation"]
                                []
 
 
+optSelFracs :: OptionalT3 Float Float Float
+optSelFracs = optional3' "f" ["fracs"] ["Set all the fractions at once."]
+                             "intact"    ["intact fraction"]
+                             "crossover" ["crossover fraction"]
+                             "mutation"  ["mutation fraction"]
+
 -----------------------------------------------------------------------------
 ---- Defaults
 
 
 readParams opts =
-    let orElse :: (Typeable a) =>  Optional1 a -> a -> a
+    let orElse :: (Typeable a) => Optional vs a -> a -> a
         opt `orElse` def = fromMaybe def $ opts `get` opt
+
+        intact'     = optSelIntactFrac    `orElse` 0.4
+        crossover'  = optSelCrossoverFrac `orElse` 0.3
+        mutation'   = optSelMutateFrac    `orElse` 0.3
+
+        (intact, crossover, mutation) = optSelFracs `orElse` (intact', crossover', mutation')
+
     in GAParams {   gaChromGenMaxChainLen  = optChromGenMaxChainLen `orElse` 5
                 ,   gaChromGenMaxChains    = optChromGenMaxChains   `orElse` 3
 
@@ -115,9 +129,9 @@ readParams opts =
                 ,   gaMaxUnchangedIter     = optMaxUnchangedIter    `orElse` 5
                 ,   gaMaxIters             = optMaxIters            `orElse` 10*1000
 
-                ,   gaSelIntactFrac        = toRational (optSelIntactFrac    `orElse` 0.4)
-                ,   gaSelCrossoverFrac     = toRational (optSelCrossoverFrac `orElse` 0.3)
-                ,   gaSelMutateFrac        = toRational (optSelMutateFrac    `orElse` 0.3)
+                ,   gaSelIntactFrac        = toRational intact
+                ,   gaSelCrossoverFrac     = toRational crossover
+                ,   gaSelMutateFrac        = toRational mutation
 
   }
 
