@@ -46,7 +46,7 @@ module Parcial2.Labyrinth where
   import Control.Monad.Fix
 
   import Data.Tuple (swap)
-  import Data.List (elemIndex, sort, nub)
+  import Data.List (elemIndex, sort, nub, minimumBy, maximumBy)
   import Data.Maybe (isJust, fromJust, fromMaybe, maybeToList)
   import Data.Bits (xor)
   import Data.Either (isLeft, isRight, Either(..))
@@ -639,6 +639,8 @@ Se genera el cromosoma.
       Aquí solamente se define la recombinación de dos cromosomas, su selección
       será descrita en la subsección \ref{subsec:gaRun}.
 
+      \noindent Se replazan los ``hoyos'' de la siguente manera:
+
       \begin{enumerate}
         \item Se seleccionan los genes $\lbrace c \rbrace$, miembros de ambos cromosomas.
 
@@ -667,12 +669,27 @@ Se genera el cromosoma.
               El remplazamiento se aplica solamente si
               \begin{enumerate*}[1)]
                 \item los genes en cuestion no fueron eliminados con los remplazamientos previos;
-                \item remplazamiento no creará genes duplicados.
+                \item remplazamiento no creará genes duplicados;
+                \item no disminuye el número de puntos de interes.
               \end{enumerate*}
 
          \item Se devuelve el par de cromosomas remplazados.
 
       \end{enumerate}
+
+      \medskip
+      \noindent Se extienden los extremos del recipiente con los del donador:
+      \begin{enumerate}
+        \item Se encuentran los extremos mas cortos del donador: entre todos los
+          puntos $\left{ c \right}$ se seleccionan los con menor y
+          mayor índices en el cromosoma donador. Si las sub-rutas entre los
+          puntos extremos y los índices correspondientes están \emph{validas} -- se guardan.
+        \item Se encuentran los extremos, correspondientes a los puntos, seleccionados en
+          el punto previo. Se guardan si son \emph{invalidas}.
+        \item Se remplazan los extremos correspondientes del recipiente por los
+          del donador (si fueron guardados ambos).
+      \end{enumerate}
+
 
       \begin{figure}
         \centering
@@ -728,24 +745,6 @@ Se genera el cromosoma.
 
         \caption{}
       \end{figure}
-
-      %% \begin{figure}
-      %%   \centering
-      %%       \input{CrossoverVioletOrangeChildrenFst.tikz }
-      %%   \caption{ Resultados de recombinación de sub-rutas en cromosoma {\color{violet} •} desde
-      %%             {\color{orange} •}.
-      %%           }
-      %%   \label{fig:crossOVchildren}
-      %% \end{figure}
-
-      %% \begin{figure}
-      %%   \centering
-      %%       \input{CrossoverVioletOrangeChildrenSnd.tikz }
-      %%   \caption{ Resultados de recombinación de sub-rutas en cromosoma {\color{orange} •} desde
-      %%             {\color{violet} •}.
-      %%           }
-      %%   \label{fig:crossVOchildren}
-      %% \end{figure}
 
 
       \begin{figure}
@@ -833,18 +832,29 @@ Se genera el cromosoma.
         \caption{}
       \end{figure}
 
+\medskip
+
 \begin{code}
 
-     type CrossoverDebug GA = ([SubRoutes], [(SubRoutes, Maybe [Point2D])])
+     type CrossoverDebug GA =  (  [SubRoutes]
+                               ,  (  [(SubRoutes, Maybe [Point2D])]
+                                  ,  (  (Maybe [Point2D], Maybe [Point2D])
+                                     ,  (Maybe [Point2D], Maybe [Point2D])
+                                     )
+                                  )
+                               )
 
      -- crossover' :: ga \rightarrow$ Chromosome ga \rightarrow$ Chromosome ga
      -- \rightarrow$ ((Chromosome ga, Chromosome ga), CrossoverDebug ga)
 
-     crossover' (GA l _ _) ch1 ch2 = (replaced, (subRoutes, debugAcc))
-        where   set1 = Set.fromList ch1
-                set2 = Set.fromList ch2
-                cs = Set.toList $  Set.intersection set1 set2
+     crossover' (GA l _ _) ch1 ch2 = (extended, debugs)
+        where   debugs = (subRoutes, (debugAcc, extDebug))
 
+                samePoints x y = let  set1 = Set.fromList x
+                                      set2 = Set.fromList y
+                                in Set.toList $  Set.intersection set1 set2
+
+                cs = samePoints ch1 ch2
                 sRoutes' = do   x <- cs
                                 y <- cs
                                 let sr = SubRoute (x,y)
@@ -855,8 +865,8 @@ Se genera el cromosoma.
 
 
                 replaceList what with l =
-                        let (Just il, Just ir)  = ( (head what `elemIndex`)
-                                                &&& (last what `elemIndex`)) l
+                        let (Just il, Just ir) = (  (head what `elemIndex`) &&&
+                                                    (last what `elemIndex`)) l
                             (left, _)   = splitAt il l
                             (_, right)  = splitAt (ir+1) l
                         in left ++ with ++ right
@@ -901,7 +911,56 @@ Se genera el cromosoma.
                                                      (\(Left x) -> x)
                                                      subRoutes
                                                      debugAcc'
-                replaced  = (replaced1, replaced2)
+
+                tryExtend donor receiver = (res, deb)
+                    where  cmp x   = compare `on` (`elemIndex` x)
+                           valid = all (`edgeOf` (l :: Labyrinth2D)) . lPairs
+                           inCase x c = if c x then Just x else Nothing
+
+                           cs = samePoints donor receiver
+
+
+                           left   = minimumBy (cmp donor) cs
+                           right  = maximumBy (cmp donor) cs
+
+                           Just diLeft   = left `elemIndex` donor
+                           Just diRight  = right `elemIndex` donor
+
+                           drLeft   = subseq 0 diLeft donor
+                           drRight  = subseq diRight (length donor -1) donor
+
+                           mbdRLeft   = drLeft `inCase` valid
+                           mbdRRight  = drRight `inCase` valid
+
+                           Just riLeft   = left `elemIndex` receiver
+                           Just riRight  = right `elemIndex` receiver
+
+                           rrLeft   = subseq 0 riLeft receiver
+                           rrRight  = subseq riRight (length receiver -1) receiver
+
+                           mbrRLeft   = rrLeft `inCase` (not . valid)
+                           mbrRRight  = rrRight `inCase` (not . valid)
+
+                           extend (Just src) (Just target) chrom =
+                                replaceSafe l target src chrom
+                           extend _ _ _ = Nothing
+
+                           extLeft   = extend mbdRLeft mbrRLeft receiver
+                           extRight  = extend mbdRLeft mbrRLeft
+                                     $ fromMaybe receiver extLeft
+
+                           debug = (extLeft, extRight)
+                           result =  (receiver `fromMaybe` extLeft)
+                                     `fromMaybe` extRight
+
+                           res = if null cs then receiver else result
+                           deb = if null cs then (Nothing, Nothing) else debug
+
+                (extended1, extDebug1) = tryExtend replaced2 replaced1
+                (extended2, extDebug2) = tryExtend replaced1 replaced2
+
+                extDebug = (extDebug1, extDebug2)
+                extended = (extended1, extended2)
 
 \end{code}
 
@@ -955,3 +1014,4 @@ Se genera el cromosoma.
 
 
 \end{document}
+

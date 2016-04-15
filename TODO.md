@@ -4,7 +4,7 @@
 ### GA
 
 - [x] crossover: replacement
-- [ ] crossover: extension
+- [x] crossover: extension
 
 - [ ] mutation
 

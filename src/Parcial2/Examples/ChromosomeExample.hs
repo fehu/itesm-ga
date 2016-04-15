@@ -50,6 +50,8 @@ data Setup = Setup { chromX :: String
 
                    , childrenOf  :: Maybe ChildSide
                    , childrenIds :: Maybe [Int]
+
+                   , childrenExt :: Maybe ChildSide
                    }
 
                    deriving Show
@@ -77,6 +79,7 @@ argsDescr = CArgs{
                         , Opt optSingleRoute
                         , Opt optChildren
                         , Opt optChildrenIds
+                        , Opt optExtChildren
                         , Opt helpArg
                         ]
   }
@@ -113,6 +116,9 @@ optChildrenIds = variable "" ["x-children"] ["Generate crossover children for gi
                                             , "`-x` must be specified." ]
                           "index" [ "children indicies." ]
 
+optExtChildren :: Optional1 ChildSide
+optExtChildren = optional "e" ["xx-children"] [ "Generate crossover extension children, for the parent given" ]
+                              [ "crossover parent, values: `Fst`, `Snd`" ]
 
 -----------------------------------------------------------------------------
 
@@ -129,7 +135,8 @@ main = do args <- getArgs
               ga = GA (labyrinth2D labyrinthExample) undefined undefined
               chrom1 = prepareChromosomeExample $ chromX setup
               chrom2 = prepareChromosomeExample $ chromY setup
-              (_, dd@(ddr, ddx)) = crossover' ga (fst chrom1) (fst chrom2)
+
+              (_, dd@(ddr, (ddx, ddxx))) = crossover' ga (fst chrom1) (fst chrom2)
 
               routes = let rts = if onlySources setup
                                   then prepareRoutes ddr [] []
@@ -143,7 +150,14 @@ main = do args <- getArgs
                     where f = if rev then last &&& head else head &&& last
               f = map getExtrs
 
-              pic = parentsPic `maybe` childrenPic $ childrenOf setup
+              pic = case (childrenExt setup, childrenOf setup) of
+                (Just side, Nothing) -> drawExtChildren (gaLabyri ga) side ddxx
+                (Nothing, Just side) -> childrenPic side
+                (Just _, Just _)     -> error "cannot use `-x` and `-e` at the same time"
+                _                    -> parentsPic
+
+--              childrenOf setup
+--              pic = (parentsPic `maybe` childrenPic $ childrenOf setup)
 
               parentsPic = tikzPicture []
                   $ uncurry ( tikzCrossover (shift setup)
@@ -160,7 +174,7 @@ main = do args <- getArgs
               writeIt f s = do writeFile f s
                                putStrLn $ "Wrote file " ++ f
 
---          print dd
+          print ddxx
 
           withHelp appName appDescr argsDescr cargs
             $ maybe (print pic) (`writeIt` show pic) $ file setup
@@ -184,6 +198,8 @@ parseArgs' (CArgValues chroms opts optErr) =
 
               , childrenOf  = opts `get` optChildren
               , childrenIds = varArgs <$> opts `get` optChildrenIds
+
+              , childrenExt = opts `get` optExtChildren
               }
             Left errs -> exitError errs
 
@@ -208,6 +224,9 @@ prepareRoutes' (srp:t) accFst accSnd = uncurry (prepareRoutes' t) next
 
 -----------------------------------------------------------------------------
 
+conns l = map (`edgeOf` l) . lPairs
+labelNode id y = tikzNode [] id (Just $ AbsPos (-2) (-y))
+
 drawChildren mbIds dta thisSide = TikzExpr $ concatMap ((pref:) . picSurround) draw
     where pref = "\n\\\\"
           picSurround = extract . tikzCmd "fbox" []
@@ -218,20 +237,17 @@ drawChildren mbIds dta thisSide = TikzExpr $ concatMap ((pref:) . picSurround) d
           ddata = first (subRoutesBoth &&& subRoutesLabyrinth) <$> reverse ddata'
 
           draw = do (((src', target'), l), mbRes) <- ddata
-                    let conns = map (`edgeOf` l) . lPairs
-
-                        rev x = if snd x then reverse $ fst x else fst x
+                    let rev x = if snd x then reverse $ fst x else fst x
                         src = rev src'
                         target = rev target'
 
-                        tSrc = tikzCromosome 0 [] src (conns src)
-                        tTar = tikzCromosome 1 [] target (conns target)
+                        tSrc = tikzCromosome 0 [] src (conns l src)
+                        tTar = tikzCromosome 1 [] target (conns l target)
 
                         tChildFail = tikzNode [] "fail" (Just $ AbsPos 5 (-2)) "ningún"
-                        tChildSucc = uncurry (tikzCromosome 2 []) . (id &&& conns)
+                        tChildSucc = uncurry (tikzCromosome 2 []) . (id &&& conns l)
                         tChild = tChildFail `maybe` tChildSucc $ mbRes
 
-                        labelNode id y = tikzNode [] id (Just $ AbsPos (-2) (-y))
 
                     return $ tikzPicture [] [ labelNode "src" 0 "Donado: "
                                             , tSrc
@@ -243,4 +259,18 @@ drawChildren mbIds dta thisSide = TikzExpr $ concatMap ((pref:) . picSurround) d
                                             , tChild
                                             ]
 
+-----------------------------------------------------------------------------
+
+drawExtChildren l Fst = drawExtChildren' l . fst -- (p@(mbFstLeft, mbFstRight), _)
+drawExtChildren l Snd = drawExtChildren' l . snd -- (_, p@(mbSndLeft, mbSndRight))
+
+drawExtChildren' l (mbLeft, mbRight) = tikzPicture [] [
+    labelNode "left" 0 "Izquierda: "
+  , drawExtResult l 0 mbLeft
+  , labelNode "right" 1 "Derecha: "
+  , drawExtResult l 1 mbRight
+  ]
+
+drawExtResult l chain (Just new) = tikzCromosome chain [] new (conns l new)
+drawExtResult _ chain _          = tikzNode [] ("fail" ++ show chain) (Just $ AbsPos 5 (-chain)) "no aplicó"
 
