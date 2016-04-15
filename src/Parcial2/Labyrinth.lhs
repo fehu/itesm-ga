@@ -585,13 +585,16 @@ Se extienden los extremos del recipiente con los del donador:
     subsección \ref{subsec:ga}.
 
 \begin{code}
-  replaceList :: (Eq a) => [a] -> [a] -> [a] -> [a]
+  replaceList :: (Eq a) => [a] -> [a] -> [a] -> Maybe [a]
   replaceList what with l =
-          let (Just il, Just ir) = (  (head what `elemIndex`) &&&
-                                      (last what `elemIndex`)) l
-              (left, _)   = splitAt il l
-              (_, right)  = splitAt (ir+1) l
-          in left ++ with ++ right
+          let ids = (  (head what `elemIndex`) &&&
+                       (last what `elemIndex`)) l
+          in case ids of
+                (Just il, Just ir) ->
+                     let  (left, _)   = splitAt il l
+                          (_, right)  = splitAt (ir+1) l
+                     in Just $ left ++ with ++ right
+                _ -> Nothing
 
 \end{code}
 \begin{code}
@@ -602,8 +605,9 @@ Se extienden los extremos del recipiente con los del donador:
           let candidate = replaceList what with l
               poisTarget = length $ filter (`isPOI` lab) what
               poisSrc    = length $ filter (`isPOI` lab) with
-          in  if poisSrc < poisTarget || candidate /= nub candidate
-              then Nothing else Just candidate
+          in do  c <- candidate
+                 if poisSrc < poisTarget || c /= nub c
+                 then Nothing else Just c
 
 \end{code}
 \begin{code}
@@ -883,6 +887,7 @@ Se definen las siguientes \emph{operaciones sobre sub-rutas}:
 \begin{code}
   mutSubRouteSame :: GA -> MutateSubRoute
   mutSubRouteSame ga ch = do
+      print "mutSubRouteSame"
       let srs = splitRoutes (gaLabyri ga) ch
       (sr, sri) <- randChoice' srs
       gen <- getStdGen
@@ -899,6 +904,7 @@ Se definen las siguientes \emph{operaciones sobre sub-rutas}:
 \begin{code}
   mutSubRouteAny :: GA -> MutateSubRoute
   mutSubRouteAny ga ch = do
+    print "mutSubRouteAny"
     let maxGen  = gaMutateMaxChainsGen $ gaParams ga
     let maxLen  = gaMutateMaxChainLen $ gaParams ga
     n <- randomRIO (1, maxGen)
@@ -909,7 +915,7 @@ Se definen las siguientes \emph{operaciones sobre sub-rutas}:
                             return $ do  len <- randomRIO (1, maxLen)
                                          gen <- getStdGen
                                          return $ randChain ga gen len []
-    return $ replaceList cut (concat paste) ch
+    return . fromJust $ replaceList cut (concat paste) ch
 
 \end{code}
 
@@ -924,8 +930,8 @@ Se definen las siguientes \emph{operaciones sobre genes} con la probabilidad de 
 
   mutGenePOI = (0.01, mutGenePOI')
   mutGenePOI' :: GA -> MutateGene
-  mutGenePOI' ga ch gene  =    fromMaybe gene
-                          <$>  randChoiceSafe notFound
+  mutGenePOI' ga ch gene  = do print "mutGenePOI"
+                               fromMaybe gene <$>  randChoiceSafe notFound
         where  l = gaLabyri ga
                notFound = filter (not . (`elem` ch)) $ labyrinthPOIs l
 
@@ -938,6 +944,7 @@ Se definen las siguientes \emph{operaciones sobre genes} con la probabilidad de 
   mutGeneAny = (0.005, mutGeneAny')
   mutGeneAny' :: GA -> MutateGene
   mutGeneAny' ga chrom gene = do
+        print "mutGeneAny"
         gen <- getStdGen
         let (gene', _) = randUnique (gaLabyri ga) chrom gen
         return gene'
@@ -1178,23 +1185,23 @@ Se genera el cromosoma.
 
      -- mutate :: ga \rightarrow$ Chromosome ga \rightarrow$ IO (Chromosome ga)
      mutate ga chrom = do
-        chrom' <- ($ chrom) =<< randChoice (map ($ ga) subRouteMuts)
-        mutateGenes chrom' geneMuts
+        -- chrom' <- ($ chrom) =<< randChoice (map ($ ga) subRouteMuts)
+        mutateGenes chrom geneMuts
 
-        where  subRouteMuts  = [ mutSubRouteSame, mutSubRouteAny ]
+        where  subRouteMuts  = [] -- [ mutSubRouteSame, mutSubRouteAny ]
                geneMuts      = [ mutGenePOI, mutGeneAny ]
 
                mutateGenes ch = mutateGenes' ch []
                mutateGenes' [] mutated _ = return mutated
-               mutateGenes' orig@(gene:t) mutated muts =
+               mutateGenes' (gene:t) mutated muts =
                     do  g <- gene'
                         mutateGenes' t (mutated ++ [g]) muts
 
-                    where  chrom = mutated ++ orig
+                    where  -- chrom g = mutated ++ g:t
                            mutF (p, mut) g' = do
                                  d <- randomIO :: IO Double
                                  g <- g'
-                                 if p < d then mut ga chrom g else return g
+                                 if p < d then mut ga mutated g else return g -- (chrom g)
                            gene' = foldr mutF (return gene) muts
 
 
@@ -1391,13 +1398,13 @@ de un cromosoma, dependiendo de su índice en la lista.
 
   \item Para la \underline{recombinación}.
 
-        Se escogen aleatoriamente dos fracciones establecidas (de tamaño igual)
-        de la población previa.
+        Se escogen aleatoriamente una fraccione establecida de la población previa
+        y se divida en dos partes iguales.
 
 \begin{code}
 
     selectCrossover ga assessed = zip <$> rand <*> rand
-        where rand = assessedRand gaSelCrossoverFrac ga assessed
+        where rand = assessedRand (flip (/) 2 . gaSelCrossoverFrac) ga assessed
 
 \end{code}
 
@@ -1435,9 +1442,12 @@ de un cromosoma, dependiendo de su índice en la lista.
 
 \begin{code}
 
-    initHook ga pop = setCachedIdxGen (gaCache ga) (assessedRandIndexGen pop)
+    initHook ga pop = do setCachedIdxGen (gaCache ga) (assessedRandIndexGen pop)
+                         putStrLn "@"
 
-    iterationHook ga = affectCachedIter (gaCache ga) (+1)
+    iterationHook ga = do putStrLn "!"
+                          affectCachedIter (gaCache ga) (+1)
+                          putStrLn ":"
 
 \end{code}
 

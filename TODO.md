@@ -9,6 +9,10 @@
 
 - [x] mutation
 
+  - [ ] sub-routes mutation must preserve uniquness of genes.
+
+- [ ] selection must be unique
+
 - [x] select intact
 - [x] select crossover
 - [x] select mutate
