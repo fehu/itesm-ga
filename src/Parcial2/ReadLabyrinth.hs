@@ -61,19 +61,27 @@ labyrinthFile :: GenParser Char st LabyrinthDescription
 labyrinthFile = do n' <- many1 digit
                    let n = read n' :: Int
 
-                   newline
-                   conns <- count n $ do r <- many $ do b <- digit
-                                                        readComma
-                                                        return $ case b of '0' -> False
-                                                                           '1' -> True
-                                         newline
-                                         return r
+                   many newline
+                   conns <- count n $ do
+                                         r <- count n $ do b <- digit
+                                                           readComma
+                                                           return $ case b of '0' -> False
+                                                                              '1' -> True
 
+--                                         r <- many $ do b <- digit
+--                                                        readComma
+--                                                        return $ case b of '0' -> False
+--                                                                           '1' -> True
+
+
+--                                         newline
+                                         return r
+                   many newline
                    (vI, vF) <- readPair
-                   newline
+                   many newline
 
                    coords <- count n $ do r <- readPair
-                                          newline
+                                          many newline
                                           return r
 
                    return $ LabyrinthDescription n
@@ -82,9 +90,9 @@ labyrinthFile = do n' <- many1 digit
                                                  coords
 
 
-readComma = do spaces
-               oneOf [',']
-               spaces
+readComma = do -- spaces
+               oneOf [',', '\n']
+               -- spaces
 
 readPair :: (Read a) => GenParser Char st (a, a)
 readPair  = do a <- many1 digit
