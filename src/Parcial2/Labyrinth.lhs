@@ -43,6 +43,7 @@ module Parcial2.Labyrinth where
 
   import Control.Exception
   import Control.Arrow (first, second, (&&&))
+  import Control.Monad (replicateM)
   import Control.Monad.Fix
 
   import Data.IORef
@@ -52,6 +53,7 @@ module Parcial2.Labyrinth where
   import Data.Bits (xor)
   import Data.Either (isLeft, isRight, Either(..))
   import Data.Function (on)
+  import Data.Ratio
   import Data.Set (Set, member, elemAt)
   import qualified Data.Set as Set
   import Data.Map (Map)
@@ -121,7 +123,10 @@ Su implementación se presentará a continuación.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Implementación}
+\section{Implementación I}
+
+Misceláneo.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Lectura de mapas}
@@ -160,6 +165,12 @@ Aquí se presenta la construcción del grafo a partir del mapa leido.
 \end{code}
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Implementación II}
+
+Se definan las operaciones \emph{atómicas} -- sobre genes y cromosomas,
+y los conceptos relacionados.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -510,7 +521,7 @@ Se comparan lexográficamente los sigientes valores:
 \label{subsec:crossover}
 
 Aquí solamente se define la recombinación de dos cromosomas, su selección
-será descrita en la subsección \ref{subsec:gaRun}.
+será descrita en la subsección \ref{subsec:gaSelect}.
 
 
 \subsubsection{Replazamiento}
@@ -952,8 +963,12 @@ Se definen las siguientes \emph{operaciones sobre genes} con la probabilidad de 
                             , gaMutateMaxChainsGen   :: Int
                             , gaMutateMaxChainLen    :: Int
 
-                            , maxUnchangedIter       :: Int
-                            , maxIters               :: Int
+                            , gaMaxUnchangedIter     :: Int
+                            , gaMaxIters             :: Int
+
+                            , gaSelIntactFrac        :: Ratio Int
+                            , gaSelCrossoverFrac     :: Ratio Int
+                            , gaSelMutateFrac        :: Ratio Int
     }
 
   data GACache = GACache {
@@ -961,6 +976,7 @@ Se definen las siguientes \emph{operaciones sobre genes} con la probabilidad de 
       , cacheBestRepeats   :: IORef Int
       , cacheBestFitness   :: IORef (Maybe RouteFitness)
       , cacheIter          :: IORef Int
+      , cacheSelIndexGen   :: IORef (IO Int)
     }
 
   cachedBestFit :: GACache -> IO (Maybe RouteFitness)
@@ -973,6 +989,9 @@ Se definen las siguientes \emph{operaciones sobre genes} con la probabilidad de 
 
   cachedIter = readIORef . cacheIter
   affectCachedIter = modifyIORef . cacheIter
+
+  cachedIdxGen = readIORef . cacheSelIndexGen
+  setCachedIdxGen = writeIORef . cacheSelIndexGen
 
   neighboursOf cache point = fromMaybe []
                            $ Map.lookup point (cacheNeighbours cache)
@@ -1208,8 +1227,8 @@ Se genera el cromosoma.
             repCount <- cachedRepeat cache
             iter <- cachedIter cache
 
-            return  $   repCount  >= maxUnchangedIter (gaParams ga)
-                    ||  iter      >= maxIters (gaParams ga)
+            return  $   repCount  >= gaMaxUnchangedIter (gaParams ga)
+                    ||  iter      >= gaMaxIters (gaParams ga)
 
 \end{code}
 
@@ -1221,6 +1240,7 @@ Se genera el cromosoma.
      -- newGA :: InputData ga \rightarrow$ IO ga
      newGA (labyrinth, params) = do
         let  nodes' = Set.toList $ nodes labyrinth
+
              neighbours = Map.fromList $ do
                 node <- nodes'
                 let connected = filter ((`edgeOf` labyrinth) . (,) node) nodes'
@@ -1229,8 +1249,14 @@ Se genera el cromosoma.
         bestRepeats  <- newIORef 0
         bestFitness  <- newIORef Nothing
         iter         <- newIORef 0
+        selIndexGen  <- newIORef (return (-1))
 
-        let cache = GACache neighbours bestRepeats bestFitness iter
+        let cache = GACache  neighbours
+                             bestRepeats
+                             bestFitness
+                             iter
+                             selIndexGen
+
         return $ GA labyrinth params cache
 
 \end{code}
@@ -1238,10 +1264,109 @@ Se genera el cromosoma.
 \end{enumerate}
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Implementación III}
+
+El proyecto separa las operaciones genéticos \emph{atómicos}, definidas en clase \emph{GA},
+de las \emph{masivas}, definidas en clase \emph{RunGA}.
+
+Las operaciones \emph{masivas} -- son las que trabajar con entera población:
+\begin{enumerate*}[1)]
+  \item selección de cromosomas para operaciones genéticos, generación de población inicial;
+  \item generación de población inicial;
+  \item ejecución de las iteraciones.
+\end{enumerate*}
+
+Las últimas dos están definidas en \hssrc{GeneticAlgorithm}{GeneticAlgorithm},
+pero su código se presentara incluso en subsección \ref{subsec:gaRun}.
 
 
-\subsection{??? gaRun ???}
-\label{subsec:gaRun}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{ Operaciones de selección }
+\label{subsec:gaSelect}
+
+Para preservación del tamaño de población, la unión de los tres
+siguientes selecciones debe siempre ser de mismo tamaño que la población,
+de la cual hubieron sidos seleccionados.
+
+Se uso un concepto \emph{Assessed}, el cual encapsula una lista de
+cromosomas con sus correspondientes valores de adaptación.
+Está siempre ordenada asendiantamente, para que los mejoros
+cromosomas (con menor valor de adaptación) estén en el principio.
+
+Se intente usar \emph{RouteFitness} sin transformarlos en un valor numerico;
+para esto se defina la función de densidad de probabilidad de selección
+de un cromosoma, dependiendo de su índice en la lista.
+
+\begin{align*}
+  P'_i &= \dfrac{0.1}{i} \\
+  P_i  &= \dfrac{P'_i}{ \sum\limits_j P'_j }
+\end{align*}
+
+\begin{tikzpicture}
+  \edef\N{200}
+
+  \draw[->] (0,0) -- (10,0) node[right] {$i$};
+  \draw[->] (0,0) -- (0,10) node[above] {$P'_i$};
+
+  \foreach \x   [evaluate=\x as \i using \x*\N*0.1] in {1,2,...,10}
+	\draw (\x,1pt) -- (\x,-3pt)
+	node[anchor=north] {\pgfmathprintnumber[fixed,precision=0]{\i}};
+
+  \foreach \y [evaluate=\y as \i using \y*0.01] in {0,...,10}
+	\draw (1pt,\y) -- (-3pt,\y)
+		node[anchor=east] {\pgfmathprintnumber[fixed,precision=3]{\i}};
+
+  \draw[xscale=10/\N, yscale=100, domain=1:\N,variable=\x,blue]
+    plot ({\x},{0.1 / \x});
+\end{tikzpicture}
+
+\bigskip
+
+\begin{code}
+
+  assessedProb' i  = 0.1 / fromInteger i
+
+  assessedProbs n  = map (/ isum) is
+        where  is = assessedProb' <$> [1..n]
+               isum = sum is
+
+
+  assessedRandIndexGen  :: Integer  -- Population size.
+                        -> IO Int   -- Random index.
+  assessedRandIndexGen n = randIdx
+    where  probs    = assessedProbs n
+           -- accumulated probabilities
+           accProbs = snd $ foldr  (\p (p', acc) -> (p'+p, p'+p : acc))
+                                   (0,[]) probs
+           -- select id, given a number in [0,1]
+           selIdx :: Double -> Int
+           selIdx d = let  -- P(A < a)
+                           less = (< d) `filter` accProbs
+                   in if null less  then 0                -- first
+                                    else length less - 1  -- max of P(A < a)
+
+           -- Generate a random assessed index.
+           randIdx = selIdx <$> randomIO
+
+  assessedRand selFrac ga assessed = do
+        iGen <- cachedIdxGen $ gaCache ga
+        let pSize = fromIntegral $ popSize assessed
+            frac  = selFrac (gaParams ga)
+            count = round $ pSize * frac
+
+        ids <- replicateM count iGen
+
+        let ua = map fst $ unwrapAssessed assessed
+        return $ map (ua !!) ids
+
+\end{code}
+
+\crule{0.75}
+\bigskip
 
 \begin{code}
 
@@ -1251,20 +1376,111 @@ Se genera el cromosoma.
 
 \end{code}
 
+\noindent Se define \underline{selección de cromosomas}:
+\begin{enumerate}[(a)]
 
-\newpage
+  \item Que \underline{pasan al siguiente generación intactos}.
 
-{\Huge \color{red} Esto es un reporte preliminar }
+    La fracción establecida de la población previa se escoje
+    aleatoriamente (con repeticiones).
 
-\begin{note}
-  La preferencia debe ser dada a las rutas que contienen un de los puntos de interes (inicio, meta).
+\begin{code}
 
-  La mutación debe extender/remplacar un gen al inicio/meta si $\exists$ una ruta directa.
+    selectIntact = assessedRand gaSelIntactFrac
 
-\end{note}
+\end{code}
+
+  \item Para la \underline{recombinación}.
+
+        Se escogen aleatoriamente dos fracciones establecidas (de tamaño igual)
+        de la población previa.
+
+\begin{code}
+
+    selectCrossover ga assessed = zip <$> rand <*> rand
+        where rand = assessedRand gaSelCrossoverFrac ga assessed
+
+\end{code}
+
+
+  \item Para la \underline{mutación}.
+
+        Se escoge aleatoriamente una fracción establecida de la población previa.
+
+\begin{code}
+
+    selectMutate = assessedRand gaSelMutateFrac
+
+\end{code}
+
+\end{enumerate}
+
+
+\medskip
+\noindent El resultado es el cromosoma con mejor valor de adaptación.
+
+\begin{code}
+
+    selectResult _ (Assessed (h:_)) = (fst h, ())
+
+\end{code}
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Ejecución de algoritmo genético}
+\label{subsec:gaRun}
+
+\noindent Se presenta aquí parte de código desde \hssrc{GeneticAlgorithm}{GeneticAlgorithm}.
+
+\begin{itemize}
+
+\item Generación de población inicial.
+
+\begin{spec}
+    initialPopulation ga pop = sequence $  do _ <- [1..pop]
+                                           return $ randomChromosome ga
+\end{spec}
+
+\item  Ejecución de las iteraciones del algoritmo.
+
+\begin{spec}
+
+runGA' ga pop = do
+    let fit = assessed $ map (id &&& fitness ga) pop
+
+    stop <- stopCriteria ga . map snd $ unwrapAssessed fit
+
+    intact  <- selectIntact ga fit
+    cross   <- selectCrossover ga fit
+    mut     <- selectMutate ga fit
+
+
+    mutated <- mapM (mutate ga) mut
+
+    let  pairToList (x,y) = [x,y]
+         newPop  =  intact
+                 ++ concatMap (pairToList . uncurry (crossover ga)) cross
+                 ++ mutated
+
+    if stop  then return $ selectResult ga fit
+             else runGA' ga newPop
+
+\end{spec}
+
+\end{itemize}
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Ejecución}
+
+{\Huge TODO}
 
 
 \end{document}

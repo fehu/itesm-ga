@@ -8,12 +8,14 @@
 
 - [x] mutation
 
-- [ ] select intact
-- [ ] select crossover
-- [ ] select mutate
+- [x] select intact
+- [x] select crossover
+- [x] select mutate
 
 - [x] stop criteria
 
-- [ ] creation
+- [x] creation
 
+### GA Tests
 
+- [ ] test on `labyrinthExample`

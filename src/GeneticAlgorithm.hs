@@ -62,6 +62,8 @@ assessed = Assessed . sortWith snd
 
 unwrapAssessed (Assessed l) = l
 
+popSize (Assessed l) = length l
+
 class ( GeneticAlgorithm ga
       , res ~ ResultData ga
       , chrom ~ Chromosome ga
@@ -77,32 +79,39 @@ class ( GeneticAlgorithm ga
 
         initialPopulation :: ga -> Int -> IO [chrom]
 
-        selectIntact    :: ga -> Assessed chrom fit -> [chrom]
-        selectCrossover :: ga -> Assessed chrom fit -> [(chrom, chrom)]
-        selectMutate    :: ga -> Assessed chrom fit -> [chrom]
+        selectIntact    :: ga -> Assessed chrom fit -> IO [chrom]
+        selectCrossover :: ga -> Assessed chrom fit -> IO [(chrom, chrom)]
+        selectMutate    :: ga -> Assessed chrom fit -> IO [chrom]
 
         selectResult    :: ga -> Assessed chrom fit -> (res, DebugData ga)
 
+
+        initialPopulation ga pop = sequence $ do _ <- [1..pop]
+                                                 return $ randomChromosome ga
 
         runGA ga popSize = runGA' ga =<< initialPopulation ga popSize
 
 
 
 runGA' ga pop = do
+    let fit = assessed $ map (id &&& fitness ga) pop
+
     stop <- stopCriteria ga . map snd $ unwrapAssessed fit
+
+    intact  <- selectIntact ga fit
+    cross   <- selectCrossover ga fit
+    mut     <- selectMutate ga fit
+
 
     mutated <- mapM (mutate ga) mut
 
-    let newPop  =  intact
-                ++ concatMap ((\(x,y) -> [x,y]) . uncurry (crossover ga)) cross
+    let pairToList (x,y) = [x,y]
+        newPop  =  intact
+                ++ concatMap (pairToList . uncurry (crossover ga)) cross
                 ++ mutated
 
-    if stop then return $ selectResult ga fit
-            else runGA' ga newPop
+    if stop  then return $ selectResult ga fit
+             else runGA' ga newPop
 
-    where   fit = assessed $ map (id &&& fitness ga) pop
-            intact = selectIntact ga fit
-            cross  = selectCrossover ga fit
-            mut    = selectMutate ga fit
 
 

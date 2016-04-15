@@ -5,7 +5,14 @@ Chromosome=dist/build/ChromosomeExample/ChromosomeExample
 
 SRC=src/Parcial2
 
-if [ ! "${1,,}" = "--fast" ]; then
+
+# if [ ! "${1,,}" = "--clean" ]; then FLAG_CLEAN=1; else FLAG_CLEAN=0; fi
+
+if [ ! "${1,,}" = "--fast" ]; then FLAG_FAST=1; else FLAG_FAST=0; fi
+
+if [ ! "${1,,}" = "--x-fast" ]; then FLAG_X_FAST=1; else FLAG_X_FAST=0; fi
+
+if [[ ! ($FLAG_FAST || $FLAG_X_FAST) ]]; then
 
     # Clean and build the project.
     cabal clean
@@ -22,6 +29,8 @@ if [ ! "${1,,}" = "--fast" ]; then
         --html-location='http://hackage.haskell.org/packages/archive/$pkg/latest/doc/html'
 
 fi
+
+if [ ! $FLAG_X_FAST ]; then
 
 # Generate Tikz Labyrinth examples.
 $Labyrinth --map build/MapExampleRaw.tikz.tex &&\
@@ -51,7 +60,9 @@ $Chromosome "violet" "orange" -x Fst -o build/CrossoverVioletOrangeChildrenFst.t
 $Chromosome "violet" "orange" -x Snd -o build/CrossoverVioletOrangeChildrenSnd.tikz &&\
 
 $Chromosome "violet" "blue" -x Fst -o build/CrossoverVioletBlueChildrenFst.tikz &&\
-$Chromosome "violet" "blue" -x Snd -o build/CrossoverVioletBlueChildrenSnd.tikz &&\
+$Chromosome "violet" "blue" -x Snd -o build/CrossoverVioletBlueChildrenSnd.tikz
+
+fi
 
 # Generate PDF for 'Parcial2/Labyrinth.lhs'.
 scripts/lhs2pdf $SRC/Labyrinth.lhs
