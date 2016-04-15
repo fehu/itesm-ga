@@ -104,6 +104,8 @@ class ( GeneticAlgorithm ga
 runGA' ga pop = do
     let fit = assessed $ map (id &&& fitness ga) pop
 
+    iterationHook ga
+
     stop <- stopCriteria ga . map snd $ unwrapAssessed fit
 
     intact  <- selectIntact ga fit
@@ -111,17 +113,24 @@ runGA' ga pop = do
     mut     <- selectMutate ga fit
 
 
+    print $ length intact
+    print $ length cross
+    print $ length mut
+
     mutated <- mapM (mutate ga) mut
+
+    print $ length mutated
 
     let pairToList (x,y) = [x,y]
         newPop  =  intact
                 ++ concatMap (pairToList . uncurry (crossover ga)) cross
                 ++ mutated
 
-    iterationHook ga
+    putStrLn $ "stop = " ++ show stop
 
     if stop  then return $ selectResult ga fit
-             else runGA' ga newPop
+             else do putStrLn "run rec GA"
+                     runGA' ga newPop
 
 
 
