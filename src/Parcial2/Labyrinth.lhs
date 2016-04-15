@@ -282,12 +282,10 @@ tendrá los mejores elementos en el principio.
 \end{code}
 
 
-\textbf{\Large No se usa}
-
 Función de utilidad: separación de las sub-rutas que se encuentran dentro de un cromosoma.
 Separa los puntos de interes como sub-rutas.
 
-\begin{spec}
+\begin{code}
   splitRoutes :: Labyrinth2D -> Chromosome GA -> [[Gene GA]]
   splitRoutes l = reverse . map reverse . splitRoutes' [] [] l
 
@@ -301,10 +299,103 @@ Separa los puntos de interes como sub-rutas.
         _                             -> splitRoutes' (addR accRoute accSplit) [h] l t
     where   addR [] s = s
             addR r s = r:s
-\end{spec}
+\end{code}
 
 
 Las pruebas del contenedor \emph{Route} se encuentran en \hstest{Parcial2-Route}{Parcial2/Route.hs}.
+
+La función misma se definerá en subsección \ref{subsec:ga}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Cromosomas aleatorios}
+\label{subsec:random}
+
+Un gen aleatorio se selecciona entre todos los nodos del mapa, y se re-genera en caso de
+que este gen ya hubiera sido generado previamente.
+
+\begin{code}
+  randPoint l  = first (`elemAt` nodes l)
+               . randomR (0, length (nodes l) - 1)
+  rand l prev = fix $
+              \f g ->
+               let (r, g') = randPoint l g
+               in if r `elem` prev  then f g' else (r, g')
+\end{code}
+
+Se empieza con la generación del primer punto
+
+\begin{code}
+  randChain :: GA -> StdGen -> Int -> [Point2D] -> [Point2D]
+  randChain ga g' len prev = nextRand ga [first'] g''
+      where (first', g'') = rand (gaLabyri ga) prev g'
+\end{code}
+
+Los demas genes se seleccionan desde los vecinos (los nodos directamente conectados)
+del gen previo.
+
+Durante la generación de cadenas se consideran las cadenas, generadas previamente,
+para no permitir repeticiones de genes.
+
+Si se encontró una repetición, se intenta
+\begin{enumerate*}[1)]
+  \item buscar otro vecino, que no se repita;
+  \item cambiar la dirección de generación;
+  \item buscar a otro vecino, con la nueva dirección.
+\end{enumerate*}
+En caso que todas las opciones fallen, la cadena se queda de tamaño incompleto.
+
+
+\begin{code}
+            oneOf xs = first (xs !!) . randomR(0, length xs - 1)
+            nextRand ga = nextRand' ga False 0
+            nextRand' ga rev c chain@(h:t) g =
+                let neighbours = gaCache ga `neighboursOf` h
+                    (r, g') = oneOf neighbours (g :: StdGen)
+                    moreTries = c < 5 * length neighbours
+                in if r `elem` prev || r `elem` chain
+                 then -- connected to some other chain
+                      if moreTries then nextRand' ga rev (c+1) chain g' -- 1 / 3
+                                   else if rev then chain -- incomplete
+                                               else nextRand' ga True (c+1) chain g' -- 2
+                 else if length chain + 1 == len
+                  then r:chain -- return
+                  else nextRand' ga rev c (r:chain) g' -- next
+\end{code}
+
+
+\noindent La generación de cromosoma completa se presentará en subsección \ref{subsec:ga}.
+
+\crule{0.75}
+
+\begin{figure}
+    \centering
+    \input{MapExampleRaw.tikz}
+    \caption{Ejemplo de mapa, inicio: 0--2, meta: 9--3.}
+    \label{fig:rawMapExample}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \input{MapExampleChromosomes.tikz}
+    \caption{Se presentan algunos cromosomas en el mapa.
+             Los cromosomas {\color{orange} •} {\color{blue} •} {\color{green} •} están compuestas
+               de pares de genes, conectados por aristas;
+             mientras que los cromosomas {\color{red} •} {\color{violet} •} están compuestos
+               de cadenas de genes, conectados por aristas, de longitud 3.
+            \textit{\small (Son de diferente grosor para que se ven mejor
+                            las conecciones que existen en varios cromosomas)}
+            }
+    \label{fig:chromosomesMapExample}
+\end{figure}
+
+
+\noindent Para mejorar las poblaciones iniciales, las cromosomas se componen de \emph{cadenas}
+-- secuencias de genes, que son sub-rutas validas de tamaños diferentes.
+
+En la figura \ref{fig:rawMapExample} se presenta el ejemplo de un mapa y
+en la figura \ref{fig:chromosomesMapExample} se presenta un ejemplo de cromosomas generados.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -411,7 +502,335 @@ Se comparan lexográficamente los sigientes valores:
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\subsection{Recombinación de cromosomas}
+\label{subsec:crossover}
+
+Aquí solamente se define la recombinación de dos cromosomas, su selección
+será descrita en la subsección \ref{subsec:gaRun}.
+
+
+\subsubsection{Replazamiento}
+
+Se replazan los ``hoyos'' de la siguente manera:
+
+\begin{enumerate}
+\item Se seleccionan los genes $\lbrace c \rbrace$, miembros de ambos cromosomas.
+
+\item Para ambos cromosomas se encuentran \emph{sub-rutas intercambiables}:
+      \begin{align*}
+        \forall ~&x \in \lbrace c \rbrace \\
+                 &y \in \lbrace c \rbrace \quad \implies \\
+                 &
+        \begin{cases}
+            \text{secuencia } \lbrace r_i \rbrace_{i=1}^{N_r}
+                & \mbox{si } \begin{aligned}
+                    \forall &~r_{j-1}, r_j \in \lbrace r_i \rbrace_{i=1}^{N_r} \\
+                    \exists & \text{ arista entre } r_{j-1} \text{ y } r_j
+                  \end{alaigned} \\
+                \lbrace\rbrace & \mbox{en otro caso}
+        \end{cases}
+      \end{align*}
+
+      Se guarda también la dirección de las sub-rutas para ambos cromosomas.
+
+\item Se aplica el remplazamiento para todas las rutas intercambiables ordenadas
+        (fue descrita en subsección \ref{subsec:subroutes}).
+      Se remplazan las sub-rutas no existentes por las existentes;
+      y se remplazan las existentes por mas cortas.
+
+      El remplazamiento se aplica solamente si
+      \begin{enumerate*}[1)]
+        \item los genes en cuestion no fueron eliminados con los remplazamientos previos;
+        \item remplazamiento no creará genes duplicados;
+        \item no disminuye el número de puntos de interes.
+      \end{enumerate*}
+
+ \item Se devuelve el par de cromosomas remplazados.
+
+\end{enumerate}
+
+\subsubsection{Extención de extremos}
+
+Se extienden los extremos del recipiente con los del donador:
+\begin{enumerate}
+\item Se encuentran los extremos mas cortos del donador: entre todos los
+  puntos $\left{ c \right}$ se seleccionan los con menor y
+  mayor índices en el cromosoma donador. Si las sub-rutas entre los
+  puntos extremos y los índices correspondientes están \emph{validas} -- se guardan.
+\item Se encuentran los extremos, correspondientes a los puntos, seleccionados en
+  el punto previo. Se guardan si son \emph{invalidas}.
+\item Se remplazan los extremos correspondientes del recipiente por los
+  del donador (si fueron guardados ambos).
+\end{enumerate}
+
+
+\crule{1}
+
+\noindent  Se definen unas funciones de utilidad; la definición de crosover se encuentra en
+    subsección \ref{subsec:ga}.
+
+\begin{code}
+  replaceList :: (Eq a) => [a] -> [a] -> [a] -> [a]
+  replaceList what with l =
+          let (Just il, Just ir) = (  (head what `elemIndex`) &&&
+                                      (last what `elemIndex`)) l
+              (left, _)   = splitAt il l
+              (_, right)  = splitAt (ir+1) l
+          in left ++ with ++ right
+
+\end{code}
+\begin{code}
+
+  replaceSafe  :: Labyrinth2D -> [Point2D] -> [Point2D] -> [Point2D]
+               -> Maybe [Point2D]
+  replaceSafe lab what with l =
+          let candidate = replaceList what with l
+              poisTarget = length $ filter (`isPOI` lab) what
+              poisSrc    = length $ filter (`isPOI` lab) with
+          in  if poisSrc < poisTarget || candidate /= nub candidate
+              then Nothing else Just candidate
+
+\end{code}
+\begin{code}
+
+  type ReplaceDebug = [(SubRoutes, Maybe [Point2D])]
+
+  tryReplace  :: [Point2D]
+              -> (Either SubRoutePoints SubRoutePoints -> Bool)
+              -> (Either SubRoutePoints SubRoutePoints -> SubRoutePoints)
+              -> [SubRoutes]
+              -> ReplaceDebug
+              -> ([Point2D], ReplaceDebug)
+  tryReplace chrom _ _ [] debugAcc = (chrom, debugAcc)
+  tryReplace chrom thisSide getThatSide (sr:srs) debugAcc =
+      tryReplace res thisSide getThatSide srs acc'
+      where  acc' =  if mbRes == Just chrom then debugAcc
+                     else (debug,mbRes):debugAcc
+             (mbRes, debug) = fromMaybe (Just chrom, sr) res'
+             res = fromMaybe chrom mbRes
+             res' = case sr of
+               SubRoutes l pts src' target' | thisSide target' ->
+                      do  target <- findSubRoute pts chrom
+                          let  src = getThatSide src'
+                               rev = snd src `xor` snd target
+
+                               debug = SubRoutes l pts
+                                          (fmap (const src) src')
+                                          (fmap (const target) target')
+
+                          return  ( replaceSafe l  (fst target)
+                                                   (fst src)
+                                                   chrom
+                                  , debug )
+               _ -> Nothing
+
+\end{code}
+\begin{code}
+
+  samePoints x y = let  set1 = Set.fromList x
+                        set2 = Set.fromList y
+                  in Set.toList $  Set.intersection set1 set2
+
+
+
+  type ExtendDebug' = (Maybe [Point2D], Maybe [Point2D])
+  type ExtendDebug = (ExtendDebug', ExtendDebug')
+
+  tryExtend  :: Labyrinth2D -> [Point2D] -> [Point2D]
+             -> ([Point2D], ExtendDebug')
+  tryExtend l donor receiver = (res, deb)
+    where  cmp x   = compare `on` (`elemIndex` x)
+           valid = all (`edgeOf` l) . lPairs
+           inCase x c = if c x then Just x else Nothing
+
+           cs = samePoints donor receiver
+
+
+           left   = minimumBy (cmp donor) cs
+           right  = maximumBy (cmp donor) cs
+
+           Just diLeft   = left `elemIndex` donor
+           Just diRight  = right `elemIndex` donor
+
+           drLeft   = subseq 0 diLeft donor
+           drRight  = subseq diRight (length donor -1) donor
+
+           mbdRLeft   = drLeft `inCase` valid
+           mbdRRight  = drRight `inCase` valid
+
+           Just riLeft   = left `elemIndex` receiver
+           Just riRight  = right `elemIndex` receiver
+
+           rrLeft   = subseq 0 riLeft receiver
+           rrRight  = subseq riRight (length receiver -1) receiver
+
+           mbrRLeft   = rrLeft `inCase` (not . valid)
+           mbrRRight  = rrRight `inCase` (not . valid)
+
+           extend (Just src) (Just target) chrom =
+                replaceSafe l target src chrom
+           extend _ _ _ = Nothing
+
+           extLeft   = extend mbdRLeft mbrRLeft receiver
+           extRight  = extend mbdRLeft mbrRLeft
+                     $ fromMaybe receiver extLeft
+
+           debug = (extLeft, extRight)
+           result =  (receiver `fromMaybe` extLeft)
+                     `fromMaybe` extRight
+
+           res = if null cs then receiver else result
+           deb = if null cs then (Nothing, Nothing) else debug
+
+\end{code}
+
+
+\begin{figure}
+\centering
+\caption{ Recombinación de cromosomas, marcados {\color{violet} •} y {\color{orange} •}
+          en la figura \ref{fig:chromosomesMapExample}.
+        }
+
+  \begin{subfigure}[b]{\textwidth}
+    \fbox{ \resizeInput{CrossoverVioletOrangeSources.tikz} }
+    \caption{ Los remplazamientos. }
+    \label{fig:crossVOsrc}
+  \end{subfigure}
+\\
+  \begin{subfigure}[b]{\textwidth}
+    \fbox{ \resizeInput{CrossoverVioletOrangeRoute0.tikz} }
+    \caption{ Remplazamiento {\color{orange} •} $\rightarrow$ {\color{violet} •} \#1. }
+    \label{fig:crossVOr0}
+  \end{subfigure}
+\\
+  \begin{subfigure}[b]{\textwidth}
+    \fbox{ \resizeInput{CrossoverVioletOrangeRoute1.tikz} }
+    \caption{ Remplazamiento {\color{violet} •} $\rightarrow$ {\color{orange} •}. }
+    \label{fig:crossVOr1}
+  \end{subfigure}
+\\
+  \begin{subfigure}[b]{\textwidth}
+    \fbox{ \resizeInput{CrossoverVioletOrangeRoute2.tikz} }
+    \caption{ Remplazamiento {\color{orange} •} $\rightarrow$ {\color{violet} •} \#2. }
+    \label{fig:crossVOr2}
+  \end{subfigure}
+
+\label{fig:crossVO}
+\end{figure}
+
+
+\begin{figure}
+\centering
+\begin{subfigure}[b]{\textwidth}
+    \input{CrossoverVioletOrangeChildrenFst.tikz }
+    \caption{ Resultados de recombinación de sub-rutas en cromosoma {\color{violet} •} desde
+              {\color{orange} •}.
+            }
+    \label{fig:crossOVchildren}
+\end{subfigure}
+\\
+\begin{subfigure}[b]{\textwidth}
+    \input{CrossoverVioletOrangeChildrenSnd.tikz }
+    \caption{ Resultados de recombinación de sub-rutas en cromosoma {\color{orange} •} desde
+              {\color{violet} •}.
+            }
+    \label{fig:crossVOchildren}
+\end{subfigure}
+
+\caption{}
+\end{figure}
+
+
+\begin{figure}
+\centering
+\caption{ Recombinación de cromosomas, marcados {\color{violet} •} y {\color{blue} •}
+          en la figura \ref{fig:chromosomesMapExample}.
+        }
+
+  \begin{subfigure}[b]{\textwidth}
+    \fbox{ \resizeInput{CrossoverVioletBlueSources.tikz} }
+    \caption{ Los remplazamientos. }
+    \label{fig:crossVBsrc}
+  \end{subfigure}
+\\
+  \begin{subfigure}[b]{\textwidth}
+    \fbox{ \resizeInput{CrossoverVioletBlueRoute0.tikz} }
+    \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
+    \label{fig:crossVBr0}
+  \end{subfigure}
+\\
+  \begin{subfigure}[b]{\textwidth}
+    \fbox{ \resizeInput{CrossoverVioletBlueRoute1.tikz} }
+    \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
+    \label{fig:crossVBr1}
+  \end{subfigure}
+\\
+  \begin{subfigure}[b]{\textwidth}
+    \fbox{ \resizeInput{CrossoverVioletBlueRoute2.tikz} }
+    \caption{ Remplazamiento {\color{violet} •} $\rightarrow$ {\color{blue} •}. }
+    \label{fig:crossVBr2}
+  \end{subfigure}
+\\
+  \begin{subfigure}[b]{\textwidth}
+    \fbox{ \resizeInput{CrossoverVioletBlueRoute3.tikz} }
+    \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
+    \label{fig:crossVBr3}
+  \end{subfigure}
+\\
+  \begin{subfigure}[b]{\textwidth}
+    \fbox{ \resizeInput{CrossoverVioletBlueRoute4.tikz} }
+    \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
+    \label{fig:crossVBr4}
+  \end{subfigure}
+\\
+  \begin{subfigure}[b]{\textwidth}
+    \fbox{ \resizeInput{CrossoverVioletBlueRoute5.tikz} }
+    \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
+    \label{fig:crossVBr5}
+  \end{subfigure}
+\\
+  \begin{subfigure}[b]{\textwidth}
+    \fbox{ \resizeInput{CrossoverVioletBlueRoute6.tikz} }
+    \caption{ Remplazamiento {\color{violet} •} $\rightarrow$ {\color{blue} •}. }
+    \label{fig:crossVBr6}
+  \end{subfigure}
+\\
+  \begin{subfigure}[b]{\textwidth}
+    \fbox{ \resizeInput{CrossoverVioletBlueRoute7.tikz} }
+    \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
+    \label{fig:crossVBr7}
+  \end{subfigure}
+
+\label{fig:crossVB}
+\end{figure}
+
+
+\begin{figure}
+\centering
+\begin{subfigure}[b]{\textwidth}
+    \input{CrossoverVioletBlueChildrenFst.tikz }
+    \caption{ Resultados de recombinación de sub-rutas en cromosoma {\color{blue} •} desde
+              {\color{violet} •}.
+            }
+    \label{fig:crossVBchildren}
+\end{subfigure}
+\\
+\begin{subfigure}[b]{\textwidth}
+    \input{CrossoverVioletBlueChildrenSnd.tikz }
+    \caption{ Resultados de recombinación de sub-rutas en cromosoma {\color{violet} •} desde
+              {\color{blue} •}.
+            }
+    \label{fig:crossBVchildren}
+\end{subfigure}
+
+\caption{}
+\end{figure}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \subsection{Algoritmo genético}
+\label{subsec:ga}
 
 \begin{code}
 
@@ -526,92 +945,8 @@ empezando con los tipos y siguiendo con los métodos.
 
 \item Generación de cromosomas aleatorios.
 
-\begin{figure}
-    \centering
-    \input{MapExampleRaw.tikz}
-    \caption{Ejemplo de mapa, inicio: 0--2, meta: 9--3.}
-    \label{fig:rawMapExample}
-\end{figure}
-
-\begin{figure}
-    \centering
-    \input{MapExampleChromosomes.tikz}
-    \caption{Se presentan algunos cromosomas en el mapa.
-             Los cromosomas {\color{orange} •} {\color{blue} •} {\color{green} •} están compuestas
-               de pares de genes, conectados por aristas;
-             mientras que los cromosomas {\color{red} •} {\color{violet} •} están compuestos
-               de cadenas de genes, conectados por aristas, de longitud 3.
-            \textit{\small (Son de diferente grosor para que se ven mejor
-                            las conecciones que existen en varios cromosomas)}
-            }
-    \label{fig:chromosomesMapExample}
-\end{figure}
-
-
-\noindent Para mejorar las poblaciones iniciales, las cromosomas se componen de \emph{cadenas}
--- secuencias de genes, que son sub-rutas validas de tamaños diferentes.
-
-En la figura \ref{fig:rawMapExample} se presenta el ejemplo de un mapa y
-en la figura \ref{fig:chromosomesMapExample} se presenta un ejemplo de cromosomas generados.
-
-\medskip
-
 >    -- randomChromosome :: ga \rightarrow$ IO (Chromosome ga)
->    randomChromosome (GA l params cache) = do
->       let
-
-
-Un gen aleatorio se selecciona entre todos los nodos del mapa, y se re-genera en caso de
-que este gen ya hubiera sido generado previamente.
-
-\begin{code}
-            randPoint   = first (`elemAt` nodes l)
-                        . randomR (0, length (nodes l) - 1)
-            rand prev = fix $
-                        \f g ->
-                         let (r, g') = randPoint g
-                         in if r `elem` prev  then f g' else (r, g')
-\end{code}
-
-Se empieza con la generación del primer punto
-
-\begin{code}
-            randChain :: StdGen -> Int -> [Point2D] -> [Point2D]
-            randChain g' len prev = nextRand [first'] g''
-                where (first', g'') = rand prev g'
-\end{code}
-
-Los demas genes se seleccionan desde los vecinos (los nodos directamente conectados)
-del gen previo.
-
-Durante la generación de cadenas se consideran las cadenas, generadas previamente,
-para no permitir repeticiones de genes.
-
-Si se encontró una repetición, se intenta
-\begin{enumerate*}[1)]
-  \item buscar otro vecino, que no se repita;
-  \item cambiar la dirección de generación;
-  \item buscar a otro vecino, con la nueva dirección.
-\end{enumerate*}
-En caso que todas las opciones fallen, la cadena se queda de tamaño incompleto.
-
-
-\begin{code}
-                      oneOf xs = first (xs !!) . randomR(0, length xs - 1)
-                      nextRand = nextRand' False 0
-                      nextRand' rev c chain@(h:t) g =
-                          let neighbours = cache `neighboursOf` h
-                              (r, g') = oneOf neighbours (g :: StdGen)
-                              moreTries = c < 5 * length neighbours
-                          in if r `elem` prev || r `elem` chain
-                           then -- connected to some other chain
-                                if moreTries then nextRand' rev (c+1) chain g' -- 1 / 3
-                                             else if rev then chain -- incomplete
-                                                         else nextRand' True (c+1) chain g' -- 2
-                           else if length chain + 1 == len
-                            then r:chain -- return
-                            else nextRand' rev c (r:chain) g' -- next
-\end{code}
+>    randomChromosome ga@(GA _ params _) = do
 
 Se selecciona aleatoriamente la longetud de \emph{cadenas}.
 
@@ -625,7 +960,7 @@ Se genera el cromosoma.
 
 \begin{code}
         g <- getStdGen
-        let f _ = randChain g chainLen
+        let f _ = randChain ga g chainLen
         return $ foldr f [] [1..chainCnt]
 \end{code}
 
@@ -636,212 +971,12 @@ Se genera el cromosoma.
 \item La \emph{recombinación} de cromosomas se enfoca en remplacar las
       malas sub-rutas o extender rutas existentes.
 
-      Aquí solamente se define la recombinación de dos cromosomas, su selección
-      será descrita en la subsección \ref{subsec:gaRun}.
 
-      \noindent Se replazan los ``hoyos'' de la siguente manera:
-
-      \begin{enumerate}
-        \item Se seleccionan los genes $\lbrace c \rbrace$, miembros de ambos cromosomas.
-
-        \item Para ambos cromosomas se encuentran \emph{sub-rutas intercambiables}:
-              \begin{align*}
-                \forall ~&x \in \lbrace c \rbrace \\
-                         &y \in \lbrace c \rbrace \quad \implies \\
-                         &
-                \begin{cases}
-                    \text{secuencia } \lbrace r_i \rbrace_{i=1}^{N_r}
-                        & \mbox{si } \begin{aligned}
-                            \forall &~r_{j-1}, r_j \in \lbrace r_i \rbrace_{i=1}^{N_r} \\
-                            \exists & \text{ arista entre } r_{j-1} \text{ y } r_j
-                          \end{alaigned} \\
-                        \lbrace\rbrace & \mbox{en otro caso}
-                \end{cases}
-              \end{align*}
-
-              Se guarda también la dirección de las sub-rutas para ambos cromosomas.
-
-        \item Se aplica el remplazamiento para todas las rutas intercambiables ordenadas
-                (fue descrita en subsección \ref{subsec:subroutes}).
-              Se remplazan las sub-rutas no existentes por las existentes;
-              y se remplazan las existentes por mas cortas.
-
-              El remplazamiento se aplica solamente si
-              \begin{enumerate*}[1)]
-                \item los genes en cuestion no fueron eliminados con los remplazamientos previos;
-                \item remplazamiento no creará genes duplicados;
-                \item no disminuye el número de puntos de interes.
-              \end{enumerate*}
-
-         \item Se devuelve el par de cromosomas remplazados.
-
-      \end{enumerate}
-
-      \medskip
-      \noindent Se extienden los extremos del recipiente con los del donador:
-      \begin{enumerate}
-        \item Se encuentran los extremos mas cortos del donador: entre todos los
-          puntos $\left{ c \right}$ se seleccionan los con menor y
-          mayor índices en el cromosoma donador. Si las sub-rutas entre los
-          puntos extremos y los índices correspondientes están \emph{validas} -- se guardan.
-        \item Se encuentran los extremos, correspondientes a los puntos, seleccionados en
-          el punto previo. Se guardan si son \emph{invalidas}.
-        \item Se remplazan los extremos correspondientes del recipiente por los
-          del donador (si fueron guardados ambos).
-      \end{enumerate}
-
-
-      \begin{figure}
-        \centering
-        \caption{ Recombinación de cromosomas, marcados {\color{violet} •} y {\color{orange} •}
-                  en la figura \ref{fig:chromosomesMapExample}.
-                }
-
-          \begin{subfigure}[b]{\textwidth}
-            \fbox{ \resizeInput{CrossoverVioletOrangeSources.tikz} }
-            \caption{ Los remplazamientos. }
-            \label{fig:crossVOsrc}
-          \end{subfigure}
-        \\
-          \begin{subfigure}[b]{\textwidth}
-            \fbox{ \resizeInput{CrossoverVioletOrangeRoute0.tikz} }
-            \caption{ Remplazamiento {\color{orange} •} $\rightarrow$ {\color{violet} •} \#1. }
-            \label{fig:crossVOr0}
-          \end{subfigure}
-        \\
-          \begin{subfigure}[b]{\textwidth}
-            \fbox{ \resizeInput{CrossoverVioletOrangeRoute1.tikz} }
-            \caption{ Remplazamiento {\color{violet} •} $\rightarrow$ {\color{orange} •}. }
-            \label{fig:crossVOr1}
-          \end{subfigure}
-        \\
-          \begin{subfigure}[b]{\textwidth}
-            \fbox{ \resizeInput{CrossoverVioletOrangeRoute2.tikz} }
-            \caption{ Remplazamiento {\color{orange} •} $\rightarrow$ {\color{violet} •} \#2. }
-            \label{fig:crossVOr2}
-          \end{subfigure}
-
-        \label{fig:crossVO}
-      \end{figure}
-
-
-      \begin{figure}
-        \centering
-        \begin{subfigure}[b]{\textwidth}
-            \input{CrossoverVioletOrangeChildrenFst.tikz }
-            \caption{ Resultados de recombinación de sub-rutas en cromosoma {\color{violet} •} desde
-                      {\color{orange} •}.
-                    }
-            \label{fig:crossOVchildren}
-        \end{subfigure}
-        \\
-        \begin{subfigure}[b]{\textwidth}
-            \input{CrossoverVioletOrangeChildrenSnd.tikz }
-            \caption{ Resultados de recombinación de sub-rutas en cromosoma {\color{orange} •} desde
-                      {\color{violet} •}.
-                    }
-            \label{fig:crossVOchildren}
-        \end{subfigure}
-
-        \caption{}
-      \end{figure}
-
-
-      \begin{figure}
-        \centering
-        \caption{ Recombinación de cromosomas, marcados {\color{violet} •} y {\color{blue} •}
-                  en la figura \ref{fig:chromosomesMapExample}.
-                }
-
-          \begin{subfigure}[b]{\textwidth}
-            \fbox{ \resizeInput{CrossoverVioletBlueSources.tikz} }
-            \caption{ Los remplazamientos. }
-            \label{fig:crossVBsrc}
-          \end{subfigure}
-        \\
-          \begin{subfigure}[b]{\textwidth}
-            \fbox{ \resizeInput{CrossoverVioletBlueRoute0.tikz} }
-            \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
-            \label{fig:crossVBr0}
-          \end{subfigure}
-        \\
-          \begin{subfigure}[b]{\textwidth}
-            \fbox{ \resizeInput{CrossoverVioletBlueRoute1.tikz} }
-            \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
-            \label{fig:crossVBr1}
-          \end{subfigure}
-        \\
-          \begin{subfigure}[b]{\textwidth}
-            \fbox{ \resizeInput{CrossoverVioletBlueRoute2.tikz} }
-            \caption{ Remplazamiento {\color{violet} •} $\rightarrow$ {\color{blue} •}. }
-            \label{fig:crossVBr2}
-          \end{subfigure}
-        \\
-          \begin{subfigure}[b]{\textwidth}
-            \fbox{ \resizeInput{CrossoverVioletBlueRoute3.tikz} }
-            \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
-            \label{fig:crossVBr3}
-          \end{subfigure}
-        \\
-          \begin{subfigure}[b]{\textwidth}
-            \fbox{ \resizeInput{CrossoverVioletBlueRoute4.tikz} }
-            \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
-            \label{fig:crossVBr4}
-          \end{subfigure}
-        \\
-          \begin{subfigure}[b]{\textwidth}
-            \fbox{ \resizeInput{CrossoverVioletBlueRoute5.tikz} }
-            \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
-            \label{fig:crossVBr5}
-          \end{subfigure}
-        \\
-          \begin{subfigure}[b]{\textwidth}
-            \fbox{ \resizeInput{CrossoverVioletBlueRoute6.tikz} }
-            \caption{ Remplazamiento {\color{violet} •} $\rightarrow$ {\color{blue} •}. }
-            \label{fig:crossVBr6}
-          \end{subfigure}
-        \\
-          \begin{subfigure}[b]{\textwidth}
-            \fbox{ \resizeInput{CrossoverVioletBlueRoute7.tikz} }
-            \caption{ Remplazamiento {\color{blue} •} $\rightarrow$ {\color{violet} •}. }
-            \label{fig:crossVBr7}
-          \end{subfigure}
-
-        \label{fig:crossVB}
-      \end{figure}
-
-
-      \begin{figure}
-        \centering
-        \begin{subfigure}[b]{\textwidth}
-            \input{CrossoverVioletBlueChildrenFst.tikz }
-            \caption{ Resultados de recombinación de sub-rutas en cromosoma {\color{blue} •} desde
-                      {\color{violet} •}.
-                    }
-            \label{fig:crossVBchildren}
-        \end{subfigure}
-        \\
-        \begin{subfigure}[b]{\textwidth}
-            \input{CrossoverVioletBlueChildrenSnd.tikz }
-            \caption{ Resultados de recombinación de sub-rutas en cromosoma {\color{violet} •} desde
-                      {\color{blue} •}.
-                    }
-            \label{fig:crossBVchildren}
-        \end{subfigure}
-
-        \caption{}
-      \end{figure}
-
-\medskip
 
 \begin{code}
 
      type CrossoverDebug GA =  (  [SubRoutes]
-                               ,  (  [(SubRoutes, Maybe [Point2D])]
-                                  ,  (  (Maybe [Point2D], Maybe [Point2D])
-                                     ,  (Maybe [Point2D], Maybe [Point2D])
-                                     )
-                                  )
+                               ,  (ReplaceDebug,  ExtendDebug)
                                )
 
      -- crossover' :: ga \rightarrow$ Chromosome ga \rightarrow$ Chromosome ga
@@ -849,10 +984,6 @@ Se genera el cromosoma.
 
      crossover' (GA l _ _) ch1 ch2 = (extended, debugs)
         where   debugs = (subRoutes, (debugAcc, extDebug))
-
-                samePoints x y = let  set1 = Set.fromList x
-                                      set2 = Set.fromList y
-                                in Set.toList $  Set.intersection set1 set2
 
                 cs = samePoints ch1 ch2
                 sRoutes' = do   x <- cs
@@ -862,44 +993,6 @@ Se genera el cromosoma.
                                 else subRoutesIn l sr ch1 ch2
 
                 subRoutes = sortWith Down . nub $ sRoutes'
-
-
-                replaceList what with l =
-                        let (Just il, Just ir) = (  (head what `elemIndex`) &&&
-                                                    (last what `elemIndex`)) l
-                            (left, _)   = splitAt il l
-                            (_, right)  = splitAt (ir+1) l
-                        in left ++ with ++ right
-
-                replaceSafe lab what with l =
-                        let candidate = replaceList what with l
-                            poisTarget = length $ filter (`isPOI` lab) what
-                            poisSrc    = length $ filter (`isPOI` lab) with
-                        in  if poisSrc < poisTarget || candidate /= nub candidate
-                            then Nothing else Just candidate
-
-                tryReplace chrom _ _ [] debugAcc = (chrom, debugAcc)
-                tryReplace chrom thisSide getThatSide (sr:srs) debugAcc =
-                    tryReplace res thisSide getThatSide srs acc'
-                    where  acc' =  if mbRes == Just chrom then debugAcc
-                                   else (debug,mbRes):debugAcc
-                           (mbRes, debug) = fromMaybe (Just chrom, sr) res'
-                           res = fromMaybe chrom mbRes
-                           res' = case sr of
-                             SubRoutes l pts src' target' | thisSide target' ->
-                                    do  target <- findSubRoute pts chrom
-                                        let  src = getThatSide src'
-                                             rev = snd src `xor` snd target
-
-                                             debug = SubRoutes l pts
-                                                        (fmap (const src) src')
-                                                        (fmap (const target) target')
-
-                                        return  ( replaceSafe l  (fst target)
-                                                                 (fst src)
-                                                                 chrom
-                                                , debug )
-                             _ -> Nothing
 
                 (replaced1, debugAcc') = tryReplace  ch1
                                                      isLeft
@@ -912,52 +1005,8 @@ Se genera el cromosoma.
                                                      subRoutes
                                                      debugAcc'
 
-                tryExtend donor receiver = (res, deb)
-                    where  cmp x   = compare `on` (`elemIndex` x)
-                           valid = all (`edgeOf` (l :: Labyrinth2D)) . lPairs
-                           inCase x c = if c x then Just x else Nothing
-
-                           cs = samePoints donor receiver
-
-
-                           left   = minimumBy (cmp donor) cs
-                           right  = maximumBy (cmp donor) cs
-
-                           Just diLeft   = left `elemIndex` donor
-                           Just diRight  = right `elemIndex` donor
-
-                           drLeft   = subseq 0 diLeft donor
-                           drRight  = subseq diRight (length donor -1) donor
-
-                           mbdRLeft   = drLeft `inCase` valid
-                           mbdRRight  = drRight `inCase` valid
-
-                           Just riLeft   = left `elemIndex` receiver
-                           Just riRight  = right `elemIndex` receiver
-
-                           rrLeft   = subseq 0 riLeft receiver
-                           rrRight  = subseq riRight (length receiver -1) receiver
-
-                           mbrRLeft   = rrLeft `inCase` (not . valid)
-                           mbrRRight  = rrRight `inCase` (not . valid)
-
-                           extend (Just src) (Just target) chrom =
-                                replaceSafe l target src chrom
-                           extend _ _ _ = Nothing
-
-                           extLeft   = extend mbdRLeft mbrRLeft receiver
-                           extRight  = extend mbdRLeft mbrRLeft
-                                     $ fromMaybe receiver extLeft
-
-                           debug = (extLeft, extRight)
-                           result =  (receiver `fromMaybe` extLeft)
-                                     `fromMaybe` extRight
-
-                           res = if null cs then receiver else result
-                           deb = if null cs then (Nothing, Nothing) else debug
-
-                (extended1, extDebug1) = tryExtend replaced2 replaced1
-                (extended2, extDebug2) = tryExtend replaced1 replaced2
+                (extended1, extDebug1) = tryExtend l replaced2 replaced1
+                (extended2, extDebug2) = tryExtend l replaced1 replaced2
 
                 extDebug = (extDebug1, extDebug2)
                 extended = (extended1, extended2)
@@ -968,9 +1017,71 @@ Se genera el cromosoma.
 %%%%%%%%%%%%%%%%%%%%%   %%%%%%%%%%%%%%%%%%%%
 
 
-\item ?
+\item La \emph{mutación} de cromosomas consiste de varios operaciones,
+      para cada de las cuales está definida la probabilidad de aplicación.
+      Se dividen en los que cambian un gen o una sub-ruta.
 
->    -- mutate :: Chromosome ga \rightarrow$ Chromosome ga
+      La mutación funciona en la siguiente manera:
+      \begin{enumerate}
+        \item Se escoge y se aplique una de las \emph{operaciones sobre sub-rutas}.
+        \item Para cada gen del resultado del punto previo,
+              se aplican (todas) las \emph{operaciones sobre genes},
+              con su probabilidad asignada.
+      \end{enumerate}
+
+      Se definen las siguientes \emph{operaciones sobre sub-rutas}:
+      \begin{itemize}
+        \item Cambia una sub-ruta valida por otra aleatoria (valida),
+              con misma longitud.
+        \item Cambia una sub-ruta, aleatoriamente seleccionada, por otra(s) aleatoria(s).
+      \end{itemize}
+
+      Se definen las siguientes \emph{operaciones sobre genes}:
+        \begin{itemize}[leftmargin=2cm]
+          \item[$P=0.01$ ---] Cambia un gen a un de los puntos de interés (inicio/meta),
+            si todavía no existe en el cromosoma.
+          \item[$P=0.005$ ---] Cambia un gen a un aleatorio.
+        \end{itemize}
+
+
+\begin{code}
+
+     -- mutate :: ga \rightarrow$ Chromosome ga \rightarrow$ IO (Chromosome ga)
+     mutate ga chrom = do chrom' <- ($ chrom) =<< randChoice subRouteMuts
+
+                          sequence $ do  gene <- chrom'
+                                         let mutF (p, mut) g' = do d <- randomIO :: IO Double
+                                                                   g <- g'
+                                                                   if p < d  then mut g
+                                                                             else return g
+                                         return $ foldr mutF (return gene) geneMuts
+
+        where  subRouteMuts = [mutSubRouteSame, mutSubRouteAny]
+               geneMuts     = [ (0.01, mutGenePOI)
+                              , (0.005, mutGeneAny)
+                              ]
+
+               randChoice = fmap fst . randChoice'
+               randChoice' xs = do ind <- randomRIO (0, length xs - 1)
+                                   return $ (xs !!) &&& id $ ind
+
+               mutSubRouteSame ch = do let srs = splitRoutes (gaLabyri ga) ch
+                                       (sr, sri) <- randChoice' srs
+                                       gen <- getStdGen
+                                       let len = length sr
+                                           rChain = randChain ga gen len []
+                                       undefined
+                                       return . concat  $   subseq 0 (sri-1) srs
+                                                        ++  rChain
+                                                        :   subseq (sri+1) len srs
+
+               mutSubRouteAny ch = undefined
+
+               mutGenePOI gene = undefined
+               mutGeneAny gene = undefined
+
+\end{code}
+
 
 \item ?
 

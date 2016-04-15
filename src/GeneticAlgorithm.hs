@@ -41,7 +41,7 @@ class GeneticAlgorithm ga where type InputData ga :: *
 
                                 crossover :: ga -> Chromosome ga -> Chromosome ga
                                                 -> (Chromosome ga, Chromosome ga)
-                                mutate    :: Chromosome ga -> Chromosome ga
+                                mutate    :: ga -> Chromosome ga -> IO (Chromosome ga)
 
                                 stopCriteria :: ga -> [Fitness ga] -> Bool
 
@@ -88,7 +88,7 @@ class ( GeneticAlgorithm ga
 
 
 
-
+-- TODO: mutate
 runGA' ga pop = let fit = assessed $ map (id &&& fitness ga) pop
                     intact = selectIntact ga fit
                     cross  = selectCrossover ga fit

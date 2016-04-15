@@ -68,3 +68,4 @@ routeOrdSpec = describe "RouteFitness ordering" $ do
         $ sort (rEx1 :: [RouteFitness]) `shouldBe` eEx1Min
 
 
+
