@@ -12,7 +12,7 @@ if [ ! "${1,,}" = "--fast" ]; then FLAG_FAST=1; else FLAG_FAST=0; fi
 
 if [ ! "${1,,}" = "--x-fast" ]; then FLAG_X_FAST=1; else FLAG_X_FAST=0; fi
 
-if [[ ! ($FLAG_FAST || $FLAG_X_FAST) ]]; then
+if ! $FLAG_FAST && ! $FLAG_X_FAST ; then
 
     # Clean and build the project.
     cabal clean
@@ -30,7 +30,7 @@ if [[ ! ($FLAG_FAST || $FLAG_X_FAST) ]]; then
 
 fi
 
-if [ ! $FLAG_X_FAST ]; then
+if ! $FLAG_X_FAST ; then
 
 # Generate Tikz Labyrinth examples.
 $Labyrinth --map build/MapExampleRaw.tikz.tex &&\
