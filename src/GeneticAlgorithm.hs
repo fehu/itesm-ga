@@ -55,6 +55,7 @@ class GeneticAlgorithm ga where type InputData ga :: *
 
 -- | Underlying list must be ordered descending.
 newtype Assessed chrom fit = Assessed [(chrom, fit)]
+    deriving Show
 
 -- | Creates a new 'Assessed', sorting the given list by 'Fitness' (descending).
 assessed :: (Ord fit) => [(chrom, fit)] -> Assessed chrom fit
@@ -113,24 +114,23 @@ runGA' ga pop = do
     mut     <- selectMutate ga fit
 
 
-    print $ length intact
-    print $ length cross
-    print $ length mut
+--    print $ length intact
+--    print $ length cross
+--    print $ length mut
 
     mutated <- mapM (mutate ga) mut
 
-    print $ length mutated
+--    print $ length mutated
 
     let pairToList (x,y) = [x,y]
         newPop  =  intact
                 ++ concatMap (pairToList . uncurry (crossover ga)) cross
                 ++ mutated
 
-    putStrLn $ "stop = " ++ show stop
+--    putStrLn $ "stop = " ++ show stop
 
     if stop  then return $ selectResult ga fit
-             else do putStrLn "run rec GA"
-                     runGA' ga newPop
+             else runGA' ga newPop
 
 
 
