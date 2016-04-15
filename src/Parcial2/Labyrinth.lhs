@@ -233,6 +233,7 @@ para permitir destinguir facilmente los dos tipos de rutas
       CompleteRoute { routeLength :: Double }
     | PartialRoute  { partialValidess :: Double
                     , partialPOI      :: POIs
+                    , partialPaths    :: Int
                     , partialLength   :: Double
                     }
     deriving (Eq, Show)
@@ -292,10 +293,11 @@ tendrá los mejores elementos en el principio.
 \begin{code}
   instance Ord RouteFitness where
     compare (CompleteRoute x)       (CompleteRoute y)       = compare x y
-    compare (PartialRoute v1 i1 l1) (PartialRoute v2 i2 l2) =
+    compare (PartialRoute v1 i1 p1 l1) (PartialRoute v2 i2 p2 l2) =
 --        compare (-l2 - v2 - poisIntVal i2/10) (-l1 - v1 - poisIntVal i1/10)
 --        compare (l2 + v2*10, i2) (l1 + v1*10, i1)
-        compare (- l2 * v2 * (poisIntVal i2 + 1)) (- l1 * v1 * (poisIntVal i1 + 1))
+        compare (fromIntegral p1 * v1 * (poisIntVal i2 + 1) - l1) -- or swapped ??
+                (fromIntegral p2 * v2 * (poisIntVal i2 + 1) - l2)
 --        compare (-l2 - v2, i2) (-l1 - v1, i1)
     compare (CompleteRoute _)        PartialRoute{}         = LT
     compare  PartialRoute{}         (CompleteRoute _)       = GT
@@ -1089,8 +1091,9 @@ empezando con los tipos y siguiendo con los métodos.
                               CompleteRoute . sum $ map fromJust dists
                          else -- is incomplete
                               let valid = filter isJust dists
-                                  v = fromIntegral (length valid)
-                                    / fromIntegral (length dists)
+                                  plen = length dists
+                                  v  = fromIntegral (length valid)
+                                     / fromIntegral plen
                                   hasInit = elem (initial l) genes
                                   hasFin = elem (target l) genes
                                   poi = case (hasInit, hasFin) of
@@ -1100,7 +1103,7 @@ empezando con los tipos y siguiendo con los métodos.
                                           _             -> POINone
                                   len = sum $ map fromJust valid
                                   v' = if isNaN v then 1 else v
-                                  in PartialRoute v' poi len
+                                  in PartialRoute v' poi plen len
 
 \end{code}
 
@@ -1361,8 +1364,11 @@ de un cromosoma, dependiendo de su índice en la lista.
            selIdx :: Double -> Int
            selIdx d = let  -- P(A < a)
                            less = (< d) `filter` accProbs
-                   in if null less  then 0                -- first
-                                    else length less - 1  -- max of P(A < a)
+
+                           --gt = dropWhile (< d) accProbs
+                   in n - length less -1
+                      -- if null gt  then 0                -- first
+                      --            else  - 1-- length less - 1  -- max of P(A < a)
 
            -- Generate a random assessed index.
            randIdx prev = do
@@ -1514,18 +1520,54 @@ runGA' ga pop = do
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Ejecución}
+\section{Ejecución y Pruebas}
 
 La aplicación está definida en \hssrc{Parcial2--App}{Parcial2/App}
 y la ejecutable actual en \hssrc{Parcial2--App}{Parcial2/App}.
 
 \noindent El modo de uso se describe en Anexo \ref{subsec:A1}.
 
+\begin{note}
+    {\Huge TODO}
+\end{note}
 
 
+\subsection{Cambios necesarios}
 
-{\Huge TODO}
+\begin{enumerate}
+  \item Seleccionar al remplacamiento en la recombinación de cromasomas aleatoriamente.
+        Al momento el proceso de ``crossover'' es \emph{puro} -- no causa edectos segundarios,
+        a los cuales pertenece lo ``aleatorio''. Eso también quiere decir que el resultado
+        siempre es el mismo para los mismos padres. Se nescesita introducir mas variedad.
 
+  \item Al momento estan desactivados los {color{red} \emph{mutaciones sobre rutas completas}},
+        porque las implementaciones quebran la politica de no-repeticion de genes.
+        Deben ser reescritos.
+
+  \item assessedRandIndexGen
+
+\end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Proyecto}
+
+El proyecto requiere GHC y \texttt{cabal} para construcción.
+
+Hay una dependencía, que no está disponible publicamento, por esto se necesita instalarla a mano:
+\href{https://github.com/fehu/CommandArgs}{CommandArgs}.
+
+\crule{1}
+
+
+El proyecto usa la paradigma de \emph{programación literaria} y el reporte se genera desde el código.
+
+Los ejemplos de laberinto y cromosomas se generan usando los mecanismos del proyecto;
+los de cromosomas usan función \emph{crossover} de \emph{GA}.
+
+
+\noindent El reporte en pdf se genera con script \emph{makeReport} proveido.
+Require instalación de \texttt{lhs2TeX} desde \texttt{cabal}.
 
 \end{document}
 
