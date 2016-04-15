@@ -80,9 +80,7 @@ labyrinthFile = do n' <- many1 digit
                                                  coords
 
 
-readComma = do -- spaces
-               oneOf [',', '\n']
-               -- spaces
+readComma = oneOf [',', '\n']
 
 readPair :: (Read a) => GenParser Char st (a, a)
 readPair  = do a <- many1 digit
