@@ -158,7 +158,7 @@ Aquí se presenta la construcción del grafo a partir del mapa leido.
         build' (LabyrinthDescription n conn (i,t) coords) =
           let get = Point2D . (coords !!)
           in Labyrinth  (Set.fromList $ map Point2D coords)
-                        (Set.fromList $ map (first get . second get) coords)
+                        (Set.fromList $ map (first get . second get) conn)
                         (get i)
                         (get t)
 
@@ -222,10 +222,11 @@ para permitir destinguir facilmente los dos tipos de rutas
   data POIs = POINone | POISome POI | POIBoth deriving (Eq, Show)
 
   instance Ord POIs where
-    x `compare` y = val x `compare` val y where
-        val POINone = 0
-        val (POISome _) = 1
-        val POIBoth = 2
+    x `compare` y = poiIntVal x `compare` poiIntVal y
+
+  poiIntVal POINone = 0
+  poiIntVal (POISome _) = 1
+  poiIntVal POIBoth = 2
 
 
   data RouteFitness =
@@ -237,6 +238,8 @@ para permitir destinguir facilmente los dos tipos de rutas
     deriving (Eq, Show)
 
 \end{code}
+
+\textbf{\Large TODO}
 
 \noindent Para la busqueda de la ruta mas corta,
 se define el orden sobre las rutas de tal manera, que
@@ -290,7 +293,8 @@ tendrá los mejores elementos en el principio.
   instance Ord RouteFitness where
     compare (CompleteRoute x)       (CompleteRoute y)       = compare x y
     compare (PartialRoute v1 i1 l1) (PartialRoute v2 i2 l2) =
-        compare (v2,i2,l2) (v1,i1,l1)
+--        compare (v2,i2,l2) (v1,i1,l1)
+        compare (-l2 - v2, i2) (-l1 - v1, i1)
     compare (CompleteRoute _)        PartialRoute{}         = LT
     compare  PartialRoute{}         (CompleteRoute _)       = GT
 
@@ -975,6 +979,7 @@ Se definen las siguientes \emph{operaciones sobre genes} con la probabilidad de 
                             , gaSelCrossoverFrac     :: Rational
                             , gaSelMutateFrac        :: Rational
     }
+    deriving Show
 
   data GACache = GACache {
         cacheNeighbours    :: Map Point2D [Point2D]
@@ -1076,7 +1081,8 @@ empezando con los tipos y siguiendo con los métodos.
      -- fitness :: ga \rightarrow$ Chromosome ga \rightarrow$ Fitness ga
      fitness (GA l _ _) genes =
                     let dists = map (uncurry $ eDist l) (lPairs genes)
-                    in if isJust `all` dists
+                    in if isJust `all` dists  && initial l  `elem` genes
+                                              && target  l  `elem` genes
                          then -- is a valid route
                               CompleteRoute . sum $ map fromJust dists
                          else -- is incomplete
@@ -1091,7 +1097,8 @@ empezando con los tipos y siguiendo con los métodos.
                                           (False, True) -> POISome POITarget
                                           _             -> POINone
                                   len = sum $ map fromJust valid
-                                  in PartialRoute v poi len
+                                  v' = if isNaN v then 0 else v
+                                  in PartialRoute v' poi len
 
 \end{code}
 
@@ -1385,7 +1392,7 @@ de un cromosoma, dependiendo de su índice en la lista.
 \begin{code}
 
   instance RunGA GA [Point2D] [Point2D] RouteFitness Min where
-    type DebugData GA = ()
+    type DebugData GA = Assessed [Point2D] RouteFitness
 
 
 \end{code}
@@ -1435,7 +1442,7 @@ de un cromosoma, dependiendo de su índice en la lista.
 
 \begin{code}
 
-    selectResult _ (Assessed (h:_)) = (fst h, ())
+    selectResult _ a@(Assessed (h:_)) = (fst h, a)
 
 \end{code}
 
@@ -1450,12 +1457,11 @@ de un cromosoma, dependiendo de su índice en la lista.
 
 \begin{code}
 
-    initHook ga pop = do setCachedIdxGen (gaCache ga) (assessedRandIndexGen pop)
-                         putStrLn "@"
+    initHook ga pop = setCachedIdxGen (gaCache ga) (assessedRandIndexGen pop)
 
-    iterationHook ga = do putStrLn "!"
-                          affectCachedIter (gaCache ga) (+1)
-                          putStrLn ":"
+    iterationHook ga = do affectCachedIter (gaCache ga) (+1)
+                          i <- cachedIter (gaCache ga)
+                          putStrLn $ "iteration #" ++ show i
 
 \end{code}
 
@@ -1507,6 +1513,14 @@ runGA' ga pop = do
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Ejecución}
+
+La aplicación está definida en \hssrc{Parcial2--App}{Parcial2/App}
+y la ejecutable actual en \hssrc{Parcial2--App}{Parcial2/App}.
+
+\noindent El modo de uso se describe en Anexo \ref{subsec:A1}.
+
+
+
 
 {\Huge TODO}
 

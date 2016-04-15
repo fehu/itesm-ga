@@ -97,21 +97,21 @@ library
 --                     , MultiParamTypeClasses
 
 
---executable ga-labyrinth
---  hs-source-dirs:      src
---  main-is:             Parcial2/AppMain.hs
---
---  build-depends:       base >=4.8 && <4.9
---                     , containers >= 0.5
---                     , random >= 1.1
---                     , parsec >= 3.1
---                     , mtl == 2.2.*
---                     , CommandArgs >= 0.1.1.5
---  default-language:    Haskell2010
---  default-extensions:  TypeFamilies
---                     , FlexibleContexts
---                     , DataKinds
---                     , MultiParamTypeClasses
+executable ga-labyrinth
+  hs-source-dirs:      src
+  main-is:             Parcial2/AppMain.hs
+
+  build-depends:       base >=4.8 && <4.9
+                     , containers >= 0.5
+                     , random >= 1.1
+                     , parsec >= 3.1
+                     , mtl == 2.2.*
+                     , CommandArgs >= 0.1.1.5
+  default-language:    Haskell2010
+  default-extensions:  TypeFamilies
+                     , FlexibleContexts
+                     , DataKinds
+                     , MultiParamTypeClasses
 
 
 executable ga-labyrinth-example-1

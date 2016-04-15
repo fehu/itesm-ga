@@ -1,6 +1,8 @@
 ##### TODO
 
-- [ ] fix runtime errors
+- [x] fix runtime errors
+
+- [x] test labyrinth reading
 
 ### GA
 
