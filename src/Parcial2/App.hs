@@ -127,7 +127,7 @@ readParams opts =
                 ,   gaMutateMaxChainLen    = optMutateMaxChainLen   `orElse` 3
 
                 ,   gaMaxUnchangedIter     = optMaxUnchangedIter    `orElse` 5
-                ,   gaMaxIters             = optMaxIters            `orElse` 10*1000
+                ,   gaMaxIters             = optMaxIters            `orElse` (10*1000)
 
                 ,   gaSelIntactFrac        = toRational intact
                 ,   gaSelCrossoverFrac     = toRational crossover
