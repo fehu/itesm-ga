@@ -45,6 +45,7 @@ module Parcial2.Labyrinth where
   import Control.Arrow (first, second, (&&&))
   import Control.Monad.Fix
 
+  import Data.IORef
   import Data.Tuple (swap)
   import Data.List (elemIndex, sort, nub, minimumBy, maximumBy)
   import Data.Maybe (isJust, fromJust, fromMaybe, maybeToList)
@@ -55,6 +56,7 @@ module Parcial2.Labyrinth where
   import qualified Data.Set as Set
   import Data.Map (Map)
   import qualified Data.Map as Map
+
   import GHC.Exts (Down(..), sortWith)
 
 
@@ -949,11 +951,28 @@ Se definen las siguientes \emph{operaciones sobre genes} con la probabilidad de 
 
                             , gaMutateMaxChainsGen   :: Int
                             , gaMutateMaxChainLen    :: Int
+
+                            , maxUnchangedIter       :: Int
+                            , maxIters               :: Int
     }
 
   data GACache = GACache {
-        cacheNeighbours :: Map Point2D [Point2D]
+        cacheNeighbours    :: Map Point2D [Point2D]
+      , cacheBestRepeats   :: IORef Int
+      , cacheBestFitness   :: IORef (Maybe RouteFitness)
+      , cacheIter          :: IORef Int
     }
+
+  cachedBestFit :: GACache -> IO (Maybe RouteFitness)
+  cachedBestFit = readIORef . cacheBestFitness
+
+  setCachedBestFit = writeIORef . cacheBestFitness
+
+  cachedRepeat = readIORef . cacheBestRepeats
+  affectCachedRepeat = modifyIORef . cacheBestRepeats
+
+  cachedIter = readIORef . cacheIter
+  affectCachedIter = modifyIORef . cacheIter
 
   neighboursOf cache point = fromMaybe []
                            $ Map.lookup point (cacheNeighbours cache)
@@ -1165,9 +1184,35 @@ Se genera el cromosoma.
 \end{code}
 
 
-\item ?
+\item \emph{Criterio de parada} se selecciona, considerando que no
+  se conoce la longitud de ruta aceptable.
+  Esto no permita establecer un criterio exacto.
 
->    -- stopCriteria :: [Fitness ga] \rightarrow$ Bool
+  Es porque el criterio se establece sobre el
+  \emph{cambio del mejor valor de adaptación en las últimas iteraciones}.
+
+  \noindent También se utiliza como criterio adicional el \emph{número máximo de iteraciones}.
+
+\begin{code}
+     -- stopCriteria :: ga \rightarrow$ [Fitness ga] \rightarrow$ IO Bool
+     stopCriteria ga fitness = do
+            let  cache  = gaCache ga
+                 raiseCount = cache `affectCachedRepeat` (+1)
+
+                 best   = head fitness
+            best' <- cachedBestFit cache
+
+            if Just best == best' then raiseCount
+            else cache `setCachedBestFit` Just best
+
+            repCount <- cachedRepeat cache
+            iter <- cachedIter cache
+
+            return  $   repCount  >= maxUnchangedIter (gaParams ga)
+                    ||  iter      >= maxIters (gaParams ga)
+
+\end{code}
+
 
 \item ?
 

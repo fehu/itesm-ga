@@ -43,9 +43,9 @@ class GeneticAlgorithm ga where type InputData ga :: *
                                                 -> (Chromosome ga, Chromosome ga)
                                 mutate    :: ga -> Chromosome ga -> IO (Chromosome ga)
 
-                                stopCriteria :: ga -> [Fitness ga] -> Bool
+                                stopCriteria :: ga -> [Fitness ga] -> IO Bool
 
-                                newGA :: InputData ga -> ga
+                                newGA :: InputData ga -> IO ga
 
                                 crossover ga c1 = fst . crossover' ga c1
 
@@ -84,20 +84,20 @@ class ( GeneticAlgorithm ga
         selectResult    :: ga -> Assessed chrom fit -> (res, DebugData ga)
 
 
-        runGA ga popSize = runGA' ga =<< initialPopulation ga popSize
+--        runGA ga popSize = runGA' ga =<< initialPopulation ga popSize
 
 
 
 -- TODO: mutate
-runGA' ga pop = let fit = assessed $ map (id &&& fitness ga) pop
-                    intact = selectIntact ga fit
-                    cross  = selectCrossover ga fit
-                    mut    = selectMutate ga fit
-
-                 in if stopCriteria ga . map snd $ unwrapAssessed fit
-                      then return $ selectResult ga fit
-                      else runGA' ga $ -- new population
-                                  intact ++
-                                  concatMap ((\(x,y) -> [x,y]) . uncurry (crossover ga)) cross
+--runGA' ga pop = let fit = assessed $ map (id &&& fitness ga) pop
+--                    intact = selectIntact ga fit
+--                    cross  = selectCrossover ga fit
+--                    mut    = selectMutate ga fit
+--
+--                 in if stopCriteria ga . map snd $ unwrapAssessed fit
+--                      then return $ selectResult ga fit
+--                      else runGA' ga $ -- new population
+--                                  intact ++
+--                                  concatMap ((\(x,y) -> [x,y]) . uncurry (crossover ga)) cross
 
 

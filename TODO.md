@@ -12,6 +12,8 @@
 - [ ] select crossover
 - [ ] select mutate
 
-- [ ] stop criteria
+- [x] stop criteria
+
+- [ ] creation
 
 
