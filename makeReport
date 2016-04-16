@@ -38,7 +38,7 @@ if [ ! "${1,,}" = "--fast" ] && [ ! "${1,,}" = "--x-fast" ]; then
 
 fi
 
-if [ ! "${1,,}" = "--x-fast" ]; then
+# if [ ! "${1,,}" = "--x-fast" ]; then
 
 # Generate Tikz Labyrinth examples.
 $Labyrinth --map build/MapExampleRaw.tikz.tex &&\
@@ -70,7 +70,7 @@ $Chromosome "violet" "orange" -x Snd -o build/CrossoverVioletOrangeChildrenSnd.t
 $Chromosome "violet" "blue" -x Fst -o build/CrossoverVioletBlueChildrenFst.tikz &&\
 $Chromosome "violet" "blue" -x Snd -o build/CrossoverVioletBlueChildrenSnd.tikz
 
-fi
+# fi
 
 # Generate PDF for 'Parcial2/Labyrinth.lhs'.
 scripts/lhs2pdf $SRC/Labyrinth.lhs
