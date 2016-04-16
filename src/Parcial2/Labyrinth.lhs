@@ -1584,6 +1584,7 @@ los de cromosomas usan función \emph{crossover} de \emph{GA}.
 Requiere instalación de \texttt{lhs2TeX} desde \texttt{cabal}.
 
 
+\newpage
 \section*{Anexo I}
 \label{sec:A1}
 
