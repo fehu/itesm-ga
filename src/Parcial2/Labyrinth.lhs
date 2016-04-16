@@ -10,7 +10,7 @@
 
 \usetikzlibrary{chains, fit}
 
-\usepackage{showframe}
+% \usepackage{showframe}
 
 \newenvironment{note}
     {\begin{mdframed}[leftmargin=1cm,
@@ -1437,7 +1437,8 @@ de un cromosoma, dependiendo de su índice en la lista.
 
 \begin{code}
 
-    initHook ga pop = setCachedIdxGen (gaCache ga) (assessedRandIndexGen pop)
+    initHook ga pop = setCachedIdxGen  (gaCache ga)
+                                       (assessedRandIndexGen pop)
 
     iterationHook ga = do  affectCachedIter (gaCache ga) (+1)
                            i <- cachedIter (gaCache ga)
@@ -1499,7 +1500,7 @@ runGA' ga pop = do
 La aplicación está definida en \hssrc{Parcial2--App}{Parcial2/App}
 y la ejecutable actual en \hssrc{Parcial2--App}{Parcial2/App}.
 
-\noindent El modo de uso se describe en Anexo \ref{sec:A1}.
+\noindent El modo de uso se describe en Anexo I.
 
 
 El proyecto también contiene aplicación de ejemplo \texttt{ga-labyrinth-example-1}
