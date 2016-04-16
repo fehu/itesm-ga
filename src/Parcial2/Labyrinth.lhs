@@ -142,7 +142,7 @@ Se utiliza un mapa 2D:
 
 La lectura del archivo del mapa se encuentra en
 \hssrc{Parcial2-ReadLabyrinth}{Parcial2/ReadLabyrinth.hs}.
-Aquí se presenta la construcción del grafo a partir del mapa leido.
+Aquí se presenta la construcción del grafo a partir del mapa leído.
 
 
 \begin{code}
@@ -179,12 +179,12 @@ y los conceptos relacionados.
 
 
 El valor de \emph{aptitud de adaptación} se llamará \emph{ruta} y se define
-para permitir destinguir facilmente los dos tipos de rutas
+para permitir distinguir fácilmente los dos tipos de rutas
 (encodificadas en los cromosomas) posibles:
 
 \begin{itemize}
   \item \textbf{Ruta completa}: es una ruta valida
-    ($\exists$ una conección entre cada par de genes adjuntos) que contiene
+    ($\exists$ una conexión entre cada par de genes adjuntos) que contiene
     en punto inicial y el punto meta.
 
     Se caracteriza por la \emph{longitud de la ruta}.
@@ -243,7 +243,7 @@ para permitir destinguir facilmente los dos tipos de rutas
 
 \noindent Para la busqueda de la ruta mas corta,
 se define el orden sobre las rutas de tal manera, que
-una lista de \emph{rutas}, ordenada ascendentamente,
+una lista de \emph{rutas}, ordenada ascendentemente,
 tendrá los mejores elementos en el principio.
 \begin{enumerate}
 
@@ -304,7 +304,7 @@ Separa los puntos de interes como sub-rutas.
 \end{code}
 
 
-La función misma se definerá en subsección \ref{subsec:ga}.
+La función misma se definirá en subsección \ref{subsec:ga}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -331,7 +331,7 @@ Se empieza con la generación del primer punto
       where (first', g'') = randUnique (gaLabyri ga) prev g'
 \end{code}
 
-Los demas genes se seleccionan desde los vecinos (los nodos directamente conectados)
+Los demás genes se seleccionan desde los vecinos (los nodos directamente conectados)
 del gen previo.
 
 Durante la generación de cadenas se consideran las cadenas, generadas previamente,
@@ -384,7 +384,7 @@ En caso que todas las opciones fallen, la cadena se queda de tamaño incompleto.
              mientras que los cromosomas {\color{red} •} {\color{violet} •} están compuestos
                de cadenas de genes, conectados por aristas, de longitud 3.
             \textit{\small (Son de diferente grosor para que se ven mejor
-                            las conecciones que existen en varios cromosomas)}
+                            las conexiones que existen en varios cromosomas)}
             }
     \label{fig:chromosomesMapExample}
 \end{figure}
@@ -403,14 +403,14 @@ en la figura \ref{fig:chromosomesMapExample} se presenta un ejemplo de cromosoma
 \label{subsec:subroutes}
 
 Se definen los contenedores de sub-rutas. Se guardan solamente los genes extremos de la ruta
-y se proveen funciones de busqueda de sub-ruta en cromosoma. Se implementa asi porque las
-cromosomas cambian durante operaciones geneticos, afectando las sub-rutas.
+y se proveen funciones de búsqueda de sub-ruta en cromosoma. Se implementa así porque las
+cromosomas cambian durante operaciones genéticos, afectando las sub-rutas.
 
-El orden sobre las sub-rutas se define en contexto de dos cromosomas: donor y recipiente.
-Se comparan lexográficamente los sigientes valores:
+El orden sobre las sub-rutas se define en contexto de dos cromosomas: donador y recipiente.
+Se comparan lexográficamente los siguientes valores:
 \begin{enumerate}
-  \item Número de púntos de interes que tiene el donor pero no el recipiente.
-  \item Diferencia entre las longitudes de donor y recipiente.
+  \item Número de puntos de interés que tiene el donador pero no el recipiente.
+  \item Diferencia entre las longitudes de donador y recipiente.
 \end{enumerate}
 
 
@@ -509,9 +509,9 @@ Aquí solamente se define la recombinación de dos cromosomas, su selección
 será descrita en la subsección \ref{subsec:gaSelect}.
 
 
-\subsubsection{Replazamiento}
+\subsubsection{Remplazamiento}
 
-Se replazan los ``hoyos'' de la siguente manera:
+Se remplazan los ``hoyos'' de la siguiente manera:
 
 \begin{enumerate}
 \item Se seleccionan los genes $\lbrace c \rbrace$, miembros de ambos cromosomas.
@@ -540,16 +540,16 @@ Se replazan los ``hoyos'' de la siguente manera:
 
       El remplazamiento se aplica solamente si
       \begin{enumerate*}[1)]
-        \item los genes en cuestion no fueron eliminados con los remplazamientos previos;
+        \item los genes en cuestión no fueron eliminados con los remplazamientos previos;
         \item remplazamiento no creará genes duplicados;
-        \item no disminuye el número de puntos de interes.
+        \item no disminuye el número de puntos de interés.
       \end{enumerate*}
 
  \item Se devuelve el par de cromosomas remplazados.
 
 \end{enumerate}
 
-\subsubsection{Extención de extremos}
+\subsubsection{Extensión de extremos}
 
 Se extienden los extremos del recipiente con los del donador:
 \begin{enumerate}
@@ -566,7 +566,7 @@ Se extienden los extremos del recipiente con los del donador:
 
 \crule{1}
 
-\noindent  Se definen unas funciones de utilidad; la definición de crosover se encuentra en
+\noindent  Se definen unas funciones de utilidad; la definición de `'crossover'' se encuentra en
     subsección \ref{subsec:ga}.
 
 \begin{code}
@@ -864,7 +864,7 @@ que se dividen en los que cambian un gen o una sub-ruta.
 
 \end{code}
 
-Se definen las siguientes \emph{operaciones sobre sub-rutas}: {\color{red} \Large disactivados}
+Se definen las siguientes \emph{operaciones sobre sub-rutas}: {\color{red} \Large desactivados}
 \begin{itemize}
   \item Cambia una sub-ruta valida por otra aleatoria (valida),
         con misma longitud.
@@ -996,11 +996,11 @@ Se definen las siguientes \emph{operaciones sobre genes} con la probabilidad de 
 
 
 \noindent
-Se define la metrica sobre los puntos del grafo:
+Se define la métrica sobre los puntos del grafo:
 $$
   \mathrm{dist}(p_1, p_2) = \begin{cases}
        \mathit{Just}~ d_E(p_1, p_2)
-    &  \mbox{si } \exists \text{ arista, connectando } p_1 \text{ y } p_2
+    &  \mbox{si } \exists \text{ arista, conectando } p_1 \text{ y } p_2
     \\ \mathit{Nothing}
     &  \mbox{en otro caso}
   \end{cases}
@@ -1045,7 +1045,7 @@ empezando con los tipos y siguiendo con los métodos.
 
 >    type Target GA = Min
 
-\item Información de entrada para generación de la población --- el laberinto y los parametros.
+\item Información de entrada para generación de la población --- el laberinto y los parámetros.
 
 >    type InputData GA = (Labyrinth2D, GAParams)
 
@@ -1112,7 +1112,7 @@ Se genera el cromosoma.
 %%%%%%%%%%%%%%%%%%%%%   %%%%%%%%%%%%%%%%%%%%
 
 
-\item La \emph{recombinación} de cromosomas se enfoca en remplacar las
+\item La \emph{recombinación} de cromosomas se enfoca en remplazar las
       malas sub-rutas o extender rutas existentes.
 
 
@@ -1287,10 +1287,10 @@ de la cual hubieron sidos seleccionados.
 
 Se uso un concepto \emph{Assessed}, el cual encapsula una lista de
 cromosomas con sus correspondientes valores de adaptación.
-Está siempre ordenada asendiantamente, para que los mejoros
+Está siempre ordenada ascendentemente, para que los mejores
 cromosomas (con menor valor de adaptación) estén en el principio.
 
-Se intente usar \emph{RouteFitness} sin transformarlos en un valor numerico;
+Se intente usar \emph{RouteFitness} sin transformarlos en un valor numérico;
 para esto se defina la función de densidad de probabilidad de selección
 de un cromosoma, dependiendo de su índice en la lista.
 
@@ -1381,7 +1381,7 @@ de un cromosoma, dependiendo de su índice en la lista.
 
   \item Que \underline{pasan al siguiente generación intactos}.
 
-    La fracción establecida de la población previa se escoje
+    La fracción establecida de la población previa se escoge
     aleatoriamente (con repeticiones).
 
 \begin{code}
@@ -1433,7 +1433,7 @@ de un cromosoma, dependiendo de su índice en la lista.
 \subsection{Ejecución de algoritmo genético}
 \label{subsec:gaRun}
 
-\noindent Se implementan los actualizaciónes de cache.
+\noindent Se implementan los actualizaciones de cache.
 
 \begin{code}
 
@@ -1513,9 +1513,9 @@ y otras ejecutables que se usan para generación del documento.
     si son los extremos.
 \end{note}
 
-\subsubsection{Exemplo de tarea}
+\subsubsection{Ejemplo de tarea}
 
-El exemplo se lee desde archivo \emph{laby.txt}.
+El ejemplo se lee desde archivo \emph{laby.txt}.
 
 \begin{verbatim}
 dist/build/ga-labyrinth/ga-labyrinth\
@@ -1531,7 +1531,7 @@ El resultado (sin debug):
   [0-0,4-3,6-2,7-21]
 \end{verbatim}
 
-\subsubsection{Exemplo de proyecto}
+\subsubsection{Ejemplo de proyecto}
 El laberinto se presenta en figura \ref{fig:rawMapExample};
 
 \begin{verbatim}
@@ -1550,13 +1550,13 @@ dist/build/ga-labyrinth-example-1/ga-labyrinth-example-1\
 \subsection{Cambios necesarios}
 
 \begin{enumerate}
-  \item Seleccionar al remplacamiento en la recombinación de cromasomas aleatoriamente.
-        Al momento el proceso de ``crossover'' es \emph{puro} -- no causa edectos segundarios,
+  \item Seleccionar al remplazamiento en la recombinación de cromosomas aleatoriamente.
+        Al momento el proceso de ``crossover'' es \emph{puro} -- no causa efectos secundarios,
         a los cuales pertenece lo ``aleatorio''. Eso también quiere decir que el resultado
-        siempre es el mismo para los mismos padres. Se nescesita introducir mas variedad.
+        siempre es el mismo para los mismos padres. Se necesita introducir mas variedad.
 
-  \item Al momento estan desactivados los {color{red} \emph{mutaciones sobre rutas completas}},
-        porque las implementaciones quebran la politica de no-repeticion de genes.
+  \item Al momento están desactivados los {color{red} \emph{mutaciones sobre rutas completas}},
+        porque las implementaciones quiebran la política de no-repetición de genes.
         Deben ser reescritos.
 
 \end{enumerate}
@@ -1567,7 +1567,7 @@ dist/build/ga-labyrinth-example-1/ga-labyrinth-example-1\
 
 El proyecto requiere GHC y \texttt{cabal} para construcción.
 
-Hay una dependencía, que no está disponible publicamento, por esto se necesita instalarla a mano:
+Hay una dependencia, que no está disponible públicamente, por esto se necesita instalarla a mano:
 \href{https://github.com/fehu/CommandArgs}{CommandArgs}.
 
 \crule{1}
@@ -1579,8 +1579,8 @@ Los ejemplos de laberinto y cromosomas se generan usando los mecanismos del proy
 los de cromosomas usan función \emph{crossover} de \emph{GA}.
 
 
-\noindent El reporte en pdf se genera con script \emph{makeReport} proveido.
-Require instalación de \texttt{lhs2TeX} desde \texttt{cabal}.
+\noindent El reporte en pdf se genera con script \emph{makeReport} proveído.
+Requiere instalación de \texttt{lhs2TeX} desde \texttt{cabal}.
 
 
 \section*{Anexo I}
