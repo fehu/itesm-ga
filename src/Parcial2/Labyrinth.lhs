@@ -403,14 +403,14 @@ en la figura \ref{fig:chromosomesMapExample} se presenta un ejemplo de cromosoma
 \label{subsec:subroutes}
 
 Se definen los contenedores de sub-rutas. Se guardan solamente los genes extremos de la ruta
-y se proveen funciones de búsqueda de sub-ruta en cromosoma. Se implementa así porque las
-cromosomas cambian durante operaciones genéticos, afectando las sub-rutas.
+y se proveen funciones de búsqueda de sub-ruta en el cromosoma. Se implementa así porque los
+cromosomas cambian durante operaciones genéticas, afectando las sub-rutas.
 
-El orden sobre las sub-rutas se define en contexto de dos cromosomas: donador y recipiente.
+El orden sobre las sub-rutas se define en contexto de dos cromosomas: donador y receptor.
 Se comparan lexográficamente los siguientes valores:
 \begin{enumerate}
-  \item Número de puntos de interés que tiene el donador pero no el recipiente.
-  \item Diferencia entre las longitudes de donador y recipiente.
+  \item Número de puntos de interés que tiene el donador pero no el receptor.
+  \item Diferencia entre las longitudes de donador y receptor.
 \end{enumerate}
 
 
@@ -534,9 +534,9 @@ Se remplazan los ``hoyos'' de la siguiente manera:
       Se guarda también la dirección de las sub-rutas para ambos cromosomas.
 
 \item Se aplica el remplazamiento para todas las rutas intercambiables ordenadas
-        (fue descrita en subsección \ref{subsec:subroutes}).
+        (fue descrito en la subsección \ref{subsec:subroutes}).
       Se remplazan las sub-rutas no existentes por las existentes;
-      y se remplazan las existentes por mas cortas.
+      y se remplazan las existentes por otras mas cortas.
 
       El remplazamiento se aplica solamente si
       \begin{enumerate*}[1)]
@@ -551,23 +551,23 @@ Se remplazan los ``hoyos'' de la siguiente manera:
 
 \subsubsection{Extensión de extremos}
 
-Se extienden los extremos del recipiente con los del donador:
+Se extienden los extremos del receptor con los del donador:
 \begin{enumerate}
 \item Se encuentran los extremos mas cortos del donador: entre todos los
-  puntos $\left{ c \right}$ se seleccionan los con menor y
+  puntos $\left{ c \right}$ se seleccionan los de menor y
   mayor índices en el cromosoma donador. Si las sub-rutas entre los
-  puntos extremos y los índices correspondientes están \emph{validas} -- se guardan.
+  puntos extremos y los índices correspondientes son \emph{validas} -- se guardan.
 \item Se encuentran los extremos, correspondientes a los puntos, seleccionados en
   el punto previo. Se guardan si son \emph{invalidas}.
-\item Se remplazan los extremos correspondientes del recipiente por los
+\item Se remplazan los extremos correspondientes del receptor por los
   del donador (si fueron guardados ambos).
 \end{enumerate}
 
 
 \crule{1}
 
-\noindent  Se definen unas funciones de utilidad; la definición de `'crossover'' se encuentra en
-    subsección \ref{subsec:ga}.
+\noindent  Se definen algunas funciones de utilidad; la definición de `'crossover'' se encuentra en
+    la subsección \ref{subsec:ga}.
 
 \begin{code}
   replaceList :: (Eq a) => [a] -> [a] -> [a] -> Maybe [a]
@@ -839,8 +839,8 @@ Se extienden los extremos del recipiente con los del donador:
 \label{subsec:mutation}
 
 
-La mutación de cromosomas consiste de varios operaciones,
-que se dividen en los que cambian un gen o una sub-ruta.
+La mutación de cromosomas consiste de varias operaciones,
+que se dividen en las que cambian un gen o una sub-ruta.
 
 \begin{code}
 
@@ -864,7 +864,7 @@ que se dividen en los que cambian un gen o una sub-ruta.
 
 \end{code}
 
-Se definen las siguientes \emph{operaciones sobre sub-rutas}: {\color{red} \Large desactivados}
+Se definen las siguientes \emph{operaciones sobre sub-rutas}: {\color{red} \Large desactivadas}
 \begin{itemize}
   \item Cambia una sub-ruta valida por otra aleatoria (valida),
         con misma longitud.
@@ -1161,9 +1161,9 @@ Se genera el cromosoma.
 %%%%%%%%%%%%%%%%%%%%%   %%%%%%%%%%%%%%%%%%%%
 
 
-\item La \emph{mutación} funciona en la siguiente manera:
+\item La \emph{mutación} funciona de la siguiente manera:
       \begin{enumerate}
-        \item Se escoge y se aplique una de las \emph{operaciones sobre sub-rutas}.
+        \item Se escoge y se aplica una de las \emph{operaciones sobre sub-rutas}.
         \item Para cada gen del resultado del punto previo,
               se aplican (todas) las \emph{operaciones sobre genes},
               con su probabilidad asignada.
@@ -1198,7 +1198,7 @@ Se genera el cromosoma.
 
 \item \emph{Criterio de parada} se selecciona, considerando que no
   se conoce la longitud de ruta aceptable.
-  Esto no permita establecer un criterio exacto.
+  Esto no permite establecer un criterio exacto.
 
   Es porque el criterio se establece sobre el
   \emph{cambio del mejor valor de adaptación en las últimas iteraciones}.
@@ -1261,12 +1261,12 @@ Se genera el cromosoma.
 
 \section{Implementación III}
 
-El proyecto separa las operaciones genéticos \emph{atómicos}, definidas en clase \emph{GA},
+El proyecto separa las operaciones genéticas \emph{atómicas}, definidas en clase \emph{GA},
 de las \emph{masivas}, definidas en clase \emph{RunGA}.
 
-Las operaciones \emph{masivas} -- son las que trabajar con entera población:
+Las operaciones \emph{masivas} -- son las que trabajan con entera población:
 \begin{enumerate*}[1)]
-  \item selección de cromosomas para operaciones genéticos, generación de población inicial;
+  \item selección de cromosomas para operaciones genéticas, generación de población inicial;
   \item generación de población inicial;
   \item ejecución de las iteraciones.
 \end{enumerate*}
@@ -1281,17 +1281,17 @@ pero su código se presentara incluso en subsección \ref{subsec:gaRun}.
 \subsection{ Operaciones de selección }
 \label{subsec:gaSelect}
 
-Para preservación del tamaño de población, la unión de los tres
+Para preservar el tamaño de población, la unión de las tres
 siguientes selecciones debe siempre ser de mismo tamaño que la población,
 de la cual hubieron sidos seleccionados.
 
-Se uso un concepto \emph{Assessed}, el cual encapsula una lista de
+Se usa un concepto \emph{Assessed}, el cual encapsula una lista de
 cromosomas con sus correspondientes valores de adaptación.
 Está siempre ordenada ascendentemente, para que los mejores
 cromosomas (con menor valor de adaptación) estén en el principio.
 
-Se intente usar \emph{RouteFitness} sin transformarlos en un valor numérico;
-para esto se defina la función de densidad de probabilidad de selección
+Se intentaba usar \emph{RouteFitness} sin transformarlos en un valor numérico;
+para esto se define la función de densidad de probabilidad de selección
 de un cromosoma, dependiendo de su índice en la lista.
 
 \begin{align*}
@@ -1379,7 +1379,7 @@ de un cromosoma, dependiendo de su índice en la lista.
 \noindent Se define \underline{selección de cromosomas}:
 \begin{enumerate}[(a)]
 
-  \item Que \underline{pasan al siguiente generación intactos}.
+  \item Que \underline{pasan a la siguiente generación intactos}.
 
     La fracción establecida de la población previa se escoge
     aleatoriamente (con repeticiones).
@@ -1392,8 +1392,8 @@ de un cromosoma, dependiendo de su índice en la lista.
 
   \item Para la \underline{recombinación}.
 
-        Se escogen aleatoriamente una fraccione establecida de la población previa
-        y se divida en dos partes iguales.
+        Se escoge aleatoriamente una fraccion establecida de la población previa
+        y se divide en dos partes iguales.
 
 \begin{code}
 
@@ -1433,7 +1433,7 @@ de un cromosoma, dependiendo de su índice en la lista.
 \subsection{Ejecución de algoritmo genético}
 \label{subsec:gaRun}
 
-\noindent Se implementan los actualizaciones de cache.
+\noindent Se implementan las actualizaciones de cache.
 
 \begin{code}
 
@@ -1446,7 +1446,7 @@ de un cromosoma, dependiendo de su índice en la lista.
 \end{code}
 
 
-\noindent Se presenta aquí parte de código desde \hssrc{GeneticAlgorithm}{GeneticAlgorithm}.
+\noindent Se presenta aquí una parte del código desde \hssrc{GeneticAlgorithm}{GeneticAlgorithm}.
 
 \begin{itemize}
 
@@ -1510,7 +1510,7 @@ y otras ejecutables que se usan para generación del documento.
 
 \begin{note}
     El algoritmo considera todas las rutas que contienen inicio y meta, no solamente
-    si son los extremos.
+    si son extremos.
 \end{note}
 
 \subsubsection{Ejemplo de tarea}
@@ -1555,9 +1555,9 @@ dist/build/ga-labyrinth-example-1/ga-labyrinth-example-1\
         a los cuales pertenece lo ``aleatorio''. Eso también quiere decir que el resultado
         siempre es el mismo para los mismos padres. Se necesita introducir mas variedad.
 
-  \item Al momento están desactivados los {color{red} \emph{mutaciones sobre rutas completas}},
+  \item Al momento están desactivadas las {\color{red} \emph{mutaciones sobre rutas completas}},
         porque las implementaciones quiebran la política de no-repetición de genes.
-        Deben ser reescritos.
+        Deben ser reescritas.
 
 \end{enumerate}
 
@@ -1573,7 +1573,7 @@ Hay una dependencia, que no está disponible públicamente, por esto se necesita
 \crule{1}
 
 
-El proyecto usa la paradigma de \emph{programación literaria} y el reporte se genera desde el código.
+El proyecto usa el paradigma de \emph{programación literaria} y el reporte se genera desde el código.
 
 Los ejemplos de laberinto y cromosomas se generan usando los mecanismos del proyecto;
 los de cromosomas usan función \emph{crossover} de \emph{GA}.

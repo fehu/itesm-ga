@@ -252,7 +252,7 @@ drawChildren mbIds dta thisSide = TikzExpr $ concatMap ((pref:) . picSurround) d
                     return $ tikzPicture [] [ labelNode "src" 0 "Donado: "
                                             , tSrc
                                             , newline
-                                            , labelNode "tar" 1 "Remplacado: "
+                                            , labelNode "tar" 1 "Remplazado: "
                                             , tTar
                                             , newline
                                             , labelNode "res" 2 "Hijo: "
