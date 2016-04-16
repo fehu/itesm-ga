@@ -202,12 +202,13 @@ para permitir destinguir facilmente los dos tipos de rutas
 
         \item \emph{validez} $= \dfrac
             {\text{número de aristas existentes}}
-            {\text{número de aristas total}}$.
+            {\text{número de aristas total}}$;
 
             \textit{aristas existentes ---
-                    aristas que existen entre los pares de genes adjuntos.}
+                    aristas que existen entre los pares de genes adjuntos;}
 
-        \item los \emph{puntos de interés} que contiene la ruta.
+        \item los \emph{puntos de interés} que contiene la ruta;
+        \item el número de genes;
         \item la longitud sumatoria de las sub-rutas en el cromosoma.
 
     \end{enumerate}
@@ -240,8 +241,6 @@ para permitir destinguir facilmente los dos tipos de rutas
 
 \end{code}
 
-\textbf{\Large TODO}
-
 \noindent Para la busqueda de la ruta mas corta,
 se define el orden sobre las rutas de tal manera, que
 una lista de \emph{rutas}, ordenada ascendentamente,
@@ -266,27 +265,10 @@ tendrá los mejores elementos en el principio.
               \end{cases}
         \end{align*}
 
-  \item Dos \emph{rutas parciales} se comparan por sus \underline{tres componentes} en orden \\
-        \underline{lexicográfico}, que quiere decir que
-        primero se comparan los primeros elementos, si son igual, se comparan los segundos, etc.,
-        hasta que la comparación de un resultado diferente de igualidad o se termine la lista.
+  \item Dos \emph{rutas parciales} se comparan por los valores,
+        producidos desde sus \underline{4 componentes}.
+        $ \langle v, i, p, l \rangle \Rightarrow  p \times v \times (\texttt{int } i + 1) - l$
 
-        El orden de comparación se cambia al opuesto.
-
-        \begin{align*}
-            \begin{aligned}
-                \forall ~ &x \in \textit{ruta parcial}\\
-                          &x \sim \langle v_x, i_x, l_x \rangle \\
-                \forall ~ &y \in \textit{ruta parcial}\\
-                          &y \sim \langle v_y, i_y, l_y \rangle
-            \end{aligned}
-            & \quad \implies
-            & \begin{cases}
-                x < y & \mbox{si } \langle v_x, i_x, l_x \rangle > \langle v_y, i_y, l_y \rangle \\
-                x > y & \mbox{si } \langle v_x, i_x, l_x \rangle < \langle v_y, i_y, l_y \rangle \\
-                x = y & \mbox{en otro caso}
-              \end{cases}
-        \end{align*}
 
 \end{enumerate}
 
@@ -294,11 +276,8 @@ tendrá los mejores elementos en el principio.
   instance Ord RouteFitness where
     compare (CompleteRoute x)       (CompleteRoute y)       = compare x y
     compare (PartialRoute v1 i1 p1 l1) (PartialRoute v2 i2 p2 l2) =
---        compare (-l2 - v2 - poisIntVal i2/10) (-l1 - v1 - poisIntVal i1/10)
---        compare (l2 + v2*10, i2) (l1 + v1*10, i1)
-        compare (fromIntegral p1 * v1 * (poisIntVal i2 + 1) - l1) -- or swapped ??
+        compare (fromIntegral p1 * v1 * (poisIntVal i2 + 1) - l1)
                 (fromIntegral p2 * v2 * (poisIntVal i2 + 1) - l2)
---        compare (-l2 - v2, i2) (-l1 - v1, i1)
     compare (CompleteRoute _)        PartialRoute{}         = LT
     compare  PartialRoute{}         (CompleteRoute _)       = GT
 
@@ -324,8 +303,6 @@ Separa los puntos de interes como sub-rutas.
             addR r s = r:s
 \end{code}
 
-
-Las pruebas del contenedor \emph{Route} se encuentran en \hstest{Parcial2-Route}{Parcial2/Route.hs}.
 
 La función misma se definerá en subsección \ref{subsec:ga}.
 
@@ -1196,10 +1173,9 @@ Se genera el cromosoma.
 
      -- mutate :: ga \rightarrow$ Chromosome ga \rightarrow$ IO (Chromosome ga)
      mutate ga chrom = do
-        -- chrom' <- ($ chrom) =<< randChoice (map ($ ga) subRouteMuts)
         mutateGenes chrom geneMuts
 
-        where  subRouteMuts  = [] -- [ mutSubRouteSame, mutSubRouteAny ]
+        where  subRouteMuts  = [] -- TODO: disabled
                geneMuts      = [ mutGenePOI, mutGeneAny ]
 
                mutateGenes ch = mutateGenes' ch []
@@ -1212,7 +1188,7 @@ Se genera el cromosoma.
                            mutF (p, mut) g' = do
                                  d <- randomIO :: IO Double
                                  g <- g'
-                                 if p < d then mut ga mutated g else return g -- (chrom g)
+                                 if p < d then mut ga mutated g else return g
                            gene' = foldr mutF (return gene) muts
 
 
@@ -1362,15 +1338,10 @@ de un cromosoma, dependiendo de su índice en la lista.
                                    (0,[]) probs
            -- select id, given a number in [0,1]
            selIdx :: Double -> Int
-           selIdx d = let  -- P(A < a)
-                           less = (< d) `filter` accProbs
-
-                           --gt = dropWhile (< d) accProbs
-                   in n - length less -1
-                      -- if null gt  then 0                -- first
-                      --            else  - 1-- length less - 1  -- max of P(A < a)
-
-           -- Generate a random assessed index.
+           selIdx d =  let less = (< d) `filter` accProbs
+                       in n - length less -1
+           -- Generate a random assessed index,
+           -- without repeating elems of `prev`.
            randIdx prev = do
                 r <- selIdx <$> randomIO
                 if r `elem` prev  then randIdx prev
@@ -1427,7 +1398,8 @@ de un cromosoma, dependiendo de su índice en la lista.
 \begin{code}
 
     selectCrossover ga assessed = zip <$> rand <*> rand
-        where rand = assessedRand (flip (/) 2 . gaSelCrossoverFrac) ga assessed
+        where rand = assessedRand  (flip (/) 2 . gaSelCrossoverFrac)
+                                   ga assessed
 
 \end{code}
 
@@ -1467,9 +1439,9 @@ de un cromosoma, dependiendo de su índice en la lista.
 
     initHook ga pop = setCachedIdxGen (gaCache ga) (assessedRandIndexGen pop)
 
-    iterationHook ga = do affectCachedIter (gaCache ga) (+1)
-                          i <- cachedIter (gaCache ga)
-                          putStrLn $ "iteration #" ++ show i
+    iterationHook ga = do  affectCachedIter (gaCache ga) (+1)
+                           i <- cachedIter (gaCache ga)
+                           putStrLn $ "iteration #" ++ show i
 
 \end{code}
 
@@ -1491,6 +1463,8 @@ de un cromosoma, dependiendo de su índice en la lista.
 
 runGA' ga pop = do
     let fit = assessed $ map (id &&& fitness ga) pop
+
+    iterationHook ga
 
     stop <- stopCriteria ga . map snd $ unwrapAssessed fit
 
@@ -1525,11 +1499,52 @@ runGA' ga pop = do
 La aplicación está definida en \hssrc{Parcial2--App}{Parcial2/App}
 y la ejecutable actual en \hssrc{Parcial2--App}{Parcial2/App}.
 
-\noindent El modo de uso se describe en Anexo \ref{subsec:A1}.
+\noindent El modo de uso se describe en Anexo \ref{sec:A1}.
+
+
+El proyecto también contiene aplicación de ejemplo \texttt{ga-labyrinth-example-1}
+y otras ejecutables que se usan para generación del documento.
+
+
+\subsection{Pruebas}
 
 \begin{note}
-    {\Huge TODO}
+    El algoritmo considera todas las rutas que contienen inicio y meta, no solamente
+    si son los extremos.
 \end{note}
+
+\subsubsection{Exemplo de tarea}
+
+El exemplo se lee desde archivo \emph{laby.txt}.
+
+\begin{verbatim}
+dist/build/ga-labyrinth/ga-labyrinth\
+    laby.txt 200\
+    --gen-max-chain-len 5\
+    --gen-max-chains 1\
+    -I 100 -U 20
+\end{verbatim}
+
+El resultado (sin debug):
+
+\begin{verbatim}
+  [0-0,4-3,6-2,7-21]
+\end{verbatim}
+
+\subsubsection{Exemplo de proyecto}
+El laberinto se presenta en figura \ref{fig:rawMapExample};
+
+\begin{verbatim}
+dist/build/ga-labyrinth-example-1/ga-labyrinth-example-1\
+    200\
+    --gen-max-chain-len 10\
+    --gen-max-chains 10\
+    -I 100 -U 20
+\end{verbatim}
+
+\begin{verbatim}
+[9--3,8--3,8-0,4-0,3-0,1-0,1--2,0--2]
+\end{verbatim}
 
 
 \subsection{Cambios necesarios}
@@ -1543,8 +1558,6 @@ y la ejecutable actual en \hssrc{Parcial2--App}{Parcial2/App}.
   \item Al momento estan desactivados los {color{red} \emph{mutaciones sobre rutas completas}},
         porque las implementaciones quebran la politica de no-repeticion de genes.
         Deben ser reescritos.
-
-  \item assessedRandIndexGen
 
 \end{enumerate}
 
@@ -1568,6 +1581,93 @@ los de cromosomas usan función \emph{crossover} de \emph{GA}.
 
 \noindent El reporte en pdf se genera con script \emph{makeReport} proveido.
 Require instalación de \texttt{lhs2TeX} desde \texttt{cabal}.
+
+
+\section*{Anexo I}
+\label{sec:A1}
+
+\begin{verbatim}
+
+Searches the shortest path in a labyrinth with Genetic Algorithm.
+
+ga-labyrinth <Labyrinth File> <Population Size> [gen-max-chains]
+                                                [gen-max-chain-len]
+                                                [mut-max-chains]
+                                                [mut-max-chain-len]
+                                                [max-unchanged]
+                                                [max-iter]
+                                                [frac-intact]
+                                                [frac-crossover]
+                                                [frac-mutation]
+                                                [fracs]
+                                                [help]
+
+Positional:
+  Labyrinth File :: Text 	--  path to labyrinth file
+  Population Size :: Int 	--
+
+Optional:
+
+  gen-max-chains <value>
+     --gen-max-chains
+     Chromosome Generation: maximum chain number.
+        value :: Int 	--
+
+  gen-max-chain-len <value>
+     --gen-max-chain-len
+     Chromosome Generation: maximum chain length.
+        value :: Int 	--
+
+  mut-max-chains <value>
+     --mut-max-chains
+     Chromosome Mutation: maximum chains to insert.
+        value :: Int 	--
+
+  mut-max-chain-len <value>
+     --mut-max-chain-len
+     Chromosome Mutation: maximum insert chain length.
+        value :: Int 	--
+
+  max-unchanged <value>
+     -U --max-unchanged
+     Maximum number of iterations without best fitness
+     change before stopping.
+        value :: Int 	--
+
+  max-iter <value>
+     -I --max-iter
+     Maximum number of iterations.
+        value :: Int 	--
+
+  frac-intact <value>
+     --frac-intact
+     Fraction of population left intact.
+        value :: Float 	--
+
+  frac-crossover <value>
+     --frac-crossover
+     Fraction of population used for crossover.
+        value :: Float 	--
+
+  frac-mutation <value>
+     --frac-mutation
+     Fraction of population used for mutation.
+        value :: Float 	--
+
+  fracs <intact> <crossover> <mutation>
+     -f --fracs
+     Set all the fractions at once.
+        intact :: Float 	--  intact fraction
+        crossover :: Float 	--  crossover fraction
+        mutation :: Float 	--  mutation fraction
+
+  help <cmd...>
+     -h --help
+     Show help
+        cmd... :: Text 	--  Commands to show the help for
+
+
+\end{verbatim}
 
 \end{document}
 
