@@ -8,11 +8,19 @@ SRC=src/Parcial2
 
 # if [ ! "${1,,}" = "--clean" ]; then FLAG_CLEAN=1; else FLAG_CLEAN=0; fi
 
-if [ ! "${1,,}" = "--fast" ]; then FLAG_FAST=1; else FLAG_FAST=0; fi
+# if [ ! "${1,,}" = "--fast" ]; then FLAG_FAST=1; else FLAG_FAST=0; fi
 
-if [ ! "${1,,}" = "--x-fast" ]; then FLAG_X_FAST=1; else FLAG_X_FAST=0; fi
+# if [ ! "${1,,}" = "--x-fast" ]; then FLAG_X_FAST=1; else FLAG_X_FAST=0; fi
 
-if ! $FLAG_FAST && ! $FLAG_X_FAST ; then
+
+#if [ $FLAG_FAST -eq 0 ] && [ $FLAG_X_FAST -eq 0 ]; then
+
+if [ ! "${1,,}" = "--fast" ] && [ ! "${1,,}" = "--x-fast" ]; then
+
+    rm -rf build
+    mkdir build
+
+    echo "cleaned LaTeX build directory"
 
     # Clean and build the project.
     cabal clean
@@ -30,7 +38,7 @@ if ! $FLAG_FAST && ! $FLAG_X_FAST ; then
 
 fi
 
-if ! $FLAG_X_FAST ; then
+if [ ! "${1,,}" = "--x-fast" ]; then
 
 # Generate Tikz Labyrinth examples.
 $Labyrinth --map build/MapExampleRaw.tikz.tex &&\
